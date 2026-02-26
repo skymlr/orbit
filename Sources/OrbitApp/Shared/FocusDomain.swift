@@ -32,8 +32,8 @@ struct HotkeySettings: Equatable, Sendable {
     var captureShortcut: String
 
     static let `default` = HotkeySettings(
-        startShortcut: "cmd+shift+s",
-        captureShortcut: "cmd+shift+o"
+        startShortcut: "ctrl+option+cmd+k",
+        captureShortcut: "ctrl+option+cmd+j"
     )
 }
 
@@ -41,6 +41,7 @@ struct SessionCategoryRecord: Equatable, Identifiable, Sendable {
     var id: UUID
     var name: String
     var normalizedName: String
+    var colorHex: String
 }
 
 struct FocusNoteRecord: Equatable, Identifiable, Sendable {
@@ -71,6 +72,8 @@ struct FocusSessionRecord: Equatable, Identifiable, Sendable {
 enum FocusDefaults {
     static let focusCategoryID = UUID(uuidString: "C8B3B4CC-2928-4A84-9C3B-EB253E9D0001")!
     static let focusCategoryName = "focus"
+    static let focusCategoryColorHex = "#00B5FF"
+    static let defaultCategoryColorHex = "#58B5FF"
 
     static func defaultSessionName(startedAt: Date) -> String {
         sessionNameFormatter.string(from: startedAt)
@@ -78,6 +81,17 @@ enum FocusDefaults {
 
     static func normalizedCategoryName(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    static func normalizedCategoryColorHex(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let noPrefix = trimmed.hasPrefix("#") ? String(trimmed.dropFirst()) : trimmed
+
+        guard noPrefix.count == 6, noPrefix.allSatisfy(\.isHexDigit) else {
+            return defaultCategoryColorHex
+        }
+
+        return "#\(noPrefix.uppercased())"
     }
 
     static func normalizedTag(_ value: String) -> String {

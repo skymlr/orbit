@@ -6,12 +6,14 @@ import Foundation
 struct AppFeature {
     private enum CancelID {
         case inactivityMonitor
+        case hotkeyRegistration
     }
 
     @CasePathable
     enum WindowDestination: Hashable, Sendable {
         case sessionWindow
         case captureWindow
+        case endSessionWindow
     }
 
     @ObservableState
@@ -32,17 +34,16 @@ struct AppFeature {
         struct NoteDraft: Equatable, Identifiable {
             var id: UUID
             var text: String
-            var tags: String
+            var tags: [String]
             var priority: NotePriority
+            var createdAt: Date
         }
 
         struct SettingsState: Equatable {
             var sessions: [FocusSessionRecord] = []
             var categories: [SessionCategoryRecord] = []
-            var newCategoryName = ""
             var startShortcut = HotkeySettings.default.startShortcut
             var captureShortcut = HotkeySettings.default.captureShortcut
-            var exportSelection: Set<UUID> = []
             var statusMessage: String?
         }
 
@@ -75,13 +76,17 @@ struct AppFeature {
         case captureTapped
         case openSessionTapped
         case endSessionTapped
+        case sessionWindowEndSessionTapped
 
         case sessionWindowClosed
         case captureWindowClosed
+        case endSessionWindowClosed
 
         case captureSubmitTapped
         case sessionAddNoteTapped
-        case sessionNoteSaveTapped(UUID, String, String, NotePriority)
+        case sessionRenameTapped(String)
+        case sessionCategoryChangedTapped(UUID)
+        case sessionNoteSaveTapped(UUID, String, [String], NotePriority)
         case sessionNoteDeleteTapped(UUID)
 
         case endSessionConfirmTapped(name: String, categoryID: UUID?)
@@ -89,14 +94,15 @@ struct AppFeature {
         case autoEndSession
 
         case settingsRefreshTapped
+        case settingsResetHotkeysTapped
         case settingsSaveHotkeysTapped
-        case settingsAddCategoryTapped
-        case settingsRenameCategoryTapped(UUID, String)
+        case settingsAddCategoryTapped(String, String)
+        case settingsRenameCategoryTapped(UUID, String, String)
         case settingsDeleteCategoryTapped(UUID)
         case settingsRenameSessionTapped(UUID, String)
         case settingsDeleteSessionTapped(UUID)
-        case settingsToggleExportSelection(UUID)
-        case settingsExportTapped(URL)
+        case settingsExportAllTapped(URL)
+        case settingsExportSessionTapped(UUID, URL)
         case settingsExportCompleted(Int)
         case operationFailed(String)
 
@@ -156,7 +162,10 @@ struct AppFeature {
                 state.noteDrafts = []
                 state.windowDestinations.removeAll()
                 state.endSessionDraft = nil
-                return .cancel(id: CancelID.inactivityMonitor)
+                return .merge(
+                    .cancel(id: CancelID.inactivityMonitor),
+                    .cancel(id: CancelID.hotkeyRegistration)
+                )
 
             case .inactivityTick:
                 guard state.activeSession != nil else { return .none }
@@ -176,13 +185,24 @@ struct AppFeature {
 
             case let .registerHotkeys(settings):
                 return .run { send in
-                    hotkeyManager.register(settings.startShortcut) {
-                        Task { await send(.hotkeyTriggered(.startSession)) }
+                    let stream = AsyncStream<HotkeyKind> { continuation in
+                        hotkeyManager.register(settings.startShortcut) {
+                            continuation.yield(.startSession)
+                        }
+                        hotkeyManager.register(settings.captureShortcut) {
+                            continuation.yield(.capture)
+                        }
+                        continuation.onTermination = { _ in
+                            hotkeyManager.unregister(settings.startShortcut)
+                            hotkeyManager.unregister(settings.captureShortcut)
+                        }
                     }
-                    hotkeyManager.register(settings.captureShortcut) {
-                        Task { await send(.hotkeyTriggered(.capture)) }
+
+                    for await kind in stream {
+                        await send(.hotkeyTriggered(kind))
                     }
                 }
+                .cancellable(id: CancelID.hotkeyRegistration, cancelInFlight: true)
 
             case .startSessionTapped:
                 if state.activeSession != nil {
@@ -244,6 +264,19 @@ struct AppFeature {
                 )
                 return .none
 
+            case .sessionWindowEndSessionTapped:
+                guard let active = state.activeSession else { return .none }
+                state.endSessionDraft = State.EndSessionDraft(
+                    id: uuid(),
+                    name: active.name,
+                    selectedCategoryID: active.categoryID,
+                    categories: state.categories
+                )
+                state.windowDestinations.remove(.captureWindow)
+                state.windowDestinations.remove(.sessionWindow)
+                state.windowDestinations.insert(.endSessionWindow)
+                return .none
+
             case .sessionWindowClosed:
                 state.windowDestinations.remove(.sessionWindow)
                 return .none
@@ -251,6 +284,11 @@ struct AppFeature {
             case .captureWindowClosed:
                 state.windowDestinations.remove(.captureWindow)
                 state.captureDraft = State.CaptureDraft()
+                return .none
+
+            case .endSessionWindowClosed:
+                state.windowDestinations.remove(.endSessionWindow)
+                state.endSessionDraft = nil
                 return .none
 
             case .captureSubmitTapped:
@@ -273,9 +311,28 @@ struct AppFeature {
                 state.windowDestinations.insert(.captureWindow)
                 return .none
 
-            case let .sessionNoteSaveTapped(noteID, text, tagsInput, priority):
+            case let .sessionRenameTapped(name):
+                guard let activeSession = state.activeSession else { return .none }
+
+                return .run { send in
+                    try? await focusRepository.renameSession(activeSession.id, name)
+                    let active = try? await focusRepository.loadActiveSession()
+                    await send(.loadActiveSessionResponse(active))
+                    await send(.settingsRefreshTapped)
+                }
+
+            case let .sessionCategoryChangedTapped(categoryID):
+                guard let activeSession = state.activeSession else { return .none }
+
+                return .run { send in
+                    try? await focusRepository.updateSessionCategory(activeSession.id, categoryID)
+                    let active = try? await focusRepository.loadActiveSession()
+                    await send(.loadActiveSessionResponse(active))
+                    await send(.settingsRefreshTapped)
+                }
+
+            case let .sessionNoteSaveTapped(noteID, text, tags, priority):
                 guard state.activeSession != nil else { return .none }
-                let tags = FocusDefaults.parseTagInput(tagsInput)
 
                 return .run { send in
                     _ = try? await focusRepository.updateNote(noteID, text, priority, tags, now)
@@ -298,6 +355,7 @@ struct AppFeature {
                 guard let activeSession = state.activeSession else { return .none }
 
                 state.endSessionDraft = nil
+                state.windowDestinations.remove(.endSessionWindow)
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.sessionWindow)
 
@@ -316,11 +374,13 @@ struct AppFeature {
 
             case .endSessionCancelTapped:
                 state.endSessionDraft = nil
+                state.windowDestinations.remove(.endSessionWindow)
                 return .none
 
             case .autoEndSession:
                 guard let activeSession = state.activeSession else { return .none }
                 state.endSessionDraft = nil
+                state.windowDestinations.remove(.endSessionWindow)
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.sessionWindow)
 
@@ -369,18 +429,30 @@ struct AppFeature {
 
                 return .send(.registerHotkeys(settings))
 
-            case .settingsAddCategoryTapped:
-                let newName = state.settings.newCategoryName
-                state.settings.newCategoryName = ""
+            case .settingsResetHotkeysTapped:
+                let previous = state.hotkeys
+                let defaults = HotkeySettings.default
 
+                hotkeyManager.unregister(previous.startShortcut)
+                hotkeyManager.unregister(previous.captureShortcut)
+
+                state.hotkeys = defaults
+                state.settings.startShortcut = defaults.startShortcut
+                state.settings.captureShortcut = defaults.captureShortcut
+                state.settings.statusMessage = "Hotkeys reset to defaults"
+                hotkeySettingsClient.save(defaults)
+
+                return .send(.registerHotkeys(defaults))
+
+            case let .settingsAddCategoryTapped(name, colorHex):
                 return .run { send in
-                    _ = try? await focusRepository.addCategory(newName)
+                    _ = try? await focusRepository.addCategory(name, colorHex)
                     await send(.settingsRefreshTapped)
                 }
 
-            case let .settingsRenameCategoryTapped(id, name):
+            case let .settingsRenameCategoryTapped(id, name, colorHex):
                 return .run { send in
-                    try? await focusRepository.renameCategory(id, name)
+                    try? await focusRepository.renameCategory(id, name, colorHex)
                     await send(.settingsRefreshTapped)
                 }
 
@@ -408,18 +480,10 @@ struct AppFeature {
                     await send(.loadActiveSessionResponse(active))
                 }
 
-            case let .settingsToggleExportSelection(sessionID):
-                if state.settings.exportSelection.contains(sessionID) {
-                    state.settings.exportSelection.remove(sessionID)
-                } else {
-                    state.settings.exportSelection.insert(sessionID)
-                }
-                return .none
-
-            case let .settingsExportTapped(directoryURL):
-                let sessionIDs = Array(state.settings.exportSelection)
+            case let .settingsExportAllTapped(directoryURL):
+                let sessionIDs = state.settings.sessions.map(\.id)
                 guard !sessionIDs.isEmpty else {
-                    state.settings.statusMessage = "Select at least one session to export."
+                    state.settings.statusMessage = "No sessions available to export."
                     return .none
                 }
 
@@ -429,9 +493,15 @@ struct AppFeature {
                     await send(.settingsRefreshTapped)
                 }
 
+            case let .settingsExportSessionTapped(sessionID, directoryURL):
+                return .run { send in
+                    let urls = (try? await markdownExportClient.export([sessionID], directoryURL)) ?? []
+                    await send(.settingsExportCompleted(urls.count))
+                    await send(.settingsRefreshTapped)
+                }
+
             case let .settingsExportCompleted(count):
                 state.settings.statusMessage = "Exported \(count) session markdown file(s)."
-                state.settings.exportSelection.removeAll()
                 return .none
 
             case let .operationFailed(message):
@@ -461,6 +531,7 @@ struct AppFeature {
                 }
 
                 state.endSessionDraft = nil
+                state.windowDestinations.remove(.endSessionWindow)
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.sessionWindow)
 
@@ -503,8 +574,9 @@ private func syncNoteDrafts(_ state: inout AppFeature.State) {
                 AppFeature.State.NoteDraft(
                     id: $0.id,
                     text: $0.text,
-                    tags: $0.tags.joined(separator: ", "),
-                    priority: $0.priority
+                    tags: $0.tags,
+                    priority: $0.priority,
+                    createdAt: $0.createdAt
                 )
             }
     )

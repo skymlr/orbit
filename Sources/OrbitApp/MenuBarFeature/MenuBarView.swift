@@ -1,8 +1,10 @@
 import ComposableArchitecture
 import SwiftUI
+import AppKit
 
 struct MenuBarView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -23,7 +25,9 @@ struct MenuBarView: View {
 
                 Spacer()
 
-                SettingsLink {
+                Button {
+                    openSettingsWindow()
+                } label: {
                     Image(systemName: "gearshape")
                 }
                 .buttonStyle(.borderless)
@@ -48,6 +52,7 @@ struct MenuBarView: View {
                 HStack(spacing: 10) {
                     Button("Open Session") {
                         store.send(.openSessionTapped)
+                        openSessionWindow()
                     }
                     .buttonStyle(.borderedProminent)
 
@@ -77,7 +82,7 @@ struct MenuBarView: View {
                 .fill(.ultraThinMaterial)
         )
         .sheet(item: $store.endSessionDraft) { draft in
-            EndSessionSheet(
+            EndSessionPromptView(
                 draft: draft,
                 onConfirm: { name, categoryID in
                     store.send(.endSessionConfirmTapped(name: name, categoryID: categoryID))
@@ -90,59 +95,31 @@ struct MenuBarView: View {
     }
 }
 
-private struct EndSessionSheet: View {
-    let draft: AppFeature.State.EndSessionDraft
-    let onConfirm: (String, UUID?) -> Void
-    let onCancel: () -> Void
+private extension MenuBarView {
+    func openSessionWindow() {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        openWindow(id: "session-window")
 
-    @State private var name = ""
-    @State private var selectedCategoryID = FocusDefaults.focusCategoryID
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("End Focus Session")
-                .font(.title3.weight(.semibold))
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Name (optional)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("Session name", text: $name)
-                    .textFieldStyle(.roundedBorder)
+        DispatchQueue.main.async {
+            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit Session" }) else {
+                return
             }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Category")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Picker("Category", selection: $selectedCategoryID) {
-                    ForEach(draft.categories) { category in
-                        Text(category.name).tag(category.id)
-                    }
-                }
-                .pickerStyle(.menu)
-            }
-
-            HStack {
-                Button("Cancel") {
-                    onCancel()
-                }
-
-                Spacer()
-
-                Button("End Session") {
-                    onConfirm(name, selectedCategoryID)
-                }
-                .buttonStyle(.borderedProminent)
-            }
-        }
-        .padding(18)
-        .frame(width: 380)
-        .background(.thinMaterial)
-        .task {
-            name = draft.name
-            selectedCategoryID = draft.selectedCategoryID
+            window.orderFrontRegardless()
+            window.makeKey()
         }
     }
+
+    func openSettingsWindow() {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        openWindow(id: "settings-window")
+
+        DispatchQueue.main.async {
+            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit Settings" }) else {
+                return
+            }
+            window.orderFrontRegardless()
+            window.makeKey()
+        }
+    }
+
 }

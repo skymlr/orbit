@@ -119,6 +119,25 @@ extension DependencyValues {
             .execute(db)
         }
 
+        migrator.registerMigration("Add colors to session categories") { db in
+            try #sql(
+                """
+                ALTER TABLE "sessionCategories"
+                ADD COLUMN "colorHex" TEXT NOT NULL DEFAULT '#58B5FF'
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                UPDATE "sessionCategories"
+                SET "colorHex" = '#00B5FF'
+                WHERE "normalizedName" = 'focus'
+                """
+            )
+            .execute(db)
+        }
+
         try migrator.migrate(database)
         defaultDatabase = database
     }

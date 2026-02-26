@@ -3,24 +3,57 @@ import ComposableArchitecture
 import SwiftUI
 
 struct OrbitSettingsView: View {
+    private enum SectionWidth {
+        static let section: CGFloat = 700
+    }
+
+    private enum SettingsSection: String, CaseIterable, Identifiable {
+        case sessions = "Sessions"
+        case categories = "Categories"
+        case hotkeys = "Hotkeys"
+
+        var id: String { rawValue }
+    }
+
+    private struct SessionDayGroup: Identifiable {
+        let day: Date
+        let sessions: [FocusSessionRecord]
+
+        var id: Date { day }
+    }
+
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @State private var selectedSection: SettingsSection = .sessions
+    @State private var newCategoryName = ""
+    @State private var newCategoryColor = Color(categoryHex: FocusDefaults.defaultCategoryColorHex)
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                hotkeysSection
-                categoriesSection
-                sessionsSection
-                exportSection
-
-                if let message = store.settings.statusMessage {
-                    Text(message)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        VStack(alignment: .center, spacing: 14) {
+            Picker("", selection: $selectedSection) {
+                ForEach(SettingsSection.allCases) { section in
+                    Text(section.rawValue).tag(section)
                 }
             }
-            .padding(20)
+            .pickerStyle(.segmented)
+            .frame(maxWidth: sectionMaxWidth(for: selectedSection))
+            .frame(maxWidth: .infinity, alignment: .center)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    selectedSectionContent
+
+                    if let message = store.settings.statusMessage {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(
             LinearGradient(
                 colors: [
@@ -34,22 +67,39 @@ struct OrbitSettingsView: View {
         )
     }
 
+    @ViewBuilder
+    private var selectedSectionContent: some View {
+        switch selectedSection {
+        case .sessions:
+            sessionsSection
+        case .categories:
+            categoriesSection
+        case .hotkeys:
+            hotkeysSection
+        }
+    }
+
     private var hotkeysSection: some View {
         sectionCard(title: "Hotkeys") {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Start Session Shortcut")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField("cmd+shift+s", text: $store.settings.startShortcut)
+                TextField("ctrl+option+cmd+k", text: $store.settings.startShortcut)
                     .textFieldStyle(.roundedBorder)
 
                 Text("Quick Capture Shortcut")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField("cmd+shift+o", text: $store.settings.captureShortcut)
+                TextField("ctrl+option+cmd+j", text: $store.settings.captureShortcut)
                     .textFieldStyle(.roundedBorder)
 
                 HStack {
+                    Button("Reset Hotkeys") {
+                        store.send(.settingsResetHotkeysTapped)
+                    }
+                    .buttonStyle(.bordered)
+
                     Spacer()
                     Button("Save Hotkeys") {
                         store.send(.settingsSaveHotkeysTapped)
@@ -58,24 +108,34 @@ struct OrbitSettingsView: View {
                 }
             }
         }
+        .frame(maxWidth: sectionMaxWidth(for: .hotkeys))
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var categoriesSection: some View {
         sectionCard(title: "Categories") {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
-                    TextField("Add category", text: $store.settings.newCategoryName)
+                    TextField("Add category", text: $newCategoryName)
                         .textFieldStyle(.roundedBorder)
+                    ColorPicker(
+                        "",
+                        selection: $newCategoryColor,
+                        supportsOpacity: false
+                    )
+                    .labelsHidden()
+                    .frame(width: 28)
+
                     Button("Add") {
-                        store.send(.settingsAddCategoryTapped)
+                        addCategoryButtonTapped()
                     }
                 }
 
                 ForEach(store.settings.categories) { category in
                     CategoryRow(
                         category: category,
-                        onRename: { newName in
-                            store.send(.settingsRenameCategoryTapped(category.id, newName))
+                        onRename: { newName, colorHex in
+                            store.send(.settingsRenameCategoryTapped(category.id, newName, colorHex))
                         },
                         onDelete: {
                             store.send(.settingsDeleteCategoryTapped(category.id))
@@ -84,47 +144,105 @@ struct OrbitSettingsView: View {
                 }
             }
         }
+        .frame(maxWidth: sectionMaxWidth(for: .categories))
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var sessionsSection: some View {
         sectionCard(title: "Sessions") {
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(store.settings.sessions) { session in
-                    SessionRow(
-                        session: session,
-                        isSelectedForExport: store.settings.exportSelection.contains(session.id),
-                        onRename: { newName in
-                            store.send(.settingsRenameSessionTapped(session.id, newName))
-                        },
-                        onDelete: {
-                            store.send(.settingsDeleteSessionTapped(session.id))
-                        },
-                        onToggleExport: {
-                            store.send(.settingsToggleExportSelection(session.id))
+            VStack(alignment: .leading, spacing: 14) {
+                if sessionGroups.isEmpty {
+                    Text("No sessions yet.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(sessionGroups) { group in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(dayHeader(group.day))
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.cyan)
+
+                        ForEach(group.sessions) { session in
+                            SessionRow(
+                                session: session,
+                                categoryColorHex: categoryColorHex(for: session.categoryID),
+                                onRename: { newName in
+                                    store.send(.settingsRenameSessionTapped(session.id, newName))
+                                },
+                                onDelete: {
+                                    store.send(.settingsDeleteSessionTapped(session.id))
+                                },
+                                onExport: {
+                                    exportSessionButtonTapped(sessionID: session.id)
+                                }
+                            )
                         }
-                    )
+                    }
+                }
+
+                HStack {
+                    Spacer()
+                    Button("Export All Sessions") {
+                        exportAllSessionsButtonTapped()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(store.settings.sessions.isEmpty)
                 }
             }
         }
+        .frame(maxWidth: sectionMaxWidth(for: .sessions))
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
-    private var exportSection: some View {
-        sectionCard(title: "Export Markdown") {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Selected sessions: \(store.settings.exportSelection.count)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+    private var sessionGroups: [SessionDayGroup] {
+        let grouped = Dictionary(grouping: store.settings.sessions) { session in
+            Calendar.current.startOfDay(for: session.startedAt)
+        }
 
-                Button("Export Selected Sessions") {
-                    exportSelectedSessions()
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(store.settings.exportSelection.isEmpty)
+        return grouped.keys
+            .sorted(by: >)
+            .map { day in
+                SessionDayGroup(
+                    day: day,
+                    sessions: grouped[day, default: []].sorted(by: { $0.startedAt > $1.startedAt })
+                )
             }
+    }
+
+    private func dayHeader(_ day: Date) -> String {
+        let formatted = day.formatted(date: .abbreviated, time: .omitted)
+        if Calendar.current.isDateInToday(day) {
+            return "Today • \(formatted)"
+        }
+        if Calendar.current.isDateInYesterday(day) {
+            return "Yesterday • \(formatted)"
+        }
+        return formatted
+    }
+
+    private func exportAllSessionsButtonTapped() {
+        chooseExportDirectory { url in
+            store.send(.settingsExportAllTapped(url))
         }
     }
 
-    private func exportSelectedSessions() {
+    private func addCategoryButtonTapped() {
+        let trimmedName = newCategoryName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+
+        store.send(.settingsAddCategoryTapped(trimmedName, newCategoryColor.categoryHex))
+        newCategoryName = ""
+        newCategoryColor = Color(categoryHex: FocusDefaults.defaultCategoryColorHex)
+    }
+
+    private func exportSessionButtonTapped(sessionID: UUID) {
+        chooseExportDirectory { url in
+            store.send(.settingsExportSessionTapped(sessionID, url))
+        }
+    }
+
+    private func chooseExportDirectory(_ onURLSelected: (URL) -> Void) {
         let panel = NSOpenPanel()
         panel.title = "Choose Export Folder"
         panel.canChooseDirectories = true
@@ -133,8 +251,17 @@ struct OrbitSettingsView: View {
         panel.prompt = "Export"
 
         if panel.runModal() == .OK, let url = panel.url {
-            store.send(.settingsExportTapped(url))
+            onURLSelected(url)
         }
+    }
+
+    private func categoryColorHex(for categoryID: UUID) -> String {
+        store.settings.categories.first(where: { $0.id == categoryID })?.colorHex
+            ?? FocusDefaults.defaultCategoryColorHex
+    }
+
+    private func sectionMaxWidth(for section: SettingsSection) -> CGFloat {
+        SectionWidth.section
     }
 
     @ViewBuilder
@@ -154,19 +281,25 @@ struct OrbitSettingsView: View {
 
 private struct CategoryRow: View {
     let category: SessionCategoryRecord
-    let onRename: (String) -> Void
+    let onRename: (String, String) -> Void
     let onDelete: () -> Void
 
     @State private var name = ""
+    @State private var color = Color(categoryHex: FocusDefaults.defaultCategoryColorHex)
 
     var body: some View {
         HStack(spacing: 8) {
             TextField("Category", text: $name)
                 .textFieldStyle(.roundedBorder)
-            Button("Rename") {
-                onRename(name)
+                .disabled(category.id == FocusDefaults.focusCategoryID)
+
+            ColorPicker("", selection: $color, supportsOpacity: false)
+                .labelsHidden()
+                .frame(width: 28)
+
+            Button("Save") {
+                onRename(name, color.categoryHex)
             }
-            .disabled(category.id == FocusDefaults.focusCategoryID)
 
             Button("Delete", role: .destructive) {
                 onDelete()
@@ -175,28 +308,40 @@ private struct CategoryRow: View {
         }
         .task(id: category.id) {
             name = category.name
+            color = Color(categoryHex: category.colorHex)
         }
     }
 }
 
 private struct SessionRow: View {
     let session: FocusSessionRecord
-    let isSelectedForExport: Bool
+    let categoryColorHex: String
     let onRename: (String) -> Void
     let onDelete: () -> Void
-    let onToggleExport: () -> Void
+    let onExport: () -> Void
 
+    @State private var isRenaming = false
     @State private var name = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                TextField("Session name", text: $name)
-                    .textFieldStyle(.roundedBorder)
-
-                Button("Rename") {
-                    onRename(name)
+                if isRenaming {
+                    TextField("Session name", text: $name)
+                        .textFieldStyle(.roundedBorder)
+                } else {
+                    Text(session.name)
+                        .font(.headline.weight(.semibold))
+                        .lineLimit(2)
                 }
+
+                Spacer()
+
+                Button(isRenaming ? "Save" : "Rename") {
+                    renameButtonTapped()
+                }
+                .buttonStyle(.bordered)
+                .disabled(isRenaming && trimmedName.isEmpty)
 
                 Button("Delete", role: .destructive) {
                     onDelete()
@@ -204,20 +349,33 @@ private struct SessionRow: View {
             }
 
             HStack(spacing: 8) {
-                Button {
-                    onToggleExport()
-                } label: {
-                    Image(systemName: isSelectedForExport ? "checkmark.circle.fill" : "circle")
+                Text(session.categoryName.uppercased())
+                    .font(.caption2.weight(.bold))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color(categoryHex: categoryColorHex).opacity(0.25))
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(Color(categoryHex: categoryColorHex).opacity(0.95), lineWidth: 1)
+                    )
+
+                Text("\(session.notes.count) \(session.notes.count == 1 ? "note" : "notes")")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Text("Started \(session.startedAt, style: .time)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button("Export") {
+                    onExport()
                 }
-                .buttonStyle(.plain)
-
-                Text(session.categoryName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Text("Started \(session.startedAt, style: .date) \(session.startedAt, style: .time)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .buttonStyle(.bordered)
             }
         }
         .padding(10)
@@ -227,6 +385,47 @@ private struct SessionRow: View {
         )
         .task(id: session.id) {
             name = session.name
+            isRenaming = false
         }
+    }
+
+    private var trimmedName: String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func renameButtonTapped() {
+        if isRenaming {
+            onRename(trimmedName)
+            isRenaming = false
+        } else {
+            isRenaming = true
+        }
+    }
+}
+
+private extension Color {
+    init(categoryHex: String) {
+        let normalized = FocusDefaults.normalizedCategoryColorHex(categoryHex)
+        let hex = String(normalized.dropFirst())
+        let value = UInt64(hex, radix: 16) ?? 0
+        let red = Double((value >> 16) & 0xFF) / 255.0
+        let green = Double((value >> 8) & 0xFF) / 255.0
+        let blue = Double(value & 0xFF) / 255.0
+        self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
+    }
+
+    var categoryHex: String {
+        let converted = NSColor(self).usingColorSpace(.sRGB)
+        let resolved = converted ?? NSColor(
+            calibratedRed: 88 / 255,
+            green: 181 / 255,
+            blue: 255 / 255,
+            alpha: 1
+        )
+
+        let red = Int(round(resolved.redComponent * 255))
+        let green = Int(round(resolved.greenComponent * 255))
+        let blue = Int(round(resolved.blueComponent * 255))
+        return String(format: "#%02X%02X%02X", red, green, blue)
     }
 }

@@ -6,6 +6,8 @@ import AppKit
 private enum OrbitWindowID {
     static let capture = "capture-window"
     static let session = "session-window"
+    static let endSession = "end-session-window"
+    static let settings = "settings-window"
 }
 
 @main
@@ -27,9 +29,6 @@ struct OrbitMenuBarApp: App {
     var body: some Scene {
         MenuBarExtra {
             MenuBarView(store: store)
-                .task {
-                    store.send(.onLaunch)
-                }
         } label: {
             MenuBarLabelView(store: store)
         }
@@ -62,13 +61,36 @@ struct OrbitMenuBarApp: App {
         }
         .defaultSize(width: 920, height: 680)
 
-        Settings {
+        Window("End Session", id: OrbitWindowID.endSession) {
+            if store.windowDestinations.contains(.endSessionWindow), let draft = store.endSessionDraft {
+                EndSessionPromptView(
+                    draft: draft,
+                    onConfirm: { name, categoryID in
+                        store.send(.endSessionConfirmTapped(name: name, categoryID: categoryID))
+                    },
+                    onCancel: {
+                        store.send(.endSessionCancelTapped)
+                    }
+                )
+                .onDisappear {
+                    store.send(.endSessionWindowClosed)
+                }
+            } else {
+                Color.clear
+                    .frame(width: 1, height: 1)
+            }
+        }
+        .windowResizability(.contentSize)
+        .defaultSize(width: 400, height: 260)
+
+        Window("Orbit Settings", id: OrbitWindowID.settings) {
             OrbitSettingsView(store: store)
                 .frame(minWidth: 820, minHeight: 620)
                 .task {
                     store.send(.settingsRefreshTapped)
                 }
         }
+        .defaultSize(width: 980, height: 700)
     }
 }
 
@@ -84,6 +106,9 @@ private struct MenuBarLabelView: View {
             .background {
                 AppLifecycleCoordinator(store: store)
             }
+            .background {
+                AppLaunchCoordinator(store: store)
+            }
     }
 }
 
@@ -97,23 +122,72 @@ private struct WindowStateCoordinator: View {
         Color.clear
             .frame(width: 0, height: 0)
             .task {
-                syncWindows()
+                syncWindows(from: [], to: store.windowDestinations)
             }
-            .onChange(of: store.windowDestinations) { _, _ in
-                syncWindows()
+            .onChange(of: store.windowDestinations) { oldValue, newValue in
+                syncWindows(from: oldValue, to: newValue)
             }
     }
 
-    private func syncWindows() {
-        syncWindow(id: OrbitWindowID.capture, isPresented: store.windowDestinations.contains(.captureWindow))
-        syncWindow(id: OrbitWindowID.session, isPresented: store.windowDestinations.contains(.sessionWindow))
+    private func syncWindows(from oldValue: Set<AppFeature.WindowDestination>, to newValue: Set<AppFeature.WindowDestination>) {
+        let removed = oldValue.subtracting(newValue)
+        let added = newValue.subtracting(oldValue)
+
+        if removed.contains(.captureWindow) {
+            dismissWindow(id: OrbitWindowID.capture)
+        }
+        if removed.contains(.sessionWindow) {
+            dismissWindow(id: OrbitWindowID.session)
+        }
+        if removed.contains(.endSessionWindow) {
+            dismissWindow(id: OrbitWindowID.endSession)
+        }
+
+        if added.contains(.sessionWindow) {
+            openWindow(id: OrbitWindowID.session)
+            bringSessionWindowToFront()
+        }
+        if added.contains(.captureWindow) {
+            openWindow(id: OrbitWindowID.capture)
+            bringCaptureWindowToFront()
+        }
+        if added.contains(.endSessionWindow) {
+            openWindow(id: OrbitWindowID.endSession)
+            bringEndSessionWindowToFront()
+        }
     }
 
-    private func syncWindow(id: String, isPresented: Bool) {
-        if isPresented {
-            openWindow(id: id)
-        } else {
-            dismissWindow(id: id)
+    private func bringSessionWindowToFront() {
+        DispatchQueue.main.async {
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit Session" }) else {
+                return
+            }
+            window.orderFrontRegardless()
+            window.makeKey()
+        }
+    }
+
+    private func bringCaptureWindowToFront() {
+        DispatchQueue.main.async {
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Quick Capture" }) else {
+                return
+            }
+            window.level = .floating
+            window.orderFrontRegardless()
+            window.makeKey()
+        }
+    }
+
+    private func bringEndSessionWindowToFront() {
+        DispatchQueue.main.async {
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            guard let window = NSApplication.shared.windows.first(where: { $0.title == "End Session" }) else {
+                return
+            }
+            window.orderFrontRegardless()
+            window.makeKey()
         }
     }
 }
@@ -126,6 +200,18 @@ private struct AppLifecycleCoordinator: View {
             .frame(width: 0, height: 0)
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                 store.send(.appWillTerminate)
+            }
+    }
+}
+
+private struct AppLaunchCoordinator: View {
+    let store: StoreOf<AppFeature>
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .task {
+                store.send(.onLaunch)
             }
     }
 }

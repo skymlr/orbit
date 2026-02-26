@@ -14,7 +14,8 @@ struct AppFeatureTests {
             SessionCategoryRecord(
                 id: FocusDefaults.focusCategoryID,
                 name: FocusDefaults.focusCategoryName,
-                normalizedName: FocusDefaults.focusCategoryName
+                normalizedName: FocusDefaults.focusCategoryName,
+                colorHex: FocusDefaults.focusCategoryColorHex
             )
         ]
 
@@ -53,19 +54,13 @@ struct AppFeatureTests {
     }
 
     @Test
-    func exportSelectionToggles() async {
-        let sessionID = UUID(uuidString: "E7C77F3E-37F4-4ADF-B8D5-662D4E43B5A1")!
-
+    func exportAllWithoutSessionsShowsMessage() async {
         let store = TestStore(initialState: AppFeature.State()) {
             AppFeature()
         }
 
-        await store.send(.settingsToggleExportSelection(sessionID)) {
-            $0.settings.exportSelection = [sessionID]
-        }
-
-        await store.send(.settingsToggleExportSelection(sessionID)) {
-            $0.settings.exportSelection = []
+        await store.send(.settingsExportAllTapped(URL(fileURLWithPath: "/tmp"))) {
+            $0.settings.statusMessage = "No sessions available to export."
         }
     }
 
@@ -86,8 +81,9 @@ struct AppFeatureTests {
                 AppFeature.State.NoteDraft(
                     id: active.notes[0].id,
                     text: active.notes[0].text,
-                    tags: active.notes[0].tags.joined(separator: ", "),
-                    priority: active.notes[0].priority
+                    tags: active.notes[0].tags,
+                    priority: active.notes[0].priority,
+                    createdAt: active.notes[0].createdAt
                 )
             ]
         }

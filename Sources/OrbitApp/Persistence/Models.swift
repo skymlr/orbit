@@ -6,6 +6,7 @@ import StructuredQueries
     let id: UUID
     var name = ""
     var normalizedName = ""
+    var colorHex: String = FocusDefaults.defaultCategoryColorHex
 }
 
 @Table struct FocusSession: Identifiable, Sendable {

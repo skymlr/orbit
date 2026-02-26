@@ -3,21 +3,10 @@ import SwiftUI
 
 struct FloatingPaletteView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @FocusState private var isNoteFieldFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Quick Capture")
-                    .font(.headline)
-                Spacer()
-                Button {
-                    store.send(.captureWindowClosed)
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                }
-                .buttonStyle(.plain)
-            }
-
             if let activeSession = store.activeSession {
                 Text("\(activeSession.name) • \(activeSession.categoryName)")
                     .font(.caption)
@@ -27,32 +16,64 @@ struct FloatingPaletteView: View {
 
             TextField("Capture note text", text: $store.captureDraft.text, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
-                .lineLimit(1 ... 4)
+                .lineLimit(2 ... 8)
+                .focused($isNoteFieldFocused)
+                .onKeyPress(.return, phases: .down) { keyPress in
+                    if keyPress.modifiers.contains(.shift) {
+                        store.captureDraft.text.append("\n")
+                        return .handled
+                    }
+                    return .ignored
+                }
+                .onSubmit {
+                    saveButtonTapped()
+                }
 
             TextField("Tags (comma-separated, optional)", text: $store.captureDraft.tags)
                 .textFieldStyle(.roundedBorder)
 
-            Picker("Priority", selection: $store.captureDraft.priority) {
-                ForEach(NotePriority.allCases, id: \.self) { priority in
-                    Text(priority.title).tag(priority)
+            HStack {
+                Text("Priority")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Picker("Priority", selection: $store.captureDraft.priority) {
+                    ForEach(NotePriority.allCases, id: \.self) { priority in
+                        Text(priority.title).tag(priority)
+                    }
                 }
+                .pickerStyle(.menu)
+                .labelsHidden()
             }
-            .pickerStyle(.segmented)
 
             HStack {
                 Spacer()
                 Button("Save") {
-                    store.send(.captureSubmitTapped)
+                    saveButtonTapped()
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(store.captureDraft.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(!canSave)
             }
         }
         .padding(14)
         .frame(width: 360)
+        .task {
+            isNoteFieldFocused = true
+        }
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(.ultraThinMaterial)
         )
+    }
+
+    private var canSave: Bool {
+        !store.captureDraft.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func saveButtonTapped() {
+        guard canSave else { return }
+        store.send(.captureSubmitTapped)
     }
 }

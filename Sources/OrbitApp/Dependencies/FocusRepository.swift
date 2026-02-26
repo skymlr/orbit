@@ -10,11 +10,12 @@ struct FocusRepository: Sendable {
 
     var listSessions: @Sendable () async throws -> [FocusSessionRecord]
     var renameSession: @Sendable (_ id: UUID, _ name: String) async throws -> Void
+    var updateSessionCategory: @Sendable (_ id: UUID, _ categoryID: UUID) async throws -> Void
     var deleteSession: @Sendable (_ id: UUID) async throws -> Void
 
     var listCategories: @Sendable () async throws -> [SessionCategoryRecord]
-    var addCategory: @Sendable (_ name: String) async throws -> SessionCategoryRecord?
-    var renameCategory: @Sendable (_ id: UUID, _ name: String) async throws -> Void
+    var addCategory: @Sendable (_ name: String, _ colorHex: String) async throws -> SessionCategoryRecord?
+    var renameCategory: @Sendable (_ id: UUID, _ name: String, _ colorHex: String) async throws -> Void
     var deleteCategory: @Sendable (_ id: UUID) async throws -> Void
 
     var createNote: @Sendable (_ sessionID: UUID, _ text: String, _ priority: NotePriority, _ tags: [String], _ now: Date) async throws -> FocusNoteRecord?
@@ -126,6 +127,25 @@ extension FocusRepository: DependencyKey {
                     .execute(db)
                 }
             },
+            updateSessionCategory: { id, categoryID in
+                @Dependency(\.defaultDatabase) var database
+
+                try await database.write { db in
+                    guard try FocusSession.find(id).fetchOne(db) != nil else { return }
+
+                    let resolvedCategoryID: UUID
+                    if try SessionCategory.find(categoryID).fetchOne(db) != nil {
+                        resolvedCategoryID = categoryID
+                    } else {
+                        resolvedCategoryID = FocusDefaults.focusCategoryID
+                    }
+
+                    try FocusSession.find(id).update {
+                        $0.categoryID = resolvedCategoryID
+                    }
+                    .execute(db)
+                }
+            },
             deleteSession: { id in
                 @Dependency(\.defaultDatabase) var database
 
@@ -147,17 +167,19 @@ extension FocusRepository: DependencyKey {
                         SessionCategoryRecord(
                             id: $0.id,
                             name: $0.name,
-                            normalizedName: $0.normalizedName
+                            normalizedName: $0.normalizedName,
+                            colorHex: FocusDefaults.normalizedCategoryColorHex($0.colorHex)
                         )
                     }
                 }
             },
-            addCategory: { name in
+            addCategory: { name, colorHex in
                 @Dependency(\.defaultDatabase) var database
                 @Dependency(\.uuid) var uuid
 
                 let normalized = FocusDefaults.normalizedCategoryName(name)
                 guard !normalized.isEmpty else { return nil }
+                let normalizedColor = FocusDefaults.normalizedCategoryColorHex(colorHex)
 
                 return try await database.write { db in
                     if try SessionCategory.where({ $0.normalizedName.eq(normalized) }).fetchOne(db) != nil {
@@ -168,30 +190,37 @@ extension FocusRepository: DependencyKey {
                     let displayName = name.trimmingCharacters(in: .whitespacesAndNewlines)
 
                     try SessionCategory.insert {
-                        ($0.id, $0.name, $0.normalizedName)
+                        ($0.id, $0.name, $0.normalizedName, $0.colorHex)
                     } values: {
-                        (id, displayName, normalized)
+                        (id, displayName, normalized, normalizedColor)
                     }
                     .execute(db)
 
                     return SessionCategoryRecord(
                         id: id,
                         name: displayName,
-                        normalizedName: normalized
+                        normalizedName: normalized,
+                        colorHex: normalizedColor
                     )
                 }
             },
-            renameCategory: { id, name in
+            renameCategory: { id, name, colorHex in
                 @Dependency(\.defaultDatabase) var database
 
-                if id == FocusDefaults.focusCategoryID {
-                    return
-                }
-
                 let normalized = FocusDefaults.normalizedCategoryName(name)
-                guard !normalized.isEmpty else { return }
+                let normalizedColor = FocusDefaults.normalizedCategoryColorHex(colorHex)
 
                 try await database.write { db in
+                    if id == FocusDefaults.focusCategoryID {
+                        try SessionCategory.find(id).update {
+                            $0.colorHex = normalizedColor
+                        }
+                        .execute(db)
+                        return
+                    }
+
+                    guard !normalized.isEmpty else { return }
+
                     let conflict = try SessionCategory
                         .where { categories in categories.normalizedName.eq(normalized) }
                         .fetchOne(db)
@@ -202,6 +231,7 @@ extension FocusRepository: DependencyKey {
                     try SessionCategory.find(id).update {
                         $0.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
                         $0.normalizedName = normalized
+                        $0.colorHex = normalizedColor
                     }
                     .execute(db)
                 }
@@ -321,18 +351,20 @@ extension FocusRepository: DependencyKey {
             endSessionSync: { _, _, _, _, _ in },
             listSessions: { [] },
             renameSession: { _, _ in },
+            updateSessionCategory: { _, _ in },
             deleteSession: { _ in },
             listCategories: {
                 [
                     SessionCategoryRecord(
                         id: FocusDefaults.focusCategoryID,
                         name: FocusDefaults.focusCategoryName,
-                        normalizedName: FocusDefaults.focusCategoryName
+                        normalizedName: FocusDefaults.focusCategoryName,
+                        colorHex: FocusDefaults.focusCategoryColorHex
                     )
                 ]
             },
-            addCategory: { _ in nil },
-            renameCategory: { _, _ in },
+            addCategory: { _, _ in nil },
+            renameCategory: { _, _, _ in },
             deleteCategory: { _ in },
             createNote: { _, _, _, _, _ in nil },
             updateNote: { _, _, _, _, _ in nil },
@@ -444,13 +476,14 @@ private func normalizedTags(_ tags: [String]) -> [String] {
 private func ensureFocusCategory(db: Database) throws {
     try #sql(
         """
-        INSERT INTO "sessionCategories" ("id", "name", "normalizedName")
-        VALUES ('c8b3b4cc-2928-4a84-9c3b-eb253e9d0001', 'focus', 'focus')
+        INSERT INTO "sessionCategories" ("id", "name", "normalizedName", "colorHex")
+        VALUES ('c8b3b4cc-2928-4a84-9c3b-eb253e9d0001', 'focus', 'focus', '#00B5FF')
         ON CONFLICT("normalizedName") DO UPDATE
         SET
           "id" = 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001',
           "name" = 'focus',
-          "normalizedName" = 'focus'
+          "normalizedName" = 'focus',
+          "colorHex" = '#00B5FF'
         """
     )
     .execute(db)
