@@ -13,9 +13,8 @@ enum ItemType: String, CaseIterable, Codable, Equatable, Sendable {
 }
 
 struct CapturedItem: Equatable, Identifiable, Codable, Sendable {
-    let id: UUID
+    var id: UUID
     var content: String
-    var mode: FocusMode
     var timestamp: Date
     var type: ItemType
 }
@@ -23,7 +22,6 @@ struct CapturedItem: Equatable, Identifiable, Codable, Sendable {
 enum CaptureInputParser {
     static func parse(
         _ rawInput: String,
-        mode: FocusMode,
         timestamp: Date,
         id: UUID
     ) -> CapturedItem? {
@@ -48,7 +46,6 @@ enum CaptureInputParser {
         return CapturedItem(
             id: id,
             content: content,
-            mode: mode,
             timestamp: timestamp,
             type: type
         )

@@ -3,13 +3,14 @@ import Foundation
 struct Session: Equatable, Identifiable, Sendable {
     var id: String { fileName }
 
-    var mode: FocusMode
+    var title: String
+    var tags: [SessionTag]
     var startedAt: Date
     var endedAt: Date?
     var items: [CapturedItem]
 
     var fileName: String {
-        "\(Self.fileNameDateFormatter.string(from: startedAt))-\(mode.rawValue).md"
+        "\(Self.fileNameDateFormatter.string(from: startedAt))-focus.md"
     }
 
     private static let fileNameDateFormatter: DateFormatter = {

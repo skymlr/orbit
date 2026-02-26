@@ -6,28 +6,33 @@ struct MenuBarFeature {
     struct State: Equatable {}
 
     enum Action {
-        case modeSelected(FocusMode)
+        case startSessionTapped
         case captureTapped
+        case openSessionTapped
         case endSessionTapped
         case preferencesTapped
         case delegate(DelegateAction)
     }
 
     enum DelegateAction {
-        case modeSelected(FocusMode)
+        case startSessionTapped
         case captureTapped
+        case openSessionTapped
         case endSessionTapped
         case preferencesTapped
     }
 
     var body: some ReducerOf<Self> {
-        Reduce { state, action in
+        Reduce { _, action in
             switch action {
-            case let .modeSelected(mode):
-                return .send(.delegate(.modeSelected(mode)))
+            case .startSessionTapped:
+                return .send(.delegate(.startSessionTapped))
 
             case .captureTapped:
                 return .send(.delegate(.captureTapped))
+
+            case .openSessionTapped:
+                return .send(.delegate(.openSessionTapped))
 
             case .endSessionTapped:
                 return .send(.delegate(.endSessionTapped))

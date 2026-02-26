@@ -5,68 +5,144 @@ struct MenuBarView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
 
     var body: some View {
-        let menuStore = store.scope(state: \.menuBar, action: \.menuBar)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Orbit: A Focus Manager")
+                        .font(.headline)
+                    if let activeSession = store.activeSession {
+                        Text("Started \(activeSession.startedAt, style: .time) • \(activeSession.startedAt, style: .timer)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("No active session")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
-        VStack(alignment: .leading, spacing: sectionSpacing(for: store.currentMode)) {
-            HStack(spacing: 8) {
-                Image(systemName: store.currentMode.config.symbolName)
-                    .foregroundStyle(store.currentMode.config.tint)
-                Text("\(store.currentMode.config.displayName) Mode")
-                    .font(.headline)
+                Spacer()
+
+                SettingsLink {
+                    Image(systemName: "gearshape")
+                }
+                .buttonStyle(.borderless)
+                .help("Settings")
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Switch Mode")
+            if let statusMessage = store.settings.statusMessage {
+                Text(statusMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let activeSession = store.activeSession {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(activeSession.name)
+                        .font(.title3.weight(.semibold))
+                    Text("Category: \(activeSession.categoryName)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                HStack(spacing: 10) {
+                    Button("Open Session") {
+                        store.send(.openSessionTapped)
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Button("Capture") {
+                        store.send(.captureTapped)
+                    }
+                }
+
+                Button("End Session") {
+                    store.send(.endSessionTapped)
+                }
+            } else {
+                Button("Start Session") {
+                    store.send(.startSessionTapped)
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button("Quick Capture") {
+                    store.send(.captureTapped)
+                }
+            }
+        }
+        .padding(14)
+        .frame(width: 360)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .sheet(item: $store.endSessionDraft) { draft in
+            EndSessionSheet(
+                draft: draft,
+                onConfirm: { name, categoryID in
+                    store.send(.endSessionConfirmTapped(name: name, categoryID: categoryID))
+                },
+                onCancel: {
+                    store.send(.endSessionCancelTapped)
+                }
+            )
+        }
+    }
+}
+
+private struct EndSessionSheet: View {
+    let draft: AppFeature.State.EndSessionDraft
+    let onConfirm: (String, UUID?) -> Void
+    let onCancel: () -> Void
+
+    @State private var name = ""
+    @State private var selectedCategoryID = FocusDefaults.focusCategoryID
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("End Focus Session")
+                .font(.title3.weight(.semibold))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Name (optional)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                TextField("Session name", text: $name)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Category")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                HStack(spacing: 8) {
-                    ForEach(FocusMode.allCases, id: \.self) { mode in
-                        Button {
-                            menuStore.send(.modeSelected(mode))
-                        } label: {
-                            VStack(spacing: 4) {
-                                Image(systemName: mode.config.symbolName)
-                                Text(mode.config.displayName)
-                                    .font(.caption2)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 6)
-                            .foregroundStyle(mode == store.currentMode ? .white : .primary)
-                            .background(mode == store.currentMode ? mode.config.tint : Color.secondary.opacity(0.15))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.plain)
+                Picker("Category", selection: $selectedCategoryID) {
+                    ForEach(draft.categories) { category in
+                        Text(category.name).tag(category.id)
                     }
                 }
+                .pickerStyle(.menu)
             }
 
-            Button(store.floatingPalette == nil ? "Capture" : "Hide Capture") {
-                menuStore.send(.captureTapped)
-            }
+            HStack {
+                Button("Cancel") {
+                    onCancel()
+                }
 
-            Button("End Session") {
-                menuStore.send(.endSessionTapped)
-            }
+                Spacer()
 
-            Divider()
-
-            Button("Preferences") {
-                menuStore.send(.preferencesTapped)
+                Button("End Session") {
+                    onConfirm(name, selectedCategoryID)
+                }
+                .buttonStyle(.borderedProminent)
             }
         }
-        .padding(12)
-        .frame(width: 340)
-        .sheet(item: $store.scope(state: \.sessionReplay, action: \.sessionReplay)) { replayStore in
-            SessionReplayView(store: replayStore)
-        }
-    }
-
-    private func sectionSpacing(for mode: FocusMode) -> CGFloat {
-        switch mode.config.density {
-        case .compact: return 10
-        case .regular: return 14
-        case .expanded: return 18
+        .padding(18)
+        .frame(width: 380)
+        .background(.thinMaterial)
+        .task {
+            name = draft.name
+            selectedCategoryID = draft.selectedCategoryID
         }
     }
 }

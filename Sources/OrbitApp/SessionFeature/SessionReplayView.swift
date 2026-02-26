@@ -10,13 +10,16 @@ struct SessionReplayView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Session Replay")
                         .font(.title2.bold())
-                    Text("\(store.session.mode.config.displayName) - \(SessionDateFormatters.header.string(from: store.session.startedAt))")
+                    Text("\(store.session.title) - \(SessionDateFormatters.header.string(from: store.session.startedAt))")
                         .foregroundStyle(.secondary)
+
+                    if !store.session.tags.isEmpty {
+                        Text("Tags: \(store.session.tags.map(\.name).joined(separator: ", "))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Spacer()
-                Button("Close") {
-                    store.send(.dismissTapped)
-                }
             }
 
             Picker("Filter", selection: $store.filter) {

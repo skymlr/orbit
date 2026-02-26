@@ -2,60 +2,57 @@ import ComposableArchitecture
 import SwiftUI
 
 struct FloatingPaletteView: View {
-    @SwiftUI.Bindable var store: StoreOf<FloatingPaletteFeature>
+    @SwiftUI.Bindable var store: StoreOf<AppFeature>
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label(store.currentMode.config.displayName, systemImage: store.currentMode.config.symbolName)
-                    .font(.caption)
-                    .foregroundStyle(store.currentMode.config.tint)
-
+                Text("Quick Capture")
+                    .font(.headline)
                 Spacer()
-
                 Button {
-                    store.send(.pinToEdgeTapped)
-                } label: {
-                    Image(systemName: store.isPinnedToEdge ? "pin.fill" : "pin")
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    store.send(.closeTapped)
+                    store.send(.captureWindowClosed)
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                 }
                 .buttonStyle(.plain)
             }
 
-            TextField(
-                store.currentMode.config.capturePlaceholder,
-                text: $store.inputText
-            )
-            .textFieldStyle(.roundedBorder)
-            .onSubmit {
-                store.send(.submitTapped)
+            if let activeSession = store.activeSession {
+                Text("\(activeSession.name) • \(activeSession.categoryName)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Recent")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            TextField("Capture note text", text: $store.captureDraft.text, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+                .lineLimit(1 ... 4)
 
-                ForEach(store.recentItems.prefix(5)) { item in
-                    HStack(alignment: .top, spacing: 6) {
-                        Text(item.type.prefix)
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(.secondary)
-                        Text(item.content)
-                            .font(.caption)
-                            .lineLimit(1)
-                    }
+            TextField("Tags (comma-separated, optional)", text: $store.captureDraft.tags)
+                .textFieldStyle(.roundedBorder)
+
+            Picker("Priority", selection: $store.captureDraft.priority) {
+                ForEach(NotePriority.allCases, id: \.self) { priority in
+                    Text(priority.title).tag(priority)
                 }
             }
+            .pickerStyle(.segmented)
+
+            HStack {
+                Spacer()
+                Button("Save") {
+                    store.send(.captureSubmitTapped)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(store.captureDraft.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
         }
-        .padding(12)
-        .frame(width: 320, height: 150)
-        .background(.thinMaterial)
+        .padding(14)
+        .frame(width: 360)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
     }
 }

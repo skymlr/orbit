@@ -49,12 +49,23 @@ extension DependencyValues {
 
 enum SessionMarkdownCodec {
     static func render(_ session: Session) -> String {
+        let tags = session.tags
+            .map(\.name)
+            .joined(separator: ", ")
+
         var sections: [String] = [
-            "# Session: \(session.mode.config.displayName) - \(headerDateFormatter().string(from: session.startedAt))",
-            "",
-            "## Captured Items",
-            "",
+            "# Session: \(session.title) - \(headerDateFormatter().string(from: session.startedAt))",
+            "Tags: \(tags)",
+            "Started: \(headerDateFormatter().string(from: session.startedAt))",
         ]
+
+        if let endedAt = session.endedAt {
+            sections.append("Ended: \(headerDateFormatter().string(from: endedAt))")
+        }
+
+        sections.append("")
+        sections.append("## Captured Items")
+        sections.append("")
 
         for item in session.items.sorted(by: { $0.timestamp < $1.timestamp }) {
             sections.append("### \(itemTimeFormatter().string(from: item.timestamp)) - \(item.type.prefix)")
@@ -66,30 +77,103 @@ enum SessionMarkdownCodec {
     }
 
     static func parse(markdown: String, fileURL: URL) throws -> Session {
+        if let newSession = try? parseNew(markdown: markdown) {
+            return newSession
+        }
+
+        return try parseLegacy(markdown: markdown)
+    }
+
+    private static func parseNew(markdown: String) throws -> Session {
         let lines = markdown.components(separatedBy: .newlines)
         guard let firstLine = lines.first, !firstLine.isEmpty else {
             throw SessionStoreError.invalidMarkdown("Missing session header")
         }
 
         var headerInput = firstLine[...]
-        let mode: FocusMode
-        let startDateString: String
-
+        let header: NewSessionHeaderParser.Output
         do {
-            let parsed = try SessionHeaderParser().parse(&headerInput)
-            mode = parsed.mode
-            startDateString = String(parsed.dateText)
+            header = try NewSessionHeaderParser().parse(&headerInput)
         } catch {
-            throw SessionStoreError.invalidMarkdown("Could not parse session header")
+            throw SessionStoreError.invalidMarkdown("Invalid new session header")
         }
 
-        guard let startedAt = headerDateFormatter().date(from: startDateString) else {
+        guard let headerStart = headerDateFormatter().date(from: String(header.dateText)) else {
+            throw SessionStoreError.invalidMarkdown("Invalid session start date")
+        }
+
+        var tags: [SessionTag] = []
+        var startedAt = headerStart
+        var endedAt: Date?
+        var sawNewFormatMetadata = false
+
+        for line in lines.dropFirst() {
+            if line.hasPrefix("Tags:") {
+                sawNewFormatMetadata = true
+                tags = tagsFromLine(line)
+            } else if line.hasPrefix("Started:") {
+                sawNewFormatMetadata = true
+                let value = line.dropFirst("Started:".count).trimmingCharacters(in: .whitespaces)
+                if let parsed = headerDateFormatter().date(from: value) {
+                    startedAt = parsed
+                }
+            } else if line.hasPrefix("Ended:") {
+                sawNewFormatMetadata = true
+                let value = line.dropFirst("Ended:".count).trimmingCharacters(in: .whitespaces)
+                if let parsed = headerDateFormatter().date(from: value) {
+                    endedAt = parsed
+                }
+            }
+        }
+
+        guard sawNewFormatMetadata else {
+            throw SessionStoreError.invalidMarkdown("Missing new session metadata")
+        }
+
+        let items = parseItems(lines: lines, startedAt: startedAt)
+
+        return Session(
+            title: normalizedSessionTitle(String(header.titleText)),
+            tags: tags,
+            startedAt: startedAt,
+            endedAt: endedAt,
+            items: items
+        )
+    }
+
+    private static func parseLegacy(markdown: String) throws -> Session {
+        let lines = markdown.components(separatedBy: .newlines)
+        guard let firstLine = lines.first, !firstLine.isEmpty else {
+            throw SessionStoreError.invalidMarkdown("Missing session header")
+        }
+
+        var headerInput = firstLine[...]
+        let header: LegacySessionHeaderParser.Output
+        do {
+            header = try LegacySessionHeaderParser().parse(&headerInput)
+        } catch {
+            throw SessionStoreError.invalidMarkdown("Could not parse legacy session header")
+        }
+
+        guard let startedAt = headerDateFormatter().date(from: String(header.dateText)) else {
             throw SessionStoreError.invalidMarkdown("Invalid session date")
         }
 
+        let items = parseItems(lines: lines, startedAt: startedAt)
+
+        return Session(
+            title: "Focus",
+            tags: [header.mode.builtInTag],
+            startedAt: startedAt,
+            endedAt: nil,
+            items: items
+        )
+    }
+
+    private static func parseItems(lines: [String], startedAt: Date) -> [CapturedItem] {
+        var items: [CapturedItem] = []
         let dayPrefix = dayDateFormatter().string(from: startedAt)
 
-        var items: [CapturedItem] = []
         var index = 0
         while index < lines.count {
             let line = lines[index]
@@ -119,22 +203,63 @@ enum SessionMarkdownCodec {
                 CapturedItem(
                     id: UUID(),
                     content: content,
-                    mode: mode,
                     timestamp: itemDate,
                     type: itemHeader.type
                 )
             )
         }
 
-        return Session(
-            mode: mode,
-            startedAt: startedAt,
-            endedAt: nil,
-            items: items
-        )
+        return items
     }
 
-    private struct SessionHeaderParser: Parser {
+    private static func tagsFromLine(_ line: String) -> [SessionTag] {
+        let raw = line.dropFirst("Tags:".count).trimmingCharacters(in: .whitespaces)
+        guard !raw.isEmpty else { return [] }
+
+        let builtInByName = Dictionary(uniqueKeysWithValues: SessionTag.builtIns.map { ($0.name, $0) })
+        var seen = Set<String>()
+        var tags: [SessionTag] = []
+
+        for component in raw.split(separator: ",") {
+            let normalized = component.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            guard !normalized.isEmpty, !seen.contains(normalized) else { continue }
+            seen.insert(normalized)
+
+            if let builtIn = builtInByName[normalized] {
+                tags.append(builtIn)
+            } else {
+                tags.append(SessionTag(id: UUID(), name: normalized, isBuiltIn: false))
+            }
+        }
+
+        return tags
+    }
+
+    private static func normalizedSessionTitle(_ title: String) -> String {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed == "Focus Session" {
+            return "Focus"
+        }
+        return trimmed.isEmpty ? "Focus" : trimmed
+    }
+
+    private struct NewSessionHeaderParser: Parser {
+        struct Output {
+            var titleText: Substring
+            var dateText: Substring
+        }
+
+        var body: some Parser<Substring, Output> {
+            Parse(Output.init(titleText:dateText:)) {
+                "# Session: "
+                Prefix(1...) { $0 != "-" }
+                "- "
+                Rest()
+            }
+        }
+    }
+
+    private struct LegacySessionHeaderParser: Parser {
         struct Output {
             var mode: FocusMode
             var dateText: Substring
@@ -278,6 +403,21 @@ private actor SessionFileStore {
             return directory
         } catch {
             throw SessionStoreError.directoryUnavailable
+        }
+    }
+}
+
+private extension FocusMode {
+    var builtInTag: SessionTag {
+        switch self {
+        case .coding:
+            return SessionTag.builtIns[0]
+        case .researching:
+            return SessionTag.builtIns[1]
+        case .email:
+            return SessionTag.builtIns[2]
+        case .meeting:
+            return SessionTag.builtIns[3]
         }
     }
 }
