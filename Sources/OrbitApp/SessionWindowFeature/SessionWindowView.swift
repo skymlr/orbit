@@ -27,54 +27,8 @@ struct SessionView: View {
                         }
                     )
 
-                    if store.noteDrafts.isEmpty {
-                        emptyState
-                    } else {
-                        ScrollView {
-                            LazyVStack(spacing: 12) {
-                                ForEach(store.noteDrafts) { draft in
-                                NoteEditorRow(
-                                    draft: draft,
-                                    onSave: { text, tags, priority in
-                                        store.send(.sessionNoteSaveTapped(draft.id, text, tags, priority))
-                                    },
-                                    onToggleTask: { lineIndex in
-                                        store.send(.sessionNoteTaskToggleTapped(draft.id, lineIndex))
-                                    },
-                                    onDelete: {
-                                        store.send(.sessionNoteDeleteTapped(draft.id))
-                                    }
-                                )
-                                    .padding(12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .fill(.thinMaterial)
-                                    )
-                                }
-                            }
-                        }
-                        .scrollIndicators(.visible)
-                    }
-
-                    HStack {
-                        Spacer()
-                        if isEndSessionConfirmationPending {
-                            Button("Confirm End Session", role: .destructive) {
-                                store.send(.sessionWindowEndSessionTapped)
-                            }
-                            .buttonStyle(.plain)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.red)
-                        } else {
-                            Button("End Session") {
-                                endSessionButtonTapped()
-                            }
-                            .buttonStyle(.plain)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.top, 2)
+                    notesContent
+                    endSessionControl
                 }
                 .frame(maxWidth: Layout.contentMaxWidth, alignment: .leading)
             } else {
@@ -87,12 +41,13 @@ struct SessionView: View {
         .padding(18)
         .frame(minWidth: 880, minHeight: 640)
         .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
+            ToolbarItem(placement: .primaryAction) {
                 Button {
                     store.send(.sessionAddNoteTapped)
                 } label: {
-                    Label("Add Note", systemImage: "plus")
+                    Image(systemName: "plus")
                 }
+                .help("Capture Note \(HotkeyHintFormatter.hint(from: store.hotkeys.captureShortcut))")
             }
         }
         .toolbarBackground(.visible, for: .windowToolbar)
@@ -118,13 +73,72 @@ struct SessionView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("No notes yet")
                 .font(.title3.weight(.semibold))
-            Text("Use + to capture your first focus note for this session.")
-                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Text("Use + or")
+                HotkeyHintLabel(shortcut: store.hotkeys.captureShortcut)
+                Text("to capture your first focus note for this session.")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.thinMaterial)
+        )
+    }
+
+    @ViewBuilder
+    private var notesContent: some View {
+        if store.noteDrafts.isEmpty {
+            emptyState
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    ForEach(store.noteDrafts) { draft in
+                        noteRow(for: draft)
+                    }
+                }
+            }
+            .scrollIndicators(.visible)
+        }
+    }
+
+    private var endSessionControl: some View {
+        HStack {
+            Spacer()
+            if isEndSessionConfirmationPending {
+                Button("Confirm End Session", role: .destructive) {
+                    store.send(.sessionWindowEndSessionTapped)
+                }
+                .buttonStyle(.orbitDestructive)
+            } else {
+                Button("End Session") {
+                    endSessionButtonTapped()
+                }
+                .buttonStyle(.orbitQuiet)
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    private func noteRow(for draft: AppFeature.State.NoteDraft) -> some View {
+        NoteEditorRow(
+            draft: draft,
+            onSave: { text, tags, priority in
+                store.send(.sessionNoteSaveTapped(draft.id, text, tags, priority))
+            },
+            onToggleTask: { lineIndex in
+                store.send(.sessionNoteTaskToggleTapped(draft.id, lineIndex))
+            },
+            onDelete: {
+                store.send(.sessionNoteDeleteTapped(draft.id))
+            }
+        )
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.thinMaterial)
         )
     }
@@ -191,7 +205,7 @@ private struct SessionHeader: View {
                     Button("Save") {
                         saveRenaming()
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.orbitSecondary)
                     .disabled(trimmedName.isEmpty)
                 }
             }
@@ -315,154 +329,9 @@ private struct NoteEditorRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(draft.createdAt.formatted(date: .omitted, time: .shortened))
-                    .font(.headline.weight(.semibold))
-
-                Spacer()
-
-                if isEditingText {
-                    Button("Save") {
-                        saveTextEditing()
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(trimmedText.isEmpty)
-                }
-
-                if isDeleteConfirmationPending {
-                    Button("Confirm Deletion", role: .destructive) {
-                        onDelete()
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.red)
-                    .font(.caption.weight(.semibold))
-                } else {
-                    Button {
-                        isDeleteConfirmationPending = true
-                        scheduleDeleteConfirmationReset()
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel("Delete note")
-                }
-            }
-
-            if isEditingText {
-                MarkdownFormattingBar { action in
-                    formatActionTapped(action)
-                }
-
-                MarkdownSourceTextView(
-                    text: $editorState.text,
-                    selectionRange: $editorState.selectionRange,
-                    isFocused: $isTextEditorFocused,
-                    onSubmit: {
-                        saveTextEditing()
-                    },
-                    onCancel: {
-                        cancelTextEditing()
-                    }
-                )
-                .frame(minHeight: 96, maxHeight: 220)
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                )
-            } else {
-                MarkdownRenderedNoteView(
-                    markdown: editorState.text,
-                    onToggleTask: onToggleTask
-                )
-                    .padding(10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                    )
-                    .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .onTapGesture {
-                        beginTextEditing()
-                    }
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
-                        Menu {
-                            ForEach(NotePriority.allCases, id: \.self) { item in
-                                Button {
-                                    prioritySelected(item)
-                                } label: {
-                                    if item == priority {
-                                        Label(item.title, systemImage: "checkmark")
-                                    } else {
-                                        Text(item.title)
-                                    }
-                                }
-                            }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Text(priority.title.uppercased())
-                                    .font(.caption)
-                                Image(systemName: "chevron.down")
-                                    .font(.caption2.weight(.semibold))
-                            }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .fill(priorityColor(for: priority).opacity(0.2))
-                            )
-                            .overlay(
-                                Capsule()
-                                    .stroke(priorityColor(for: priority).opacity(0.7), lineWidth: 1)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Change priority")
-                        
-                        if tags.isEmpty {
-                            Text("No tags")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        ForEach(tags, id: \.self) { tag in
-                            TagChip(tag: tag) {
-                                removeTag(tag)
-                            }
-                        }
-                        
-                        Button {
-                            addTagButtonTapped()
-                        } label: {
-                            Image(systemName: isAddingTag ? "xmark.circle.fill" : "plus.circle.fill")
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 2)
-                }
-
-                if isAddingTag {
-                    HStack(spacing: 8) {
-                        TextField("New tag", text: $pendingTag)
-                            .textFieldStyle(.roundedBorder)
-                            .focused($isTagFieldFocused)
-                            .onSubmit {
-                                addTag()
-                            }
-
-                        Button("Add") {
-                            addTag()
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(trimmedPendingTag.isEmpty)
-                    }
-                }
-            }
+            headerRow
+            textSection
+            metadataSection
         }
         .task(id: draft) {
             if !isEditingText {
@@ -473,6 +342,175 @@ private struct NoteEditorRow: View {
             tags = draft.tags
             isDeleteConfirmationPending = false
             deleteConfirmationToken += 1
+        }
+    }
+
+    private var headerRow: some View {
+        HStack {
+            Text(draft.createdAt.formatted(date: .omitted, time: .shortened))
+                .font(.headline.weight(.semibold))
+
+            Spacer()
+
+            if isEditingText {
+                Button("Save") {
+                    saveTextEditing()
+                }
+                .buttonStyle(.orbitSecondary)
+                .disabled(trimmedText.isEmpty)
+            }
+
+            if isDeleteConfirmationPending {
+                Button("Confirm Deletion", role: .destructive) {
+                    onDelete()
+                }
+                .buttonStyle(.orbitDestructive)
+            } else {
+                Button {
+                    isDeleteConfirmationPending = true
+                    scheduleDeleteConfirmationReset()
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Delete note")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var textSection: some View {
+        if isEditingText {
+            MarkdownFormattingBar { action in
+                formatActionTapped(action)
+            }
+
+            MarkdownSourceTextView(
+                text: $editorState.text,
+                selectionRange: $editorState.selectionRange,
+                isFocused: $isTextEditorFocused,
+                onSubmit: {
+                    saveTextEditing()
+                },
+                onCancel: {
+                    cancelTextEditing()
+                }
+            )
+            .frame(minHeight: 96, maxHeight: 220)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+        } else {
+            MarkdownRenderedNoteView(
+                markdown: editorState.text,
+                onToggleTask: onToggleTask
+            )
+            .padding(10)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .onTapGesture {
+                beginTextEditing()
+            }
+        }
+    }
+
+    private var metadataSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            tagsRow
+            if isAddingTag {
+                addTagRow
+            }
+        }
+    }
+
+    private var tagsRow: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                priorityMenu
+
+                if tags.isEmpty {
+                    Text("No tags")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(tags, id: \.self) { tag in
+                    TagChip(tag: tag) {
+                        removeTag(tag)
+                    }
+                }
+
+                Button {
+                    addTagButtonTapped()
+                } label: {
+                    Image(systemName: isAddingTag ? "xmark.circle.fill" : "plus.circle.fill")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private var priorityMenu: some View {
+        Menu {
+            ForEach(NotePriority.allCases, id: \.self) { item in
+                Button {
+                    prioritySelected(item)
+                } label: {
+                    if item == priority {
+                        Label(item.title, systemImage: "checkmark")
+                    } else {
+                        Text(item.title)
+                    }
+                }
+            }
+        } label: {
+            priorityLabel(for: priority)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Change priority")
+    }
+
+    private func priorityLabel(for priority: NotePriority) -> some View {
+        HStack(spacing: 6) {
+            Text(priority.title.uppercased())
+                .font(.caption)
+            Image(systemName: "chevron.down")
+                .font(.caption2.weight(.semibold))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(priorityColor(for: priority).opacity(0.2))
+        )
+        .overlay(
+            Capsule()
+                .stroke(priorityColor(for: priority).opacity(0.7), lineWidth: 1)
+        )
+    }
+
+    private var addTagRow: some View {
+        HStack(spacing: 8) {
+            TextField("New tag", text: $pendingTag)
+                .textFieldStyle(.roundedBorder)
+                .focused($isTagFieldFocused)
+                .onSubmit {
+                    addTag()
+                }
+
+            Button("Add") {
+                addTag()
+            }
+            .buttonStyle(.orbitSecondary)
+            .disabled(trimmedPendingTag.isEmpty)
         }
     }
 

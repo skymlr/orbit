@@ -4,7 +4,6 @@ import SwiftUI
 import AppKit
 
 private enum OrbitWindowID {
-    static let capture = "capture-window"
     static let session = "session-window"
     static let endSession = "end-session-window"
     static let settings = "settings-window"
@@ -33,20 +32,6 @@ struct OrbitMenuBarApp: App {
             MenuBarLabelView(store: store)
         }
         .menuBarExtraStyle(.window)
-
-        Window("Quick Capture", id: OrbitWindowID.capture) {
-            if store.windowDestinations.contains(.captureWindow) {
-                QuickCaptureView(store: store)
-                    .onDisappear {
-                        store.send(.captureWindowClosed)
-                    }
-            } else {
-                Color.clear
-                    .frame(width: 1, height: 1)
-            }
-        }
-        .windowResizability(.contentSize)
-        .defaultSize(width: 360, height: 240)
 
         Window("Orbit Session", id: OrbitWindowID.session) {
             if store.windowDestinations.contains(.sessionWindow) {
@@ -134,7 +119,7 @@ private struct WindowStateCoordinator: View {
         let added = newValue.subtracting(oldValue)
 
         if removed.contains(.captureWindow) {
-            dismissWindow(id: OrbitWindowID.capture)
+            QuickCapturePanelController.shared.dismiss()
         }
         if removed.contains(.sessionWindow) {
             dismissWindow(id: OrbitWindowID.session)
@@ -148,8 +133,7 @@ private struct WindowStateCoordinator: View {
             bringSessionWindowToFront()
         }
         if added.contains(.captureWindow) {
-            openWindow(id: OrbitWindowID.capture)
-            bringCaptureWindowToFront()
+            QuickCapturePanelController.shared.present(store: store)
         }
         if added.contains(.endSessionWindow) {
             openWindow(id: OrbitWindowID.endSession)
@@ -163,18 +147,6 @@ private struct WindowStateCoordinator: View {
             guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit Session" }) else {
                 return
             }
-            window.orderFrontRegardless()
-            window.makeKey()
-        }
-    }
-
-    private func bringCaptureWindowToFront() {
-        DispatchQueue.main.async {
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Quick Capture" }) else {
-                return
-            }
-            window.level = .floating
             window.orderFrontRegardless()
             window.makeKey()
         }

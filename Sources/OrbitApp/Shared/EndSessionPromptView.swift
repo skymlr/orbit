@@ -38,13 +38,14 @@ struct EndSessionPromptView: View {
                 Button("Cancel") {
                     onCancel()
                 }
+                .buttonStyle(.orbitSecondary)
 
                 Spacer()
 
                 Button("End Session") {
                     onConfirm(name, selectedCategoryID)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.orbitDestructive)
             }
         }
         .padding(18)

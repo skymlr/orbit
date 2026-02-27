@@ -13,6 +13,17 @@ struct OrbitSettingsView: View {
         case hotkeys = "Hotkeys"
 
         var id: String { rawValue }
+
+        var iconName: String {
+            switch self {
+            case .sessions:
+                return "clock.arrow.circlepath"
+            case .categories:
+                return "folder"
+            case .hotkeys:
+                return "keyboard"
+            }
+        }
     }
 
     private struct SessionDayGroup: Identifiable {
@@ -28,48 +39,18 @@ struct OrbitSettingsView: View {
     @State private var newCategoryColor = Color(categoryHex: FocusDefaults.defaultCategoryColorHex)
 
     var body: some View {
-        VStack(alignment: .center, spacing: 14) {
-            Picker("", selection: $selectedSection) {
-                ForEach(SettingsSection.allCases) { section in
-                    Text(section.rawValue).tag(section)
-                }
-            }
-            .pickerStyle(.segmented)
-            .frame(maxWidth: sectionMaxWidth(for: selectedSection))
-            .frame(maxWidth: .infinity, alignment: .center)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    selectedSectionContent
-
-                    if let message = store.settings.statusMessage {
-                        Text(message)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        NavigationSplitView {
+            sidebar
+        } detail: {
+            detailContent
         }
-        .padding(20)
+        .navigationSplitViewStyle(.balanced)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(
-            LinearGradient(
-                colors: [
-                    Color(red: 0.03, green: 0.05, blue: 0.09),
-                    Color(red: 0.08, green: 0.12, blue: 0.19)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .opacity(0.2)
-        )
     }
 
     @ViewBuilder
-    private var selectedSectionContent: some View {
-        switch selectedSection {
+    private func selectedSectionContent(for section: SettingsSection) -> some View {
+        switch section {
         case .sessions:
             sessionsSection
         case .categories:
@@ -79,10 +60,44 @@ struct OrbitSettingsView: View {
         }
     }
 
+    private var sidebar: some View {
+        List(selection: $selectedSection) {
+            ForEach(SettingsSection.allCases) { section in
+                Label(section.rawValue, systemImage: section.iconName)
+                    .font(.body.weight(.semibold))
+                    .tag(section)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedSection = section
+                    }
+            }
+        }
+        .listStyle(.sidebar)
+        .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
+    }
+
+    private var detailContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                selectedSectionContent(for: selectedSection)
+
+                if let message = store.settings.statusMessage {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .navigationTitle(selectedSection.rawValue)
+    }
+
     private var hotkeysSection: some View {
         sectionCard(title: "Hotkeys") {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Start Session Shortcut")
+                Text("Session Shortcut (Open/Start)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 TextField("ctrl+option+cmd+k", text: $store.settings.startShortcut)
@@ -98,13 +113,13 @@ struct OrbitSettingsView: View {
                     Button("Reset Hotkeys") {
                         store.send(.settingsResetHotkeysTapped)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.orbitSecondary)
 
                     Spacer()
                     Button("Save Hotkeys") {
                         store.send(.settingsSaveHotkeysTapped)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.orbitPrimary)
                 }
             }
         }
@@ -129,6 +144,7 @@ struct OrbitSettingsView: View {
                     Button("Add") {
                         addCategoryButtonTapped()
                     }
+                    .buttonStyle(.orbitSecondary)
                 }
 
                 ForEach(store.settings.categories) { category in
@@ -186,9 +202,7 @@ struct OrbitSettingsView: View {
                     Button("Export All Sessions") {
                         exportAllSessionsButtonTapped()
                     }
-                    .buttonStyle(.plain)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .buttonStyle(.orbitSecondary)
                     .disabled(store.settings.sessions.isEmpty)
                 }
             }
@@ -274,10 +288,6 @@ struct OrbitSettingsView: View {
             content()
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.ultraThinMaterial)
-        )
     }
 }
 
@@ -302,10 +312,12 @@ private struct CategoryRow: View {
             Button("Save") {
                 onRename(name, color.categoryHex)
             }
+            .buttonStyle(.orbitSecondary)
 
             Button("Delete", role: .destructive) {
                 onDelete()
             }
+            .buttonStyle(.orbitDestructive)
             .disabled(category.id == FocusDefaults.focusCategoryID)
         }
         .task(id: category.id) {
@@ -342,12 +354,13 @@ private struct SessionRow: View {
                 Button(isRenaming ? "Save" : "Rename") {
                     renameButtonTapped()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.orbitSecondary)
                 .disabled(isRenaming && trimmedName.isEmpty)
 
                 Button("Delete", role: .destructive) {
                     onDelete()
                 }
+                .buttonStyle(.orbitDestructive)
             }
 
             HStack(spacing: 8) {
@@ -377,7 +390,7 @@ private struct SessionRow: View {
                 Button("Export") {
                     onExport()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.orbitSecondary)
             }
         }
         .padding(10)

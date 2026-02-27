@@ -7,7 +7,6 @@ enum MarkdownFormatAction: String, CaseIterable, Sendable {
     case strikethrough
     case heading1
     case heading2
-    case heading3
     case bulletList
     case numberedList
     case taskList
@@ -25,8 +24,6 @@ enum MarkdownFormatAction: String, CaseIterable, Sendable {
         case .heading1:
             return "textformat.size.larger"
         case .heading2:
-            return "textformat.size"
-        case .heading3:
             return "textformat.size.smaller"
         case .bulletList:
             return "list.bullet"
@@ -51,8 +48,6 @@ enum MarkdownFormatAction: String, CaseIterable, Sendable {
             return "Heading 1"
         case .heading2:
             return "Heading 2"
-        case .heading3:
-            return "Heading 3"
         case .bulletList:
             return "Bulleted List"
         case .numberedList:
@@ -91,7 +86,7 @@ enum MarkdownAttributedRenderer {
     static func renderAttributed(markdown: String) -> AttributedString {
         if let rendered = try? AttributedString(
             markdown: markdown,
-            options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .full)
+            options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         ) {
             return rendered
         }
@@ -114,8 +109,6 @@ enum MarkdownEditingCore {
             return applyHeading(level: 1, to: text, selection: selection)
         case .heading2:
             return applyHeading(level: 2, to: text, selection: selection)
-        case .heading3:
-            return applyHeading(level: 3, to: text, selection: selection)
         case .bulletList:
             return applyBulletedList(to: text, selection: selection)
         case .numberedList:

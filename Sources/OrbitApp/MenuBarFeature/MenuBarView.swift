@@ -50,11 +50,17 @@ struct MenuBarView: View {
                 }
 
                 HStack(spacing: 10) {
-                    Button("Open Session") {
-                        store.send(.openSessionTapped)
+                    Button {
+                        store.send(.startSessionTapped)
                         openSessionWindow()
+                    } label: {
+                        hotkeyButtonLabel(
+                            title: "Session",
+                            shortcut: store.hotkeys.startShortcut
+                        )
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.orbitPrimary)
+                    .help("Open or Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))")
 
                     Button {
                         store.send(.captureTapped)
@@ -64,19 +70,21 @@ struct MenuBarView: View {
                             shortcut: store.hotkeys.captureShortcut
                         )
                     }
+                    .buttonStyle(.orbitSecondary)
                 }
 
                 Button("End Session") {
                     store.send(.endSessionTapped)
                 }
+                .buttonStyle(.orbitQuiet)
             } else {
                 Button {
                     store.send(.startSessionTapped)
                 } label: {
-                    startSessionHeroLabel(shortcut: store.hotkeys.startShortcut)
+                    sessionHeroLabel(shortcut: store.hotkeys.startShortcut)
                 }
-                .buttonStyle(.plain)
-                .help("Start Session \(hotkeyHint(from: store.hotkeys.startShortcut))")
+                .buttonStyle(.orbitHero)
+                .help("Open or Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))")
             }
         }
         .padding(14)
@@ -101,115 +109,30 @@ struct MenuBarView: View {
 
 private extension MenuBarView {
     @ViewBuilder
-    func startSessionHeroLabel(shortcut: String) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.02, green: 0.14, blue: 0.24),
-                            Color(red: 0.02, green: 0.29, blue: 0.40),
-                            Color(red: 0.24, green: 0.19, blue: 0.04)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    Color.cyan.opacity(0.95),
-                                    Color.orange.opacity(0.85)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.3
-                        )
-                )
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Image(systemName: "atom")
-                        .font(.title3.weight(.semibold))
-                    Text("Start Session")
-                        .font(.title3.weight(.bold))
-                    Spacer()
-                    Text(hotkeyHint(from: shortcut))
-                        .font(.caption.monospacedDigit().weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.9))
-                }
-
-                Text("Ignite a new focus orbit")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.86))
+    func sessionHeroLabel(shortcut: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: "atom")
+                    .font(.title3.weight(.semibold))
+                Text("Open or Start Session")
+                    .font(.title3.weight(.bold))
+                Spacer()
+                HotkeyHintLabel(shortcut: shortcut, tone: .inverted)
+                    .font(.caption.monospacedDigit().weight(.semibold))
             }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+
+            Text("Open your focus orbit or ignite a new one")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.86))
         }
-        .frame(maxWidth: .infinity, minHeight: 90)
-        .shadow(color: Color.cyan.opacity(0.25), radius: 10, y: 4)
+        .foregroundStyle(.white)
     }
 
     @ViewBuilder
     func hotkeyButtonLabel(title: String, shortcut: String) -> some View {
         HStack(spacing: 8) {
             Text(title)
-            Text(hotkeyHint(from: shortcut))
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    func hotkeyHint(from shortcut: String) -> String {
-        let components = shortcut
-            .split(separator: "+")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-
-        guard let keyPart = components.last, !keyPart.isEmpty else {
-            return shortcut.uppercased()
-        }
-
-        let modifiers = Set(components.dropLast())
-        let control = modifiers.contains("ctrl") || modifiers.contains("control")
-        let option = modifiers.contains("option") || modifiers.contains("opt") || modifiers.contains("alt")
-        let shift = modifiers.contains("shift")
-        let command = modifiers.contains("cmd") || modifiers.contains("command")
-
-        var glyphs = ""
-        if control { glyphs += "⌃" }
-        if option { glyphs += "⌥" }
-        if shift { glyphs += "⇧" }
-        if command { glyphs += "⌘" }
-
-        return glyphs + keyGlyph(for: String(keyPart))
-    }
-
-    func keyGlyph(for key: String) -> String {
-        switch key.lowercased() {
-        case "space":
-            return "Space"
-        case "return", "enter":
-            return "↩"
-        case "tab":
-            return "⇥"
-        case "escape", "esc":
-            return "⎋"
-        case "delete", "backspace":
-            return "⌫"
-        case "up":
-            return "↑"
-        case "down":
-            return "↓"
-        case "left":
-            return "←"
-        case "right":
-            return "→"
-        default:
-            return key.uppercased()
+            HotkeyHintLabel(shortcut: shortcut)
         }
     }
 

@@ -26,6 +26,9 @@ struct QuickCaptureView: View {
                 isFocused: $isEditorFocused,
                 onSubmit: {
                     saveButtonTapped()
+                },
+                onCancel: {
+                    dismissCapture()
                 }
             )
             .frame(minHeight: 96, maxHeight: 220)
@@ -37,9 +40,7 @@ struct QuickCaptureView: View {
             Button(editorState.isPreviewVisible ? "Hide Preview" : "Show Preview") {
                 editorState.isPreviewVisible.toggle()
             }
-            .buttonStyle(.plain)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
+            .buttonStyle(.orbitQuiet)
 
             if editorState.isPreviewVisible {
                 ScrollView {
@@ -81,12 +82,12 @@ struct QuickCaptureView: View {
                 Button("Save") {
                     saveButtonTapped()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.orbitPrimary)
                 .disabled(!canSave)
             }
         }
         .padding(14)
-        .frame(width: 360)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .task {
             editorState.text = store.captureDraft.text
             editorState.selectionRange = NSRange(location: (store.captureDraft.text as NSString).length, length: 0)
@@ -105,6 +106,9 @@ struct QuickCaptureView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(.ultraThinMaterial)
         )
+        .onExitCommand {
+            dismissCapture()
+        }
     }
 
     private var canSave: Bool {
@@ -125,5 +129,9 @@ struct QuickCaptureView: View {
         guard canSave else { return }
         store.captureDraft.text = editorState.text
         store.send(.captureSubmitTapped)
+    }
+
+    private func dismissCapture() {
+        store.send(.captureWindowClosed)
     }
 }
