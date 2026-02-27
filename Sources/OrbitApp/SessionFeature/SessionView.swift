@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import Foundation
+import AppKit
 import SwiftUI
 
 struct SessionView: View {
@@ -8,6 +9,7 @@ struct SessionView: View {
     }
 
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Environment(\.openWindow) private var openWindow
     @State private var isEndSessionConfirmationPending = false
     @State private var endSessionConfirmationToken = 0
 
@@ -41,13 +43,20 @@ struct SessionView: View {
         .padding(18)
         .frame(minWidth: 880, minHeight: 640)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
                 Button {
                     store.send(.sessionAddNoteTapped)
                 } label: {
                     Image(systemName: "plus")
                 }
                 .help("Capture Note \(HotkeyHintFormatter.hint(from: store.hotkeys.captureShortcut))")
+
+                Button {
+                    openSettingsWindow()
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .help("Open Settings")
             }
         }
         .toolbarBackground(.visible, for: .windowToolbar)
@@ -56,17 +65,9 @@ struct SessionView: View {
             isEndSessionConfirmationPending = false
             endSessionConfirmationToken += 1
         }
-        .background(
-            LinearGradient(
-                colors: [
-                    Color(red: 0.06, green: 0.09, blue: 0.15),
-                    Color(red: 0.05, green: 0.11, blue: 0.18)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .opacity(0.25)
-        )
+        .background {
+            OrbitSpaceBackground()
+        }
     }
 
     private var emptyState: some View {
@@ -152,6 +153,19 @@ struct SessionView: View {
     private func endSessionButtonTapped() {
         isEndSessionConfirmationPending = true
         scheduleEndSessionConfirmationReset()
+    }
+
+    private func openSettingsWindow() {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        openWindow(id: "settings-window")
+
+        DispatchQueue.main.async {
+            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit Settings" }) else {
+                return
+            }
+            window.orderFrontRegardless()
+            window.makeKey()
+        }
     }
 
     private func scheduleEndSessionConfirmationReset() {

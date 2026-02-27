@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "0DA7B243FC05E48BFAB7D6A4"
+               BlueprintIdentifier = "F3E06B0D2578442A30B97606"
                BuildableName = "Orbit.app"
                BlueprintName = "Orbit"
                ReferencedContainer = "container:Orbit.xcodeproj">
@@ -30,7 +30,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "0DA7B243FC05E48BFAB7D6A4"
+            BlueprintIdentifier = "F3E06B0D2578442A30B97606"
             BuildableName = "Orbit.app"
             BlueprintName = "Orbit"
             ReferencedContainer = "container:Orbit.xcodeproj">
@@ -53,7 +53,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "0DA7B243FC05E48BFAB7D6A4"
+            BlueprintIdentifier = "F3E06B0D2578442A30B97606"
             BuildableName = "Orbit.app"
             BlueprintName = "Orbit"
             ReferencedContainer = "container:Orbit.xcodeproj">
@@ -70,7 +70,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "0DA7B243FC05E48BFAB7D6A4"
+            BlueprintIdentifier = "F3E06B0D2578442A30B97606"
             BuildableName = "Orbit.app"
             BlueprintName = "Orbit"
             ReferencedContainer = "container:Orbit.xcodeproj">

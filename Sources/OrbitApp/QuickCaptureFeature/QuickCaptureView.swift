@@ -103,8 +103,13 @@ struct QuickCaptureView: View {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.ultraThinMaterial)
+            ZStack {
+                OrbitSpaceBackground()
+
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         )
         .onExitCommand {
             dismissCapture()

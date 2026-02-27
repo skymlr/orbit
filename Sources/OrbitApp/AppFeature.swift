@@ -59,6 +59,7 @@ struct AppFeature {
         var settings = SettingsState()
 
         var windowDestinations: Set<WindowDestination> = []
+        var sessionWindowFocusRequest = 0
         var hasLaunched = false
     }
 
@@ -253,6 +254,7 @@ struct AppFeature {
             case .openSessionTapped:
                 guard state.activeSession != nil else { return .none }
                 state.windowDestinations.insert(.sessionWindow)
+                state.sessionWindowFocusRequest &+= 1
                 return .none
 
             case .endSessionTapped:

@@ -112,6 +112,13 @@ private struct WindowStateCoordinator: View {
             .onChange(of: store.windowDestinations) { oldValue, newValue in
                 syncWindows(from: oldValue, to: newValue)
             }
+            .onChange(of: store.sessionWindowFocusRequest) { _, _ in
+                guard store.windowDestinations.contains(.sessionWindow) else {
+                    return
+                }
+                openWindow(id: OrbitWindowID.session)
+                bringSessionWindowToFront()
+            }
     }
 
     private func syncWindows(from oldValue: Set<AppFeature.WindowDestination>, to newValue: Set<AppFeature.WindowDestination>) {

@@ -7,257 +7,260 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		06760B2B00EF3D8B258BE1C2 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 4E8AC76DFEA855381F6C474C /* SQLiteData */; };
-		0881D489AFEFB15EBF6FB485 /* MarkdownFormattingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5C74C3754FC31119382C93 /* MarkdownFormattingBar.swift */; };
-		0B4FDB73FCDD8FFFA13DA192 /* SessionWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72FA38383611FC0974F019A4 /* SessionWindowView.swift */; };
-		0C8945FFEE220C88253336FA /* QuickCapturePanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C148A46D9D7585EEC98548 /* QuickCapturePanelController.swift */; };
-		0E06E10A26DFF6C1BE6F70BC /* MarkdownEditingCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A541E64D96159E0A16D5718 /* MarkdownEditingCore.swift */; };
-		121BC4B1927D4B2F390C5FF5 /* EndSessionPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5272D304E9A9E50BD7D30D6 /* EndSessionPromptView.swift */; };
-		15381A0538975D4A49F81B69 /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D2ABC442D1954B49711CB2 /* AppFeature.swift */; };
-		1635FAFD0CF1540A250C833A /* MarkdownSourceTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED6B2970D525BC074AF56FE1 /* MarkdownSourceTextView.swift */; };
-		21262417AEF3AE8854EEC968 /* InactivityClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7ACC35DA9490420F0197069 /* InactivityClient.swift */; };
-		38A3AC3AACB349E385FFE58F /* HotkeySettingsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C9FB9F4FCD473E1A09ECB0 /* HotkeySettingsClient.swift */; };
-		3D26E891A4156B1B02FE6821 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFFD97FDE59A9C384E2B9AD8 /* MenuBarView.swift */; };
-		3EC2A16EF1862C05CAA06E64 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF1E9EE40633EF50CF3D9B5 /* App.swift */; };
-		48242D105C63BAEB48A419F6 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7ED86C3CCC0479FE0E01A86 /* Models.swift */; };
-		578C902291FE69EF751AC05A /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = 677CD6CCF4B8D2935C03B0D9 /* CasePaths */; };
-		6D19E2F6E70542A74C7AFBB7 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = EE9FABAD638532832138E0DD /* ComposableArchitecture */; };
-		89BA19A3AC1863F1AE62F966 /* FocusDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFE66F81A22F8C78B2A537DB /* FocusDomain.swift */; };
-		8B8DC6A3D6E739D3C68A15FC /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C50B3332DFA282B224845E3 /* HotkeyManager.swift */; };
-		9054A1A89A443F14EC894568 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5DC93CE7EA5E9CABA165BA12 /* Assets.xcassets */; };
-		9319F23BAD0A0779A17FE699 /* OrbitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F51DB8DB6B670007876D1CD /* OrbitSettingsView.swift */; };
-		9BCD0964E622813296F1494A /* HotkeyHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE457EF366E52D98AC2B5A8E /* HotkeyHint.swift */; };
-		A2338B8F2C7ECF38ACC556A8 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE5B19097C89A9307058B646 /* Cocoa.framework */; };
-		A692CA4C11BA7789FB309540 /* OrbitButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC481794266F6D8A7A8B0456 /* OrbitButtonStyles.swift */; };
-		A967BE8723A7A83EDC1D30F3 /* Schema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D9727329FFB3B871349B17 /* Schema.swift */; };
-		C2C9393308A4A129F7CA1912 /* MarkdownExportClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22ABC81FA6E26F34B22371B4 /* MarkdownExportClient.swift */; };
-		C7633366D190620BF7B842F3 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 85FA2F0D5908F169E51AC398 /* Dependencies */; };
-		C7EC73B9CFEA1DCA8571DDD5 /* QuickCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E9C9B54F65895BD24B04F9B /* QuickCaptureView.swift */; };
-		E4799AE3D9E389D96948A9B7 /* StructuredQueries in Frameworks */ = {isa = PBXBuildFile; productRef = B15C3FAE01E8282D33D4802D /* StructuredQueries */; };
-		E49896050E160DFC5986B1E3 /* FocusRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3824F108F43EE0EE73979D9D /* FocusRepository.swift */; };
+		0A2AECD5A0506945CEA2427C /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B530B8010CF8D16BE42A806 /* AppFeature.swift */; };
+		129108716B6D6454E9C049FB /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 939B4686F681D1AB1E86FEE3 /* HotkeyManager.swift */; };
+		18A310F719E11A8F6B79C202 /* HotkeySettingsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44490CE1643584D6C65E8E98 /* HotkeySettingsClient.swift */; };
+		3C482E3B3E36C47271434CF4 /* SessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC4ED013FA7E93095B1607D /* SessionView.swift */; };
+		40FB8FB982A901E2E676EF33 /* EndSessionPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0BE749A8AE1FBEC1ADE578 /* EndSessionPromptView.swift */; };
+		42BDFA1F95893036B537543C /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = B9FDA9C6F3A1812A35121240 /* ComposableArchitecture */; };
+		451ACBA049063CCD5E6F1F3E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 291708EC5BE70B08C0BE024D /* Assets.xcassets */; };
+		45A1A95C4CCDFC5469356EF7 /* OrbitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE06957523E45246BA60DA32 /* OrbitSettingsView.swift */; };
+		499F1D80E6D80A2FCC6045C0 /* HotkeyHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E40796C93534BE6F33252A /* HotkeyHint.swift */; };
+		49C6216B5FFED77CBC628BBC /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F3D42B26B834405B080A9 /* SQLiteData */; };
+		5B99B69A79ED935EE0697E31 /* OrbitSpaceBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51047D6A4CAEE07BAA7EC5AC /* OrbitSpaceBackground.swift */; };
+		5ED3EBE07034644BB6CBAA6A /* OrbitButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D62CEA84DB59F08A129516 /* OrbitButtonStyles.swift */; };
+		606F4B2E67606EBE2812681D /* MarkdownFormattingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB3D89EEA79A3398FA93988A /* MarkdownFormattingBar.swift */; };
+		616F55B69C8965B5E86006E6 /* MarkdownEditingCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F00FE2F626222FAFD1C553 /* MarkdownEditingCore.swift */; };
+		66ABC5DF1AB74B171926CDC6 /* QuickCapturePanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B506A9B68A7F83A885F957AF /* QuickCapturePanelController.swift */; };
+		871F2E6A55CA72D18F24302B /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2E9D98F420D66D714AD8BB4 /* App.swift */; };
+		9BBA6F384680BB482D421C91 /* MarkdownExportClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64A3200E14F7AA7EE8D1C0DA /* MarkdownExportClient.swift */; };
+		AB233A69302E0587CA7425FE /* FocusDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03ECC9E468033A3B565E6903 /* FocusDomain.swift */; };
+		ABAD4ABEB54CA1A903279E68 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 917CED81ABB623D45031BBF5 /* MenuBarView.swift */; };
+		AD9303D52E4DADB031A9A825 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC83B1EB70C124FA7CDE929F /* Models.swift */; };
+		B58B36FDFF82D895E3555D9D /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = E15831EEDCEF779BEC1B2A12 /* CasePaths */; };
+		B7432C3712B7134C4D391820 /* InactivityClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FDC5C7439DA09C3E6A669E3 /* InactivityClient.swift */; };
+		C319A8B9958C8FC1A90C06D4 /* QuickCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A470AACEF9FF6251F3248B09 /* QuickCaptureView.swift */; };
+		CF398F3433BC8C01DD424615 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E972D20F001E8433B06D38DB /* Cocoa.framework */; };
+		D7FFD3B06C0C0391A5EE96B9 /* MarkdownSourceTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DCED07DFAA15CC1579007D4 /* MarkdownSourceTextView.swift */; };
+		D9B95420E5CD1398EA2AFC06 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = DDDE93BFC2E32AF58D256595 /* Dependencies */; };
+		DC6D5534CF78F80E409AA61D /* StructuredQueries in Frameworks */ = {isa = PBXBuildFile; productRef = 7574805B15E40ABA4DCDC906 /* StructuredQueries */; };
+		E1855B23CCA3507FC83A16C9 /* Schema.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13D2EA78727984D05C809E7 /* Schema.swift */; };
+		EC7C1AB9CE91BED49A451B8E /* FocusRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C7F59AA463DAC3A74BF16D /* FocusRepository.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1F51DB8DB6B670007876D1CD /* OrbitSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitSettingsView.swift; sourceTree = "<group>"; };
-		22ABC81FA6E26F34B22371B4 /* MarkdownExportClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownExportClient.swift; sourceTree = "<group>"; };
-		3824F108F43EE0EE73979D9D /* FocusRepository.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FocusRepository.swift; sourceTree = "<group>"; };
-		4A541E64D96159E0A16D5718 /* MarkdownEditingCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownEditingCore.swift; sourceTree = "<group>"; };
-		4E9C9B54F65895BD24B04F9B /* QuickCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
-		53BB1888E443CBD249B9A944 /* Orbit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Orbit.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		5DC93CE7EA5E9CABA165BA12 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		62D2ABC442D1954B49711CB2 /* AppFeature.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppFeature.swift; sourceTree = "<group>"; };
-		67D9727329FFB3B871349B17 /* Schema.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Schema.swift; sourceTree = "<group>"; };
-		72FA38383611FC0974F019A4 /* SessionWindowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionWindowView.swift; sourceTree = "<group>"; };
-		76C148A46D9D7585EEC98548 /* QuickCapturePanelController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickCapturePanelController.swift; sourceTree = "<group>"; };
-		7C50B3332DFA282B224845E3 /* HotkeyManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
-		AE457EF366E52D98AC2B5A8E /* HotkeyHint.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeyHint.swift; sourceTree = "<group>"; };
-		AE5C74C3754FC31119382C93 /* MarkdownFormattingBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownFormattingBar.swift; sourceTree = "<group>"; };
-		C4C9FB9F4FCD473E1A09ECB0 /* HotkeySettingsClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeySettingsClient.swift; sourceTree = "<group>"; };
-		C7ED86C3CCC0479FE0E01A86 /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		CC481794266F6D8A7A8B0456 /* OrbitButtonStyles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitButtonStyles.swift; sourceTree = "<group>"; };
-		CFE66F81A22F8C78B2A537DB /* FocusDomain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FocusDomain.swift; sourceTree = "<group>"; };
-		ED6B2970D525BC074AF56FE1 /* MarkdownSourceTextView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownSourceTextView.swift; sourceTree = "<group>"; };
-		EE5B19097C89A9307058B646 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
-		EFFD97FDE59A9C384E2B9AD8 /* MenuBarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
-		F5272D304E9A9E50BD7D30D6 /* EndSessionPromptView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EndSessionPromptView.swift; sourceTree = "<group>"; };
-		F7ACC35DA9490420F0197069 /* InactivityClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InactivityClient.swift; sourceTree = "<group>"; };
-		FEF1E9EE40633EF50CF3D9B5 /* App.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		03ECC9E468033A3B565E6903 /* FocusDomain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FocusDomain.swift; sourceTree = "<group>"; };
+		291708EC5BE70B08C0BE024D /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		44490CE1643584D6C65E8E98 /* HotkeySettingsClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeySettingsClient.swift; sourceTree = "<group>"; };
+		51047D6A4CAEE07BAA7EC5AC /* OrbitSpaceBackground.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitSpaceBackground.swift; sourceTree = "<group>"; };
+		5B530B8010CF8D16BE42A806 /* AppFeature.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppFeature.swift; sourceTree = "<group>"; };
+		5FDC5C7439DA09C3E6A669E3 /* InactivityClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InactivityClient.swift; sourceTree = "<group>"; };
+		64A3200E14F7AA7EE8D1C0DA /* MarkdownExportClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownExportClient.swift; sourceTree = "<group>"; };
+		69D62CEA84DB59F08A129516 /* OrbitButtonStyles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitButtonStyles.swift; sourceTree = "<group>"; };
+		75E40796C93534BE6F33252A /* HotkeyHint.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeyHint.swift; sourceTree = "<group>"; };
+		7FC4ED013FA7E93095B1607D /* SessionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionView.swift; sourceTree = "<group>"; };
+		8DCED07DFAA15CC1579007D4 /* MarkdownSourceTextView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownSourceTextView.swift; sourceTree = "<group>"; };
+		917CED81ABB623D45031BBF5 /* MenuBarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		939B4686F681D1AB1E86FEE3 /* HotkeyManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
+		9D878C4B6F87DB3FF6FB2231 /* Orbit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Orbit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A13D2EA78727984D05C809E7 /* Schema.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Schema.swift; sourceTree = "<group>"; };
+		A2E9D98F420D66D714AD8BB4 /* App.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		A470AACEF9FF6251F3248B09 /* QuickCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
+		B506A9B68A7F83A885F957AF /* QuickCapturePanelController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickCapturePanelController.swift; sourceTree = "<group>"; };
+		BC83B1EB70C124FA7CDE929F /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		D6F00FE2F626222FAFD1C553 /* MarkdownEditingCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownEditingCore.swift; sourceTree = "<group>"; };
+		E7C7F59AA463DAC3A74BF16D /* FocusRepository.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FocusRepository.swift; sourceTree = "<group>"; };
+		E972D20F001E8433B06D38DB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		EE06957523E45246BA60DA32 /* OrbitSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitSettingsView.swift; sourceTree = "<group>"; };
+		FB3D89EEA79A3398FA93988A /* MarkdownFormattingBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownFormattingBar.swift; sourceTree = "<group>"; };
+		FC0BE749A8AE1FBEC1ADE578 /* EndSessionPromptView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EndSessionPromptView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		C966F4C490E46E13834EB08C /* Frameworks */ = {
+		08ACE1AFF659332E588375C9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A2338B8F2C7ECF38ACC556A8 /* Cocoa.framework in Frameworks */,
-				6D19E2F6E70542A74C7AFBB7 /* ComposableArchitecture in Frameworks */,
-				578C902291FE69EF751AC05A /* CasePaths in Frameworks */,
-				C7633366D190620BF7B842F3 /* Dependencies in Frameworks */,
-				06760B2B00EF3D8B258BE1C2 /* SQLiteData in Frameworks */,
-				E4799AE3D9E389D96948A9B7 /* StructuredQueries in Frameworks */,
+				CF398F3433BC8C01DD424615 /* Cocoa.framework in Frameworks */,
+				42BDFA1F95893036B537543C /* ComposableArchitecture in Frameworks */,
+				B58B36FDFF82D895E3555D9D /* CasePaths in Frameworks */,
+				D9B95420E5CD1398EA2AFC06 /* Dependencies in Frameworks */,
+				49C6216B5FFED77CBC628BBC /* SQLiteData in Frameworks */,
+				DC6D5534CF78F80E409AA61D /* StructuredQueries in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		43304813730FB9B38DA9A51B /* MenuBarFeature */ = {
+		05818FFC4346EA17D2F3AAA3 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				EFFD97FDE59A9C384E2B9AD8 /* MenuBarView.swift */,
-			);
-			name = MenuBarFeature;
-			path = MenuBarFeature;
-			sourceTree = "<group>";
-		};
-		46ACA9BBA6D7B2B303909E38 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				5DC93CE7EA5E9CABA165BA12 /* Assets.xcassets */,
-			);
-			name = Resources;
-			path = Resources;
-			sourceTree = "<group>";
-		};
-		46BF0099023961A1DDDE8926 = {
-			isa = PBXGroup;
-			children = (
-				60FBFFE04D3E17871A00C830 /* Products */,
-				D5EF873D1480F25303CF1F48 /* Frameworks */,
-				789447152611C0B9B0826FD3 /* Sources */,
-				46ACA9BBA6D7B2B303909E38 /* Resources */,
-			);
-			sourceTree = "<group>";
-		};
-		60FBFFE04D3E17871A00C830 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				53BB1888E443CBD249B9A944 /* Orbit.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		61215F03D3EB63E9365EE4B0 /* OrbitApp */ = {
-			isa = PBXGroup;
-			children = (
-				FEF1E9EE40633EF50CF3D9B5 /* App.swift */,
-				62D2ABC442D1954B49711CB2 /* AppFeature.swift */,
-				675769964E04E33024FE5087 /* Dependencies */,
-				43304813730FB9B38DA9A51B /* MenuBarFeature */,
-				1F51DB8DB6B670007876D1CD /* OrbitSettingsView.swift */,
-				A54AD9684EADDC215DB17745 /* Persistence */,
-				877A67BB5C267AA52FE6EE25 /* QuickCaptureFeature */,
-				67D9727329FFB3B871349B17 /* Schema.swift */,
-				64E5A464B269F8C19CD1BAF4 /* SessionWindowFeature */,
-				A95ABDBE646CC6EAF7A9B84C /* Shared */,
-			);
-			name = OrbitApp;
-			path = OrbitApp;
-			sourceTree = "<group>";
-		};
-		64E5A464B269F8C19CD1BAF4 /* SessionWindowFeature */ = {
-			isa = PBXGroup;
-			children = (
-				72FA38383611FC0974F019A4 /* SessionWindowView.swift */,
-			);
-			name = SessionWindowFeature;
-			path = SessionWindowFeature;
-			sourceTree = "<group>";
-		};
-		675769964E04E33024FE5087 /* Dependencies */ = {
-			isa = PBXGroup;
-			children = (
-				3824F108F43EE0EE73979D9D /* FocusRepository.swift */,
-				7C50B3332DFA282B224845E3 /* HotkeyManager.swift */,
-				C4C9FB9F4FCD473E1A09ECB0 /* HotkeySettingsClient.swift */,
-				F7ACC35DA9490420F0197069 /* InactivityClient.swift */,
-				22ABC81FA6E26F34B22371B4 /* MarkdownExportClient.swift */,
-			);
-			name = Dependencies;
-			path = Dependencies;
-			sourceTree = "<group>";
-		};
-		789447152611C0B9B0826FD3 /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				61215F03D3EB63E9365EE4B0 /* OrbitApp */,
+				AF65549547F3EBD20B3419CC /* OrbitApp */,
 			);
 			name = Sources;
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		877A67BB5C267AA52FE6EE25 /* QuickCaptureFeature */ = {
+		284D4D58F13EB41F56A4E277 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
-				4E9C9B54F65895BD24B04F9B /* QuickCaptureView.swift */,
-			);
-			name = QuickCaptureFeature;
-			path = QuickCaptureFeature;
-			sourceTree = "<group>";
-		};
-		8854B27844EA6DEC30F7B191 /* OS X */ = {
-			isa = PBXGroup;
-			children = (
-				EE5B19097C89A9307058B646 /* Cocoa.framework */,
-			);
-			name = "OS X";
-			sourceTree = "<group>";
-		};
-		A54AD9684EADDC215DB17745 /* Persistence */ = {
-			isa = PBXGroup;
-			children = (
-				C7ED86C3CCC0479FE0E01A86 /* Models.swift */,
-			);
-			name = Persistence;
-			path = Persistence;
-			sourceTree = "<group>";
-		};
-		A95ABDBE646CC6EAF7A9B84C /* Shared */ = {
-			isa = PBXGroup;
-			children = (
-				F5272D304E9A9E50BD7D30D6 /* EndSessionPromptView.swift */,
-				CFE66F81A22F8C78B2A537DB /* FocusDomain.swift */,
-				AE457EF366E52D98AC2B5A8E /* HotkeyHint.swift */,
-				4A541E64D96159E0A16D5718 /* MarkdownEditingCore.swift */,
-				AE5C74C3754FC31119382C93 /* MarkdownFormattingBar.swift */,
-				ED6B2970D525BC074AF56FE1 /* MarkdownSourceTextView.swift */,
-				CC481794266F6D8A7A8B0456 /* OrbitButtonStyles.swift */,
-				76C148A46D9D7585EEC98548 /* QuickCapturePanelController.swift */,
+				FC0BE749A8AE1FBEC1ADE578 /* EndSessionPromptView.swift */,
+				03ECC9E468033A3B565E6903 /* FocusDomain.swift */,
+				75E40796C93534BE6F33252A /* HotkeyHint.swift */,
+				D6F00FE2F626222FAFD1C553 /* MarkdownEditingCore.swift */,
+				FB3D89EEA79A3398FA93988A /* MarkdownFormattingBar.swift */,
+				8DCED07DFAA15CC1579007D4 /* MarkdownSourceTextView.swift */,
+				69D62CEA84DB59F08A129516 /* OrbitButtonStyles.swift */,
+				51047D6A4CAEE07BAA7EC5AC /* OrbitSpaceBackground.swift */,
+				B506A9B68A7F83A885F957AF /* QuickCapturePanelController.swift */,
 			);
 			name = Shared;
 			path = Shared;
 			sourceTree = "<group>";
 		};
-		D5EF873D1480F25303CF1F48 /* Frameworks */ = {
+		2F5A59C2240F8BB543EB3866 /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
-				8854B27844EA6DEC30F7B191 /* OS X */,
+				BC83B1EB70C124FA7CDE929F /* Models.swift */,
+			);
+			name = Persistence;
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		4135EC12FD58755A8298D5F1 = {
+			isa = PBXGroup;
+			children = (
+				88B53B6D82BF78AFC875B5FD /* Products */,
+				6E1029E72C02450AB1BCB211 /* Frameworks */,
+				05818FFC4346EA17D2F3AAA3 /* Sources */,
+				B89F993EE0AC80E4D7ECD1E9 /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+		46A1C3437395DA46C2A4D040 /* MenuBarFeature */ = {
+			isa = PBXGroup;
+			children = (
+				917CED81ABB623D45031BBF5 /* MenuBarView.swift */,
+			);
+			name = MenuBarFeature;
+			path = MenuBarFeature;
+			sourceTree = "<group>";
+		};
+		6E1029E72C02450AB1BCB211 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C500409A8C3BEF7679650305 /* OS X */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		88B53B6D82BF78AFC875B5FD /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9D878C4B6F87DB3FF6FB2231 /* Orbit.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		89069B19BA6C809146ABE848 /* QuickCaptureFeature */ = {
+			isa = PBXGroup;
+			children = (
+				A470AACEF9FF6251F3248B09 /* QuickCaptureView.swift */,
+			);
+			name = QuickCaptureFeature;
+			path = QuickCaptureFeature;
+			sourceTree = "<group>";
+		};
+		AF65549547F3EBD20B3419CC /* OrbitApp */ = {
+			isa = PBXGroup;
+			children = (
+				A2E9D98F420D66D714AD8BB4 /* App.swift */,
+				5B530B8010CF8D16BE42A806 /* AppFeature.swift */,
+				F6263B6E46E9F6E2A6AD9358 /* Dependencies */,
+				46A1C3437395DA46C2A4D040 /* MenuBarFeature */,
+				EE06957523E45246BA60DA32 /* OrbitSettingsView.swift */,
+				2F5A59C2240F8BB543EB3866 /* Persistence */,
+				89069B19BA6C809146ABE848 /* QuickCaptureFeature */,
+				A13D2EA78727984D05C809E7 /* Schema.swift */,
+				FF0764D04630812E639C48D1 /* SessionFeature */,
+				284D4D58F13EB41F56A4E277 /* Shared */,
+			);
+			name = OrbitApp;
+			path = OrbitApp;
+			sourceTree = "<group>";
+		};
+		B89F993EE0AC80E4D7ECD1E9 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				291708EC5BE70B08C0BE024D /* Assets.xcassets */,
+			);
+			name = Resources;
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		C500409A8C3BEF7679650305 /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				E972D20F001E8433B06D38DB /* Cocoa.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
+		F6263B6E46E9F6E2A6AD9358 /* Dependencies */ = {
+			isa = PBXGroup;
+			children = (
+				E7C7F59AA463DAC3A74BF16D /* FocusRepository.swift */,
+				939B4686F681D1AB1E86FEE3 /* HotkeyManager.swift */,
+				44490CE1643584D6C65E8E98 /* HotkeySettingsClient.swift */,
+				5FDC5C7439DA09C3E6A669E3 /* InactivityClient.swift */,
+				64A3200E14F7AA7EE8D1C0DA /* MarkdownExportClient.swift */,
+			);
+			name = Dependencies;
+			path = Dependencies;
+			sourceTree = "<group>";
+		};
+		FF0764D04630812E639C48D1 /* SessionFeature */ = {
+			isa = PBXGroup;
+			children = (
+				7FC4ED013FA7E93095B1607D /* SessionView.swift */,
+			);
+			name = SessionFeature;
+			path = SessionFeature;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0DA7B243FC05E48BFAB7D6A4 /* Orbit */ = {
+		F3E06B0D2578442A30B97606 /* Orbit */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 6299C1CDB80FBFF510D6C986 /* Build configuration list for PBXNativeTarget "Orbit" */;
+			buildConfigurationList = 7891340EB46522886342F333 /* Build configuration list for PBXNativeTarget "Orbit" */;
 			buildPhases = (
-				E02C1892394DA8134A4DB662 /* Sources */,
-				C966F4C490E46E13834EB08C /* Frameworks */,
-				8A4AA89BC65B006DF83FB395 /* Resources */,
+				3A6B86C5172FE4CE3E3D570B /* Sources */,
+				08ACE1AFF659332E588375C9 /* Frameworks */,
+				D5D274CD221B0837709BFA83 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				F9586D0C34DA392B5AA72412 /* PBXTargetDependency */,
-				4CBB68522F3225518AD520B9 /* PBXTargetDependency */,
-				C98841029E7189CF45108F81 /* PBXTargetDependency */,
-				FC957F5E28FD90B77A97EBB0 /* PBXTargetDependency */,
-				7D3F3BBB178E0BA362DB5DBF /* PBXTargetDependency */,
+				2ADEFC940C2EAEEEA7C15A32 /* PBXTargetDependency */,
+				B0EF052339D18B39CEE44503 /* PBXTargetDependency */,
+				08EBD1B2C1C978CBC7FD9CEE /* PBXTargetDependency */,
+				AEC8A134C27EB9B096C87BE2 /* PBXTargetDependency */,
+				18DF85531DB6BE3DEAFE39B2 /* PBXTargetDependency */,
 			);
 			name = Orbit;
 			packageProductDependencies = (
-				EE9FABAD638532832138E0DD /* ComposableArchitecture */,
-				677CD6CCF4B8D2935C03B0D9 /* CasePaths */,
-				85FA2F0D5908F169E51AC398 /* Dependencies */,
-				4E8AC76DFEA855381F6C474C /* SQLiteData */,
-				B15C3FAE01E8282D33D4802D /* StructuredQueries */,
+				B9FDA9C6F3A1812A35121240 /* ComposableArchitecture */,
+				E15831EEDCEF779BEC1B2A12 /* CasePaths */,
+				DDDE93BFC2E32AF58D256595 /* Dependencies */,
+				CA6F3D42B26B834405B080A9 /* SQLiteData */,
+				7574805B15E40ABA4DCDC906 /* StructuredQueries */,
 			);
 			productName = Orbit;
-			productReference = 53BB1888E443CBD249B9A944 /* Orbit.app */;
+			productReference = 9D878C4B6F87DB3FF6FB2231 /* Orbit.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		3A90612B159B54453185C770 /* Project object */ = {
+		5E01970D091EFAEEC26ECF7B /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1300;
 				LastUpgradeCheck = 1300;
 			};
-			buildConfigurationList = 9283F44900B52C1118EDC287 /* Build configuration list for PBXProject "Orbit" */;
+			buildConfigurationList = DA1103692C2E1E3D25B0AB61 /* Build configuration list for PBXProject "Orbit" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -265,90 +268,141 @@
 				en,
 				Base,
 			);
-			mainGroup = 46BF0099023961A1DDDE8926;
+			mainGroup = 4135EC12FD58755A8298D5F1;
 			packageReferences = (
-				944DCDE1A5B48289EA42F118 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
-				8865C5935F024CEC1ACCC62E /* XCRemoteSwiftPackageReference "swift-case-paths" */,
-				72A55E0EF5F59F737EF9E771 /* XCRemoteSwiftPackageReference "swift-dependencies" */,
-				18B5C7AB2465D0D73D0D5769 /* XCRemoteSwiftPackageReference "sqlite-data" */,
-				909E4117947127E541BD6F08 /* XCRemoteSwiftPackageReference "swift-structured-queries" */,
+				3B8C61BA604A3CCDB839E0E7 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				34B7070745E7FFFE541E0C7E /* XCRemoteSwiftPackageReference "swift-case-paths" */,
+				7BFEE2D00F5F7C0E799081CA /* XCRemoteSwiftPackageReference "swift-dependencies" */,
+				CD99FF1E5DFBADE4B7A07ED8 /* XCRemoteSwiftPackageReference "sqlite-data" */,
+				3F444906A0EDCD50EE06433A /* XCRemoteSwiftPackageReference "swift-structured-queries" */,
 			);
-			productRefGroup = 60FBFFE04D3E17871A00C830 /* Products */;
+			productRefGroup = 88B53B6D82BF78AFC875B5FD /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				0DA7B243FC05E48BFAB7D6A4 /* Orbit */,
+				F3E06B0D2578442A30B97606 /* Orbit */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		8A4AA89BC65B006DF83FB395 /* Resources */ = {
+		D5D274CD221B0837709BFA83 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9054A1A89A443F14EC894568 /* Assets.xcassets in Resources */,
+				451ACBA049063CCD5E6F1F3E /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		E02C1892394DA8134A4DB662 /* Sources */ = {
+		3A6B86C5172FE4CE3E3D570B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3EC2A16EF1862C05CAA06E64 /* App.swift in Sources */,
-				15381A0538975D4A49F81B69 /* AppFeature.swift in Sources */,
-				E49896050E160DFC5986B1E3 /* FocusRepository.swift in Sources */,
-				8B8DC6A3D6E739D3C68A15FC /* HotkeyManager.swift in Sources */,
-				38A3AC3AACB349E385FFE58F /* HotkeySettingsClient.swift in Sources */,
-				21262417AEF3AE8854EEC968 /* InactivityClient.swift in Sources */,
-				C2C9393308A4A129F7CA1912 /* MarkdownExportClient.swift in Sources */,
-				3D26E891A4156B1B02FE6821 /* MenuBarView.swift in Sources */,
-				9319F23BAD0A0779A17FE699 /* OrbitSettingsView.swift in Sources */,
-				48242D105C63BAEB48A419F6 /* Models.swift in Sources */,
-				C7EC73B9CFEA1DCA8571DDD5 /* QuickCaptureView.swift in Sources */,
-				A967BE8723A7A83EDC1D30F3 /* Schema.swift in Sources */,
-				0B4FDB73FCDD8FFFA13DA192 /* SessionWindowView.swift in Sources */,
-				121BC4B1927D4B2F390C5FF5 /* EndSessionPromptView.swift in Sources */,
-				89BA19A3AC1863F1AE62F966 /* FocusDomain.swift in Sources */,
-				9BCD0964E622813296F1494A /* HotkeyHint.swift in Sources */,
-				0E06E10A26DFF6C1BE6F70BC /* MarkdownEditingCore.swift in Sources */,
-				0881D489AFEFB15EBF6FB485 /* MarkdownFormattingBar.swift in Sources */,
-				1635FAFD0CF1540A250C833A /* MarkdownSourceTextView.swift in Sources */,
-				A692CA4C11BA7789FB309540 /* OrbitButtonStyles.swift in Sources */,
-				0C8945FFEE220C88253336FA /* QuickCapturePanelController.swift in Sources */,
+				871F2E6A55CA72D18F24302B /* App.swift in Sources */,
+				0A2AECD5A0506945CEA2427C /* AppFeature.swift in Sources */,
+				EC7C1AB9CE91BED49A451B8E /* FocusRepository.swift in Sources */,
+				129108716B6D6454E9C049FB /* HotkeyManager.swift in Sources */,
+				18A310F719E11A8F6B79C202 /* HotkeySettingsClient.swift in Sources */,
+				B7432C3712B7134C4D391820 /* InactivityClient.swift in Sources */,
+				9BBA6F384680BB482D421C91 /* MarkdownExportClient.swift in Sources */,
+				ABAD4ABEB54CA1A903279E68 /* MenuBarView.swift in Sources */,
+				45A1A95C4CCDFC5469356EF7 /* OrbitSettingsView.swift in Sources */,
+				AD9303D52E4DADB031A9A825 /* Models.swift in Sources */,
+				C319A8B9958C8FC1A90C06D4 /* QuickCaptureView.swift in Sources */,
+				E1855B23CCA3507FC83A16C9 /* Schema.swift in Sources */,
+				3C482E3B3E36C47271434CF4 /* SessionView.swift in Sources */,
+				40FB8FB982A901E2E676EF33 /* EndSessionPromptView.swift in Sources */,
+				AB233A69302E0587CA7425FE /* FocusDomain.swift in Sources */,
+				499F1D80E6D80A2FCC6045C0 /* HotkeyHint.swift in Sources */,
+				616F55B69C8965B5E86006E6 /* MarkdownEditingCore.swift in Sources */,
+				606F4B2E67606EBE2812681D /* MarkdownFormattingBar.swift in Sources */,
+				D7FFD3B06C0C0391A5EE96B9 /* MarkdownSourceTextView.swift in Sources */,
+				5ED3EBE07034644BB6CBAA6A /* OrbitButtonStyles.swift in Sources */,
+				5B99B69A79ED935EE0697E31 /* OrbitSpaceBackground.swift in Sources */,
+				66ABC5DF1AB74B171926CDC6 /* QuickCapturePanelController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		4CBB68522F3225518AD520B9 /* PBXTargetDependency */ = {
+		08EBD1B2C1C978CBC7FD9CEE /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = 677CD6CCF4B8D2935C03B0D9 /* CasePaths */;
+			productRef = DDDE93BFC2E32AF58D256595 /* Dependencies */;
 		};
-		7D3F3BBB178E0BA362DB5DBF /* PBXTargetDependency */ = {
+		18DF85531DB6BE3DEAFE39B2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = B15C3FAE01E8282D33D4802D /* StructuredQueries */;
+			productRef = 7574805B15E40ABA4DCDC906 /* StructuredQueries */;
 		};
-		C98841029E7189CF45108F81 /* PBXTargetDependency */ = {
+		2ADEFC940C2EAEEEA7C15A32 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = 85FA2F0D5908F169E51AC398 /* Dependencies */;
+			productRef = B9FDA9C6F3A1812A35121240 /* ComposableArchitecture */;
 		};
-		F9586D0C34DA392B5AA72412 /* PBXTargetDependency */ = {
+		AEC8A134C27EB9B096C87BE2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = EE9FABAD638532832138E0DD /* ComposableArchitecture */;
+			productRef = CA6F3D42B26B834405B080A9 /* SQLiteData */;
 		};
-		FC957F5E28FD90B77A97EBB0 /* PBXTargetDependency */ = {
+		B0EF052339D18B39CEE44503 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = 4E8AC76DFEA855381F6C474C /* SQLiteData */;
+			productRef = E15831EEDCEF779BEC1B2A12 /* CasePaths */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		0AE89701176723ABF5E64304 /* Debug */ = {
+		292D26E82C8965BD133233EC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
+				PRODUCT_NAME = Orbit;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		37F41FC57433478EF21E34C1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
+				PRODUCT_NAME = Orbit;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		523055AD466F972DCE274FC0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -410,7 +464,7 @@
 			};
 			name = Debug;
 		};
-		5C11419187BDA6B49C038803 /* Release */ = {
+		6DCC158CD301411130F8D928 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -465,73 +519,23 @@
 			};
 			name = Release;
 		};
-		623F66FE37817DB860850CA6 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
-				PRODUCT_NAME = Orbit;
-				SDKROOT = macosx;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
-			};
-			name = Debug;
-		};
-		F070CF481DE6913AE859B846 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
-				PRODUCT_NAME = Orbit;
-				SDKROOT = macosx;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		6299C1CDB80FBFF510D6C986 /* Build configuration list for PBXNativeTarget "Orbit" */ = {
+		7891340EB46522886342F333 /* Build configuration list for PBXNativeTarget "Orbit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F070CF481DE6913AE859B846 /* Release */,
-				623F66FE37817DB860850CA6 /* Debug */,
+				37F41FC57433478EF21E34C1 /* Release */,
+				292D26E82C8965BD133233EC /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		9283F44900B52C1118EDC287 /* Build configuration list for PBXProject "Orbit" */ = {
+		DA1103692C2E1E3D25B0AB61 /* Build configuration list for PBXProject "Orbit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0AE89701176723ABF5E64304 /* Debug */,
-				5C11419187BDA6B49C038803 /* Release */,
+				523055AD466F972DCE274FC0 /* Debug */,
+				6DCC158CD301411130F8D928 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -539,23 +543,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		18B5C7AB2465D0D73D0D5769 /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/sqlite-data";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
-		};
-		72A55E0EF5F59F737EF9E771 /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-dependencies";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.8.0;
-			};
-		};
-		8865C5935F024CEC1ACCC62E /* XCRemoteSwiftPackageReference "swift-case-paths" */ = {
+		34B7070745E7FFFE541E0C7E /* XCRemoteSwiftPackageReference "swift-case-paths" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-case-paths";
 			requirement = {
@@ -563,15 +551,7 @@
 				minimumVersion = 1.5.0;
 			};
 		};
-		909E4117947127E541BD6F08 /* XCRemoteSwiftPackageReference "swift-structured-queries" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-structured-queries";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.0;
-			};
-		};
-		944DCDE1A5B48289EA42F118 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
+		3B8C61BA604A3CCDB839E0E7 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
 			requirement = {
@@ -579,35 +559,59 @@
 				minimumVersion = 1.16.0;
 			};
 		};
+		3F444906A0EDCD50EE06433A /* XCRemoteSwiftPackageReference "swift-structured-queries" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-structured-queries";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
+		7BFEE2D00F5F7C0E799081CA /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-dependencies";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.8.0;
+			};
+		};
+		CD99FF1E5DFBADE4B7A07ED8 /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/sqlite-data";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		4E8AC76DFEA855381F6C474C /* SQLiteData */ = {
+		7574805B15E40ABA4DCDC906 /* StructuredQueries */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 18B5C7AB2465D0D73D0D5769 /* XCRemoteSwiftPackageReference "sqlite-data" */;
-			productName = SQLiteData;
-		};
-		677CD6CCF4B8D2935C03B0D9 /* CasePaths */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 8865C5935F024CEC1ACCC62E /* XCRemoteSwiftPackageReference "swift-case-paths" */;
-			productName = CasePaths;
-		};
-		85FA2F0D5908F169E51AC398 /* Dependencies */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 72A55E0EF5F59F737EF9E771 /* XCRemoteSwiftPackageReference "swift-dependencies" */;
-			productName = Dependencies;
-		};
-		B15C3FAE01E8282D33D4802D /* StructuredQueries */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 909E4117947127E541BD6F08 /* XCRemoteSwiftPackageReference "swift-structured-queries" */;
+			package = 3F444906A0EDCD50EE06433A /* XCRemoteSwiftPackageReference "swift-structured-queries" */;
 			productName = StructuredQueries;
 		};
-		EE9FABAD638532832138E0DD /* ComposableArchitecture */ = {
+		B9FDA9C6F3A1812A35121240 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 944DCDE1A5B48289EA42F118 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			package = 3B8C61BA604A3CCDB839E0E7 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
+		};
+		CA6F3D42B26B834405B080A9 /* SQLiteData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CD99FF1E5DFBADE4B7A07ED8 /* XCRemoteSwiftPackageReference "sqlite-data" */;
+			productName = SQLiteData;
+		};
+		DDDE93BFC2E32AF58D256595 /* Dependencies */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7BFEE2D00F5F7C0E799081CA /* XCRemoteSwiftPackageReference "swift-dependencies" */;
+			productName = Dependencies;
+		};
+		E15831EEDCEF779BEC1B2A12 /* CasePaths */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 34B7070745E7FFFE541E0C7E /* XCRemoteSwiftPackageReference "swift-case-paths" */;
+			productName = CasePaths;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 3A90612B159B54453185C770 /* Project object */;
+	rootObject = 5E01970D091EFAEEC26ECF7B /* Project object */;
 }

@@ -46,6 +46,9 @@ struct OrbitSettingsView: View {
         }
         .navigationSplitViewStyle(.balanced)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background {
+            OrbitSpaceBackground()
+        }
     }
 
     @ViewBuilder
@@ -95,7 +98,7 @@ struct OrbitSettingsView: View {
     }
 
     private var hotkeysSection: some View {
-        sectionCard(title: "Hotkeys") {
+        sectionCard {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Session Shortcut (Open/Start)")
                     .font(.caption)
@@ -128,7 +131,7 @@ struct OrbitSettingsView: View {
     }
 
     private var categoriesSection: some View {
-        sectionCard(title: "Categories") {
+        sectionCard {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     TextField("Add category", text: $newCategoryName)
@@ -165,7 +168,7 @@ struct OrbitSettingsView: View {
     }
 
     private var sessionsSection: some View {
-        sectionCard(title: "Sessions") {
+        sectionCard {
             VStack(alignment: .leading, spacing: 14) {
                 if sessionGroups.isEmpty {
                     Text("No sessions yet.")
@@ -281,10 +284,8 @@ struct OrbitSettingsView: View {
     }
 
     @ViewBuilder
-    private func sectionCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func sectionCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.title3.weight(.semibold))
             content()
         }
         .padding(14)
