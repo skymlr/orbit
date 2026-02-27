@@ -59,8 +59,7 @@ struct SessionView: View {
                 .help("Open Settings")
             }
         }
-        .toolbarBackground(.visible, for: .windowToolbar)
-        .toolbarBackground(.thinMaterial, for: .windowToolbar)
+        .toolbarBackground(.hidden, for: .windowToolbar)
         .task(id: store.activeSession?.id) {
             isEndSessionConfirmationPending = false
             endSessionConfirmationToken += 1

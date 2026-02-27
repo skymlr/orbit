@@ -4,6 +4,7 @@ import AppKit
 
 struct MenuBarView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -26,7 +27,9 @@ struct MenuBarView: View {
                 Spacer()
 
                 Button {
-                    openSettingsWindow()
+                    dismissMenuThen {
+                        openSettingsWindow()
+                    }
                 } label: {
                     Image(systemName: "gearshape")
                 }
@@ -51,8 +54,10 @@ struct MenuBarView: View {
 
                 HStack(spacing: 10) {
                     Button {
-                        store.send(.startSessionTapped)
-                        openSessionWindow()
+                        dismissMenuThen {
+                            store.send(.startSessionTapped)
+                            openSessionWindow()
+                        }
                     } label: {
                         hotkeyButtonLabel(
                             title: "Session",
@@ -63,7 +68,9 @@ struct MenuBarView: View {
                     .help("Open or Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))")
 
                     Button {
-                        store.send(.captureTapped)
+                        dismissMenuThen {
+                            store.send(.captureTapped)
+                        }
                     } label: {
                         hotkeyButtonLabel(
                             title: "Capture",
@@ -74,12 +81,16 @@ struct MenuBarView: View {
                 }
 
                 Button("End Session") {
-                    store.send(.endSessionTapped)
+                    dismissMenuThen {
+                        store.send(.sessionWindowEndSessionTapped)
+                    }
                 }
                 .buttonStyle(.orbitQuiet)
             } else {
                 Button {
-                    store.send(.startSessionTapped)
+                    dismissMenuThen {
+                        store.send(.startSessionTapped)
+                    }
                 } label: {
                     sessionHeroLabel(shortcut: store.hotkeys.startShortcut)
                 }
@@ -89,25 +100,27 @@ struct MenuBarView: View {
         }
         .padding(14)
         .frame(width: 360)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.ultraThinMaterial)
-        )
-        .sheet(item: $store.endSessionDraft) { draft in
-            EndSessionPromptView(
-                draft: draft,
-                onConfirm: { name, categoryID in
-                    store.send(.endSessionConfirmTapped(name: name, categoryID: categoryID))
-                },
-                onCancel: {
-                    store.send(.endSessionCancelTapped)
-                }
-            )
+        .background {
+            ZStack {
+                OrbitSpaceBackground()
+
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.ultraThinMaterial.opacity(0.44))
+
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
     }
 }
 
 private extension MenuBarView {
+    func dismissMenuThen(_ action: @escaping () -> Void) {
+        dismiss()
+        action()
+    }
+
     @ViewBuilder
     func sessionHeroLabel(shortcut: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {

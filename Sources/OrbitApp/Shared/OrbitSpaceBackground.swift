@@ -38,7 +38,7 @@ private struct OrbitStarField: View {
             let height = proxy.size.height
 
             ZStack {
-                ForEach(0..<44, id: \.self) { index in
+                ForEach(0..<160, id: \.self) { index in
                     Circle()
                         .fill(Color.white.opacity(starAlpha(for: index)))
                         .frame(width: starSize(for: index), height: starSize(for: index))
@@ -56,11 +56,11 @@ private struct OrbitStarField: View {
     }
 
     private func starSize(for index: Int) -> CGFloat {
-        1.2 + CGFloat((index * 17) % 3)
+        0.9 + CGFloat((index * 17) % 5) * 0.45
     }
 
     private func starAlpha(for index: Int) -> Double {
-        0.16 + Double((index * 29) % 36) / 120
+        0.14 + Double((index * 29) % 58) / 160
     }
 }
 
@@ -73,39 +73,33 @@ private struct OrbitMotif: View {
     }
 
     private let planets: [PlanetSpec] = [
-        PlanetSpec(orbit: 0.18, angle: 24, size: 0.016, color: Color(red: 0.65, green: 0.86, blue: 0.96)),
-        PlanetSpec(orbit: 0.29, angle: 205, size: 0.020, color: Color(red: 0.97, green: 0.71, blue: 0.44)),
-        PlanetSpec(orbit: 0.40, angle: 302, size: 0.022, color: Color(red: 0.60, green: 0.74, blue: 0.92)),
-        PlanetSpec(orbit: 0.52, angle: 132, size: 0.025, color: Color(red: 0.90, green: 0.54, blue: 0.34)),
+        PlanetSpec(orbit: 0.14, angle: 18, size: 0.010, color: Color(red: 0.67, green: 0.88, blue: 0.97)),
+        PlanetSpec(orbit: 0.19, angle: 118, size: 0.012, color: Color(red: 0.92, green: 0.61, blue: 0.42)),
+        PlanetSpec(orbit: 0.24, angle: 245, size: 0.013, color: Color(red: 0.97, green: 0.74, blue: 0.44)),
+        PlanetSpec(orbit: 0.29, angle: 312, size: 0.014, color: Color(red: 0.57, green: 0.75, blue: 0.93)),
+        PlanetSpec(orbit: 0.36, angle: 76, size: 0.015, color: Color(red: 0.63, green: 0.83, blue: 0.95)),
+        PlanetSpec(orbit: 0.43, angle: 188, size: 0.016, color: Color(red: 0.94, green: 0.66, blue: 0.49)),
+        PlanetSpec(orbit: 0.52, angle: 134, size: 0.018, color: Color(red: 0.89, green: 0.56, blue: 0.36)),
+        PlanetSpec(orbit: 0.60, angle: 286, size: 0.017, color: Color(red: 0.66, green: 0.81, blue: 0.95)),
     ]
 
     var body: some View {
         GeometryReader { proxy in
             let size = min(proxy.size.width, proxy.size.height)
-            let center = CGPoint(x: proxy.size.width * 0.5, y: proxy.size.height * 0.47)
-            let orbitFractions: [CGFloat] = [0.18, 0.29, 0.40, 0.52]
+            let center = CGPoint(x: proxy.size.width * 0.82, y: proxy.size.height * 0.80)
+            let orbitFractions: [CGFloat] = [0.34, 0.49, 0.64, 0.79]
 
             ZStack {
                 ForEach(Array(orbitFractions.enumerated()), id: \.offset) { index, fraction in
                     Circle()
                         .stroke(
                             Color(red: 0.58, green: 0.84, blue: 0.95)
-                                .opacity(0.12 + Double(index) * 0.08),
-                            lineWidth: 1.35
+                                .opacity(0.05 + Double(index) * 0.03),
+                            lineWidth: 0.8
                         )
                         .frame(width: size * fraction * 2, height: size * fraction * 2)
                         .position(center)
                 }
-
-                Circle()
-                    .fill(Color(red: 0.98, green: 0.75, blue: 0.30).opacity(0.90))
-                    .frame(width: size * 0.085, height: size * 0.085)
-                    .position(center)
-
-                Circle()
-                    .stroke(Color.white.opacity(0.20), lineWidth: 1)
-                    .frame(width: size * 0.10, height: size * 0.10)
-                    .position(center)
 
                 ForEach(Array(planets.enumerated()), id: \.offset) { _, planet in
                     Circle()

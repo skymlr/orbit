@@ -9,29 +9,51 @@ struct QuickCaptureView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let activeSession = store.activeSession {
-                Text("\(activeSession.name) • \(activeSession.categoryName)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+            HStack {
+                if let activeSession = store.activeSession {
+                    Text("\(activeSession.name) • \(activeSession.categoryName)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                
+                Spacer()
+                
+                Button {
+                    dismissCapture()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
             }
 
             MarkdownFormattingBar { action in
                 formatActionTapped(action)
             }
 
-            MarkdownSourceTextView(
-                text: $editorState.text,
-                selectionRange: $editorState.selectionRange,
-                isFocused: $isEditorFocused,
-                onSubmit: {
-                    saveButtonTapped()
-                },
-                onCancel: {
-                    dismissCapture()
+            ZStack(alignment: .topLeading) {
+                MarkdownSourceTextView(
+                    text: $editorState.text,
+                    selectionRange: $editorState.selectionRange,
+                    isFocused: $isEditorFocused,
+                    onSubmit: {
+                        saveButtonTapped()
+                    },
+                    onCancel: {
+                        dismissCapture()
+                    }
+                )
+                .frame(minHeight: 96, maxHeight: 220)
+
+                if editorState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("Capture your focus note...")
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 12)
+                        .padding(.top, 10)
+                        .allowsHitTesting(false)
                 }
-            )
-            .frame(minHeight: 96, maxHeight: 220)
+            }
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(.ultraThinMaterial)
@@ -56,7 +78,13 @@ struct QuickCaptureView: View {
             }
 
             TextField("Tags (comma-separated, optional)", text: $store.captureDraft.tags)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                )
                 .onSubmit {
                     saveButtonTapped()
                 }
@@ -65,9 +93,7 @@ struct QuickCaptureView: View {
                 Text("Priority")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
-
-                Spacer()
-
+                
                 Picker("Priority", selection: $store.captureDraft.priority) {
                     ForEach(NotePriority.allCases, id: \.self) { priority in
                         Text(priority.title).tag(priority)
@@ -75,10 +101,9 @@ struct QuickCaptureView: View {
                 }
                 .pickerStyle(.menu)
                 .labelsHidden()
-            }
 
-            HStack {
                 Spacer()
+
                 Button("Save") {
                     saveButtonTapped()
                 }
