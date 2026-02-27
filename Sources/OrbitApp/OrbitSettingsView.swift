@@ -11,6 +11,7 @@ struct OrbitSettingsView: View {
         case sessions = "Sessions"
         case categories = "Categories"
         case hotkeys = "Hotkeys"
+        case about = "About"
 
         var id: String { rawValue }
 
@@ -22,6 +23,8 @@ struct OrbitSettingsView: View {
                 return "folder"
             case .hotkeys:
                 return "keyboard"
+            case .about:
+                return "info.circle"
             }
         }
     }
@@ -61,6 +64,8 @@ struct OrbitSettingsView: View {
             categoriesSection
         case .hotkeys:
             hotkeysSection
+        case .about:
+            aboutSection
         }
     }
 
@@ -222,6 +227,50 @@ struct OrbitSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
+    private var aboutSection: some View {
+        sectionCard {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Orbit: A Focus Manager")
+                        .font(.title2.weight(.bold))
+                    Text("Version \(appVersionString)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text(bundleIdentifier)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Built for focused work on macOS.")
+                        .font(.body)
+
+                    Text("Features")
+                        .font(.headline.weight(.semibold))
+                    Text("• Menu bar-first session management")
+                    Text("• Quick capture with markdown notes")
+                    Text("• Tags, priorities, categories, and session exports")
+                    Text("• Local-first SQLite persistence")
+                }
+                .font(.subheadline)
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Current shortcuts")
+                        .font(.headline.weight(.semibold))
+                    Text("Open/Start Session: \(store.settings.startShortcut)")
+                    Text("Quick Capture: \(store.settings.captureShortcut)")
+                }
+                .font(.subheadline)
+            }
+        }
+        .frame(maxWidth: sectionMaxWidth(for: .about))
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
     private var historicalSessions: [FocusSessionRecord] {
         store.settings.sessions.filter { session in
             session.endedAt != nil && session.id != store.activeSession?.id
@@ -309,6 +358,26 @@ struct OrbitSettingsView: View {
 
     private func sectionMaxWidth(for section: SettingsSection) -> CGFloat {
         SectionWidth.section
+    }
+
+    private var appVersionString: String {
+        let shortVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+
+        switch (shortVersion, build) {
+        case let (short?, build?) where !short.isEmpty && !build.isEmpty:
+            return "\(short) (\(build))"
+        case let (short?, _) where !short.isEmpty:
+            return short
+        case let (_, build?) where !build.isEmpty:
+            return build
+        default:
+            return "Development"
+        }
+    }
+
+    private var bundleIdentifier: String {
+        Bundle.main.bundleIdentifier ?? "OrbitApp"
     }
 
     @ViewBuilder
