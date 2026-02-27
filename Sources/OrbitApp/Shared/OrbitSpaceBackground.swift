@@ -66,30 +66,32 @@ private struct OrbitStarField: View {
 
 private struct OrbitMotif: View {
     private struct PlanetSpec {
-        var orbit: CGFloat
+        var orbitIndex: Int
         var angle: CGFloat
         var size: CGFloat
         var color: Color
     }
 
+    private let orbitFractions: [CGFloat] = [0.34, 0.49, 0.64, 0.79]
     private let planets: [PlanetSpec] = [
-        PlanetSpec(orbit: 0.14, angle: 18, size: 0.010, color: Color(red: 0.67, green: 0.88, blue: 0.97)),
-        PlanetSpec(orbit: 0.19, angle: 118, size: 0.012, color: Color(red: 0.92, green: 0.61, blue: 0.42)),
-        PlanetSpec(orbit: 0.24, angle: 245, size: 0.013, color: Color(red: 0.97, green: 0.74, blue: 0.44)),
-        PlanetSpec(orbit: 0.29, angle: 312, size: 0.014, color: Color(red: 0.57, green: 0.75, blue: 0.93)),
-        PlanetSpec(orbit: 0.36, angle: 76, size: 0.015, color: Color(red: 0.63, green: 0.83, blue: 0.95)),
-        PlanetSpec(orbit: 0.43, angle: 188, size: 0.016, color: Color(red: 0.94, green: 0.66, blue: 0.49)),
-        PlanetSpec(orbit: 0.52, angle: 134, size: 0.018, color: Color(red: 0.89, green: 0.56, blue: 0.36)),
-        PlanetSpec(orbit: 0.60, angle: 286, size: 0.017, color: Color(red: 0.66, green: 0.81, blue: 0.95)),
+        PlanetSpec(orbitIndex: 0, angle: 32, size: 0.011, color: Color(red: 0.67, green: 0.88, blue: 0.97)),
+        PlanetSpec(orbitIndex: 0, angle: 228, size: 0.010, color: Color(red: 0.92, green: 0.61, blue: 0.42)),
+        PlanetSpec(orbitIndex: 1, angle: 106, size: 0.012, color: Color(red: 0.97, green: 0.74, blue: 0.44)),
+        PlanetSpec(orbitIndex: 1, angle: 304, size: 0.013, color: Color(red: 0.57, green: 0.75, blue: 0.93)),
+        PlanetSpec(orbitIndex: 2, angle: 64, size: 0.015, color: Color(red: 0.63, green: 0.83, blue: 0.95)),
+        PlanetSpec(orbitIndex: 2, angle: 176, size: 0.014, color: Color(red: 0.94, green: 0.66, blue: 0.49)),
+        PlanetSpec(orbitIndex: 3, angle: 136, size: 0.017, color: Color(red: 0.89, green: 0.56, blue: 0.36)),
+        PlanetSpec(orbitIndex: 3, angle: 286, size: 0.016, color: Color(red: 0.66, green: 0.81, blue: 0.95)),
     ]
 
     var body: some View {
         GeometryReader { proxy in
             let size = min(proxy.size.width, proxy.size.height)
             let center = CGPoint(x: proxy.size.width * 0.82, y: proxy.size.height * 0.80)
-            let orbitFractions: [CGFloat] = [0.34, 0.49, 0.64, 0.79]
 
             ZStack {
+                sun(center: center, size: size)
+
                 ForEach(Array(orbitFractions.enumerated()), id: \.offset) { index, fraction in
                     Circle()
                         .stroke(
@@ -102,13 +104,54 @@ private struct OrbitMotif: View {
                 }
 
                 ForEach(Array(planets.enumerated()), id: \.offset) { _, planet in
+                    let orbitIndex = min(max(planet.orbitIndex, 0), orbitFractions.count - 1)
+                    let radius = size * orbitFractions[orbitIndex]
                     Circle()
                         .fill(planet.color.opacity(0.92))
                         .frame(width: size * planet.size, height: size * planet.size)
-                        .position(pointOnOrbit(center: center, radius: size * planet.orbit, angleDegrees: planet.angle))
+                        .position(pointOnOrbit(center: center, radius: radius, angleDegrees: planet.angle))
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func sun(center: CGPoint, size: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color(red: 1.00, green: 0.83, blue: 0.46).opacity(0.55),
+                            Color(red: 0.96, green: 0.63, blue: 0.26).opacity(0.22),
+                            .clear
+                        ],
+                        center: .center,
+                        startRadius: 2,
+                        endRadius: size * 0.13
+                    )
+                )
+                .frame(width: size * 0.30, height: size * 0.30)
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color(red: 1.00, green: 0.93, blue: 0.70),
+                            Color(red: 1.00, green: 0.74, blue: 0.39)
+                        ],
+                        center: .center,
+                        startRadius: 1,
+                        endRadius: size * 0.031
+                    )
+                )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.35), lineWidth: 0.8)
+                )
+                .frame(width: size * 0.062, height: size * 0.062)
+        }
+        .position(center)
     }
 
     private func pointOnOrbit(center: CGPoint, radius: CGFloat, angleDegrees: CGFloat) -> CGPoint {

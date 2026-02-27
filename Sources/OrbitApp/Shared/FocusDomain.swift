@@ -74,6 +74,18 @@ enum FocusDefaults {
     static let focusCategoryName = "focus"
     static let focusCategoryColorHex = "#00B5FF"
     static let defaultCategoryColorHex = "#58B5FF"
+    static let categoryColorOptions: [String] = [
+        "#00B5FF",
+        "#58B5FF",
+        "#38D39F",
+        "#7ED957",
+        "#F2C94C",
+        "#FF9F1C",
+        "#FF6B6B",
+        "#EF476F",
+        "#B388FF",
+        "#8D99AE",
+    ]
 
     static func defaultSessionName(startedAt: Date) -> String {
         let day = Calendar.current.component(.day, from: startedAt)

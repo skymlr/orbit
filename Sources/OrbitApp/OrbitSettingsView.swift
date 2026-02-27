@@ -37,7 +37,7 @@ struct OrbitSettingsView: View {
     @Environment(\.openWindow) private var openWindow
     @State private var selectedSection: SettingsSection = .sessions
     @State private var newCategoryName = ""
-    @State private var newCategoryColor = Color(categoryHex: FocusDefaults.defaultCategoryColorHex)
+    @State private var newCategoryColorHex = FocusDefaults.defaultCategoryColorHex
 
     var body: some View {
         NavigationSplitView {
@@ -134,21 +134,18 @@ struct OrbitSettingsView: View {
     private var categoriesSection: some View {
         sectionCard {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    TextField("Add category", text: $newCategoryName)
-                        .textFieldStyle(.roundedBorder)
-                    ColorPicker(
-                        "",
-                        selection: $newCategoryColor,
-                        supportsOpacity: false
-                    )
-                    .labelsHidden()
-                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        TextField("Add category", text: $newCategoryName)
+                            .textFieldStyle(.roundedBorder)
 
-                    Button("Add") {
-                        addCategoryButtonTapped()
+                        Button("Add") {
+                            addCategoryButtonTapped()
+                        }
+                        .buttonStyle(.orbitSecondary)
                     }
-                    .buttonStyle(.orbitSecondary)
+
+                    CategoryColorPalettePicker(selectedHex: $newCategoryColorHex)
                 }
 
                 ForEach(store.settings.categories) { category in
@@ -267,9 +264,9 @@ struct OrbitSettingsView: View {
         let trimmedName = newCategoryName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
 
-        store.send(.settingsAddCategoryTapped(trimmedName, newCategoryColor.categoryHex))
+        store.send(.settingsAddCategoryTapped(trimmedName, newCategoryColorHex))
         newCategoryName = ""
-        newCategoryColor = Color(categoryHex: FocusDefaults.defaultCategoryColorHex)
+        newCategoryColorHex = FocusDefaults.defaultCategoryColorHex
     }
 
     private func exportSessionButtonTapped(sessionID: UUID) {
@@ -329,32 +326,72 @@ private struct CategoryRow: View {
     let onDelete: () -> Void
 
     @State private var name = ""
-    @State private var color = Color(categoryHex: FocusDefaults.defaultCategoryColorHex)
+    @State private var selectedColorHex = FocusDefaults.defaultCategoryColorHex
 
     var body: some View {
-        HStack(spacing: 8) {
-            TextField("Category", text: $name)
-                .textFieldStyle(.roundedBorder)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                TextField("Category", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                    .disabled(category.id == FocusDefaults.focusCategoryID)
+
+                Button("Save") {
+                    onRename(name, selectedColorHex)
+                }
+                .buttonStyle(.orbitSecondary)
+
+                Button("Delete", role: .destructive) {
+                    onDelete()
+                }
+                .buttonStyle(.orbitDestructive)
                 .disabled(category.id == FocusDefaults.focusCategoryID)
-
-            ColorPicker("", selection: $color, supportsOpacity: false)
-                .labelsHidden()
-                .frame(width: 28)
-
-            Button("Save") {
-                onRename(name, color.categoryHex)
             }
-            .buttonStyle(.orbitSecondary)
 
-            Button("Delete", role: .destructive) {
-                onDelete()
-            }
-            .buttonStyle(.orbitDestructive)
-            .disabled(category.id == FocusDefaults.focusCategoryID)
+            CategoryColorPalettePicker(selectedHex: $selectedColorHex)
         }
         .task(id: category.id) {
             name = category.name
-            color = Color(categoryHex: category.colorHex)
+            let normalized = FocusDefaults.normalizedCategoryColorHex(category.colorHex)
+            if FocusDefaults.categoryColorOptions.contains(normalized) {
+                selectedColorHex = normalized
+            } else {
+                selectedColorHex = FocusDefaults.defaultCategoryColorHex
+            }
+        }
+    }
+}
+
+private struct CategoryColorPalettePicker: View {
+    @Binding var selectedHex: String
+
+    var body: some View {
+        LazyVGrid(
+            columns: Array(repeating: GridItem(.fixed(24), spacing: 8), count: 10),
+            alignment: .leading,
+            spacing: 8
+        ) {
+            ForEach(FocusDefaults.categoryColorOptions, id: \.self) { colorHex in
+                let isSelected = selectedHex == colorHex
+
+                Button {
+                    selectedHex = colorHex
+                } label: {
+                    Circle()
+                        .fill(Color(categoryHex: colorHex))
+                        .frame(width: 18, height: 18)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(isSelected ? 0.95 : 0.45), lineWidth: isSelected ? 2 : 1)
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(Color.black.opacity(0.22), lineWidth: 0.5)
+                        )
+                }
+                .buttonStyle(.plain)
+                .help(colorHex)
+                .accessibilityLabel("Category color \(colorHex)")
+            }
         }
     }
 }
@@ -524,20 +561,5 @@ private extension Color {
         let green = Double((value >> 8) & 0xFF) / 255.0
         let blue = Double(value & 0xFF) / 255.0
         self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
-    }
-
-    var categoryHex: String {
-        let converted = NSColor(self).usingColorSpace(.sRGB)
-        let resolved = converted ?? NSColor(
-            calibratedRed: 88 / 255,
-            green: 181 / 255,
-            blue: 255 / 255,
-            alpha: 1
-        )
-
-        let red = Int(round(resolved.redComponent * 255))
-        let green = Int(round(resolved.greenComponent * 255))
-        let blue = Int(round(resolved.blueComponent * 255))
-        return String(format: "#%02X%02X%02X", red, green, blue)
     }
 }
