@@ -36,7 +36,7 @@ struct OrbitMenuBarApp: App {
 
         Window("Quick Capture", id: OrbitWindowID.capture) {
             if store.windowDestinations.contains(.captureWindow) {
-                FloatingPaletteView(store: store)
+                QuickCaptureView(store: store)
                     .onDisappear {
                         store.send(.captureWindowClosed)
                     }
@@ -50,7 +50,7 @@ struct OrbitMenuBarApp: App {
 
         Window("Orbit Session", id: OrbitWindowID.session) {
             if store.windowDestinations.contains(.sessionWindow) {
-                SessionWindowView(store: store)
+                SessionView(store: store)
                     .onDisappear {
                         store.send(.sessionWindowClosed)
                     }

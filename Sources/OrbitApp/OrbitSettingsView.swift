@@ -186,7 +186,9 @@ struct OrbitSettingsView: View {
                     Button("Export All Sessions") {
                         exportAllSessionsButtonTapped()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.plain)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
                     .disabled(store.settings.sessions.isEmpty)
                 }
             }

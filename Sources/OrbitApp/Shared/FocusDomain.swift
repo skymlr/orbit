@@ -76,7 +76,11 @@ enum FocusDefaults {
     static let defaultCategoryColorHex = "#58B5FF"
 
     static func defaultSessionName(startedAt: Date) -> String {
-        sessionNameFormatter.string(from: startedAt)
+        let day = Calendar.current.component(.day, from: startedAt)
+        let year = Calendar.current.component(.year, from: startedAt)
+        let month = sessionNameMonthFormatter.string(from: startedAt)
+        let time = sessionNameTimeFormatter.string(from: startedAt)
+        return "\(month) \(day)\(ordinalSuffix(for: day)), \(year) @ \(time)"
     }
 
     static func normalizedCategoryName(_ value: String) -> String {
@@ -116,11 +120,33 @@ enum FocusDefaults {
         "\(exportFileFormatter.string(from: session.startedAt))-\(session.id.uuidString.lowercased()).md"
     }
 
-    private static let sessionNameFormatter: DateFormatter = {
+    private static func ordinalSuffix(for day: Int) -> String {
+        let twoDigits = day % 100
+        if (11...13).contains(twoDigits) {
+            return "th"
+        }
+
+        switch day % 10 {
+        case 1: return "st"
+        case 2: return "nd"
+        case 3: return "rd"
+        default: return "th"
+        }
+    }
+
+    private static let sessionNameMonthFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        formatter.dateFormat = "MMMM"
+        return formatter
+    }()
+
+    private static let sessionNameTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "h:mma"
         return formatter
     }()
 

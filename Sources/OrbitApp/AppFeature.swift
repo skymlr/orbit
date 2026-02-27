@@ -87,6 +87,7 @@ struct AppFeature {
         case sessionRenameTapped(String)
         case sessionCategoryChangedTapped(UUID)
         case sessionNoteSaveTapped(UUID, String, [String], NotePriority)
+        case sessionNoteTaskToggleTapped(UUID, Int)
         case sessionNoteDeleteTapped(UUID)
 
         case endSessionConfirmTapped(name: String, categoryID: UUID?)
@@ -336,6 +337,22 @@ struct AppFeature {
 
                 return .run { send in
                     _ = try? await focusRepository.updateNote(noteID, text, priority, tags, now)
+                    let active = try? await focusRepository.loadActiveSession()
+                    await send(.loadActiveSessionResponse(active))
+                    await send(.settingsRefreshTapped)
+                }
+
+            case let .sessionNoteTaskToggleTapped(noteID, lineIndex):
+                guard state.activeSession != nil else { return .none }
+                guard let draft = state.noteDrafts[id: noteID] else { return .none }
+
+                let toggledText = MarkdownEditingCore.toggleTask(in: draft.text, lineIndex: lineIndex)
+                guard toggledText != draft.text else { return .none }
+
+                state.noteDrafts[id: noteID]?.text = toggledText
+
+                return .run { send in
+                    _ = try? await focusRepository.updateNote(noteID, toggledText, draft.priority, draft.tags, now)
                     let active = try? await focusRepository.loadActiveSession()
                     await send(.loadActiveSessionResponse(active))
                     await send(.settingsRefreshTapped)

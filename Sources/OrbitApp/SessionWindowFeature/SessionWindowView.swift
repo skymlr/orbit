@@ -1,7 +1,8 @@
 import ComposableArchitecture
+import Foundation
 import SwiftUI
 
-struct SessionWindowView: View {
+struct SessionView: View {
     private enum Layout {
         static let contentMaxWidth: CGFloat = 700
     }
@@ -36,6 +37,9 @@ struct SessionWindowView: View {
                                     draft: draft,
                                     onSave: { text, tags, priority in
                                         store.send(.sessionNoteSaveTapped(draft.id, text, tags, priority))
+                                    },
+                                    onToggleTask: { lineIndex in
+                                        store.send(.sessionNoteTaskToggleTapped(draft.id, lineIndex))
                                     },
                                     onDelete: {
                                         store.send(.sessionNoteDeleteTapped(draft.id))
@@ -275,28 +279,36 @@ private struct SessionHeader: View {
 private struct NoteEditorRow: View {
     let draft: AppFeature.State.NoteDraft
     let onSave: (String, [String], NotePriority) -> Void
+    let onToggleTask: (Int) -> Void
     let onDelete: () -> Void
 
     @State private var isEditingText = false
     @State private var isAddingTag = false
     @State private var isDeleteConfirmationPending = false
     @State private var deleteConfirmationToken = 0
-    @State private var text: String
+    @State private var editorState: MarkdownEditorState
     @State private var tags: [String]
     @State private var pendingTag = ""
     @State private var priority: NotePriority
-    @FocusState private var isTextFieldFocused: Bool
+    @State private var isTextEditorFocused = false
     @FocusState private var isTagFieldFocused: Bool
 
     init(
         draft: AppFeature.State.NoteDraft,
         onSave: @escaping (String, [String], NotePriority) -> Void,
+        onToggleTask: @escaping (Int) -> Void,
         onDelete: @escaping () -> Void
     ) {
         self.draft = draft
         self.onSave = onSave
+        self.onToggleTask = onToggleTask
         self.onDelete = onDelete
-        _text = State(initialValue: draft.text)
+        _editorState = State(
+            initialValue: MarkdownEditorState(
+                text: draft.text,
+                selectionRange: NSRange(location: (draft.text as NSString).length, length: 0)
+            )
+        )
         _tags = State(initialValue: draft.tags)
         _priority = State(initialValue: draft.priority)
     }
@@ -339,26 +351,31 @@ private struct NoteEditorRow: View {
             }
 
             if isEditingText {
-                TextField("Note text", text: $text, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(2 ... 6)
-                    .focused($isTextFieldFocused)
-                    .onKeyPress(.return, phases: .down) { keyPress in
-                        if keyPress.modifiers.contains(.shift) {
-                            text.append("\n")
-                            return .handled
-                        }
-                        return .ignored
-                    }
-                    .onSubmit {
+                MarkdownFormattingBar { action in
+                    formatActionTapped(action)
+                }
+
+                MarkdownSourceTextView(
+                    text: $editorState.text,
+                    selectionRange: $editorState.selectionRange,
+                    isFocused: $isTextEditorFocused,
+                    onSubmit: {
                         saveTextEditing()
-                    }
-                    .onExitCommand {
+                    },
+                    onCancel: {
                         cancelTextEditing()
                     }
+                )
+                .frame(minHeight: 96, maxHeight: 220)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                )
             } else {
-                Text(text)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                MarkdownRenderedNoteView(
+                    markdown: editorState.text,
+                    onToggleTask: onToggleTask
+                )
                     .padding(10)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -449,7 +466,8 @@ private struct NoteEditorRow: View {
         }
         .task(id: draft) {
             if !isEditingText {
-                text = draft.text
+                editorState.text = draft.text
+                editorState.selectionRange = NSRange(location: (draft.text as NSString).length, length: 0)
                 priority = draft.priority
             }
             tags = draft.tags
@@ -472,7 +490,7 @@ private struct NoteEditorRow: View {
     }
 
     private var trimmedText: String {
-        text.trimmingCharacters(in: .whitespacesAndNewlines)
+        editorState.text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var trimmedPendingTag: String {
@@ -482,7 +500,7 @@ private struct NoteEditorRow: View {
     private func beginTextEditing() {
         isEditingText = true
         DispatchQueue.main.async {
-            isTextFieldFocused = true
+            isTextEditorFocused = true
         }
     }
 
@@ -490,17 +508,30 @@ private struct NoteEditorRow: View {
         guard !trimmedText.isEmpty else { return }
         persistChanges()
         isEditingText = false
+        isTextEditorFocused = false
     }
 
     private func cancelTextEditing() {
-        text = draft.text
+        editorState.text = draft.text
+        editorState.selectionRange = NSRange(location: (draft.text as NSString).length, length: 0)
         isEditingText = false
+        isTextEditorFocused = false
     }
 
     private func prioritySelected(_ newPriority: NotePriority) {
         guard priority != newPriority else { return }
         priority = newPriority
         persistChanges()
+    }
+
+    private func formatActionTapped(_ action: MarkdownFormatAction) {
+        let result = MarkdownEditingCore.apply(
+            action: action,
+            to: editorState.text,
+            selection: editorState.selectionRange
+        )
+        editorState.text = result.text
+        editorState.selectionRange = result.selection
     }
 
     private func addTag() {
@@ -538,8 +569,7 @@ private struct NoteEditorRow: View {
 
     private func persistChanges() {
         guard !trimmedText.isEmpty else { return }
-        text = trimmedText
-        onSave(trimmedText, tags, priority)
+        onSave(editorState.text, tags, priority)
     }
 
     private func scheduleDeleteConfirmationReset() {
@@ -549,6 +579,62 @@ private struct NoteEditorRow: View {
             guard token == deleteConfirmationToken, isDeleteConfirmationPending else { return }
             isDeleteConfirmationPending = false
         }
+    }
+}
+
+private struct MarkdownRenderedNoteView: View {
+    let markdown: String
+    let onToggleTask: (Int) -> Void
+
+    var body: some View {
+        let taskLines = MarkdownEditingCore.taskLines(in: markdown)
+
+        if taskLines.isEmpty {
+            Text(MarkdownAttributedRenderer.renderAttributed(markdown: markdown))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+            let tasksByLine = Dictionary(uniqueKeysWithValues: taskLines.map { ($0.lineIndex, $0) })
+
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(Array(lines.enumerated()), id: \.offset) { offset, line in
+                    if let task = tasksByLine[offset] {
+                        taskLineRow(task)
+                    } else if line.isEmpty {
+                        Text(" ")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        Text(MarkdownAttributedRenderer.renderAttributed(markdown: line))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private func taskLineRow(_ task: MarkdownTaskLine) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Button {
+                onToggleTask(task.lineIndex)
+            } label: {
+                Image(systemName: task.isChecked ? "checkmark.square.fill" : "square")
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(task.isChecked ? .green : .secondary)
+
+            Text(MarkdownAttributedRenderer.renderAttributed(markdown: task.lineText.isEmpty ? " " : task.lineText))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.leading, indentationWidth(for: task.indentation))
+    }
+
+    private func indentationWidth(for indentation: String) -> CGFloat {
+        let columns = indentation.reduce(0) { partialResult, character in
+            partialResult + (character == "\t" ? 4 : 1)
+        }
+        return CGFloat(columns) * 6
     }
 }
 
