@@ -22,6 +22,7 @@ struct AppFeature {
             var text = ""
             var tags = ""
             var priority: NotePriority = .none
+            var editingNoteID: UUID?
         }
 
         struct EndSessionDraft: Equatable, Identifiable {
@@ -85,6 +86,7 @@ struct AppFeature {
 
         case captureSubmitTapped
         case sessionAddNoteTapped
+        case sessionNoteEditTapped(UUID)
         case sessionRenameTapped(String)
         case sessionCategoryChangedTapped(UUID)
         case sessionNoteSaveTapped(UUID, String, [String], NotePriority)
@@ -299,18 +301,34 @@ struct AppFeature {
                 let text = state.captureDraft.text
                 let tags = FocusDefaults.parseTagInput(state.captureDraft.tags)
                 let priority = state.captureDraft.priority
+                let editingNoteID = state.captureDraft.editingNoteID
 
                 state.captureDraft = State.CaptureDraft()
                 state.windowDestinations.remove(.captureWindow)
 
                 return .run { send in
-                    _ = try? await focusRepository.createNote(activeSession.id, text, priority, tags, now)
+                    if let noteID = editingNoteID {
+                        _ = try? await focusRepository.updateNote(noteID, text, priority, tags, now)
+                    } else {
+                        _ = try? await focusRepository.createNote(activeSession.id, text, priority, tags, now)
+                    }
                     let active = try? await focusRepository.loadActiveSession()
                     await send(.loadActiveSessionResponse(active))
                     await send(.settingsRefreshTapped)
                 }
 
             case .sessionAddNoteTapped:
+                state.captureDraft = State.CaptureDraft()
+                state.windowDestinations.insert(.captureWindow)
+                return .none
+
+            case let .sessionNoteEditTapped(noteID):
+                guard let draft = state.noteDrafts[id: noteID] else { return .none }
+
+                state.captureDraft.text = draft.text
+                state.captureDraft.tags = draft.tags.joined(separator: ", ")
+                state.captureDraft.priority = draft.priority
+                state.captureDraft.editingNoteID = noteID
                 state.windowDestinations.insert(.captureWindow)
                 return .none
 
@@ -500,7 +518,9 @@ struct AppFeature {
                 }
 
             case let .settingsExportAllTapped(directoryURL):
-                let sessionIDs = state.settings.sessions.map(\.id)
+                let sessionIDs = state.settings.sessions
+                    .filter { $0.endedAt != nil }
+                    .map(\.id)
                 guard !sessionIDs.isEmpty else {
                     state.settings.statusMessage = "No sessions available to export."
                     return .none

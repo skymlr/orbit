@@ -16,9 +16,21 @@ struct QuickCaptureView: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
-                
+
+                if store.captureDraft.editingNoteID != nil {
+                    Text("Editing note")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                        )
+                }
+
                 Spacer()
-                
+
                 Button {
                     dismissCapture()
                 } label: {
@@ -104,7 +116,7 @@ struct QuickCaptureView: View {
 
                 Spacer()
 
-                Button("Save") {
+                Button(saveButtonTitle) {
                     saveButtonTapped()
                 }
                 .buttonStyle(.orbitPrimary)
@@ -116,7 +128,10 @@ struct QuickCaptureView: View {
         .task {
             editorState.text = store.captureDraft.text
             editorState.selectionRange = NSRange(location: (store.captureDraft.text as NSString).length, length: 0)
-            isEditorFocused = true
+            requestEditorFocus()
+        }
+        .onChange(of: store.captureDraft.editingNoteID) { _, _ in
+            requestEditorFocus()
         }
         .onChange(of: editorState.text) { _, newValue in
             store.captureDraft.text = newValue
@@ -145,6 +160,10 @@ struct QuickCaptureView: View {
         !editorState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    private var saveButtonTitle: String {
+        store.captureDraft.editingNoteID == nil ? "Save" : "Save Changes"
+    }
+
     private func formatActionTapped(_ action: MarkdownFormatAction) {
         let result = MarkdownEditingCore.apply(
             action: action,
@@ -163,5 +182,15 @@ struct QuickCaptureView: View {
 
     private func dismissCapture() {
         store.send(.captureWindowClosed)
+    }
+
+    private func requestEditorFocus() {
+        isEditorFocused = false
+        DispatchQueue.main.async {
+            isEditorFocused = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            isEditorFocused = true
+        }
     }
 }

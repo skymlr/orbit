@@ -126,8 +126,8 @@ struct SessionView: View {
     private func noteRow(for draft: AppFeature.State.NoteDraft) -> some View {
         NoteEditorRow(
             draft: draft,
-            onSave: { text, tags, priority in
-                store.send(.sessionNoteSaveTapped(draft.id, text, tags, priority))
+            onEdit: {
+                store.send(.sessionNoteEditTapped(draft.id))
             },
             onToggleTask: { lineIndex in
                 store.send(.sessionNoteTaskToggleTapped(draft.id, lineIndex))
@@ -135,11 +135,6 @@ struct SessionView: View {
             onDelete: {
                 store.send(.sessionNoteDeleteTapped(draft.id))
             }
-        )
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.thinMaterial)
         )
     }
 
@@ -305,322 +300,141 @@ private struct SessionHeader: View {
 
 private struct NoteEditorRow: View {
     let draft: AppFeature.State.NoteDraft
-    let onSave: (String, [String], NotePriority) -> Void
+    let onEdit: () -> Void
     let onToggleTask: (Int) -> Void
     let onDelete: () -> Void
 
-    @State private var isEditingText = false
-    @State private var isAddingTag = false
     @State private var isDeleteConfirmationPending = false
     @State private var deleteConfirmationToken = 0
-    @State private var editorState: MarkdownEditorState
-    @State private var tags: [String]
-    @State private var pendingTag = ""
-    @State private var priority: NotePriority
-    @State private var isTextEditorFocused = false
-    @FocusState private var isTagFieldFocused: Bool
 
     init(
         draft: AppFeature.State.NoteDraft,
-        onSave: @escaping (String, [String], NotePriority) -> Void,
+        onEdit: @escaping () -> Void,
         onToggleTask: @escaping (Int) -> Void,
         onDelete: @escaping () -> Void
     ) {
         self.draft = draft
-        self.onSave = onSave
+        self.onEdit = onEdit
         self.onToggleTask = onToggleTask
         self.onDelete = onDelete
-        _editorState = State(
-            initialValue: MarkdownEditorState(
-                text: draft.text,
-                selectionRange: NSRange(location: (draft.text as NSString).length, length: 0)
-            )
-        )
-        _tags = State(initialValue: draft.tags)
-        _priority = State(initialValue: draft.priority)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            headerRow
-            textSection
-            metadataSection
-        }
-        .task(id: draft) {
-            if !isEditingText {
-                editorState.text = draft.text
-                editorState.selectionRange = NSRange(location: (draft.text as NSString).length, length: 0)
-                priority = draft.priority
-            }
-            tags = draft.tags
-            isDeleteConfirmationPending = false
-            deleteConfirmationToken += 1
-        }
-    }
+        VStack(alignment: .leading, spacing: 12) {
+            MarkdownRenderedNoteView(
+                markdown: draft.text,
+                onToggleTask: onToggleTask
+            )
+            .font(.body)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-    private var headerRow: some View {
-        HStack {
-            Text(draft.createdAt.formatted(date: .omitted, time: .shortened))
-                .font(.headline.weight(.semibold))
+            tagsSection
 
-            Spacer()
+            HStack(alignment: .center, spacing: 10) {
+                Text(draft.createdAt.formatted(date: .omitted, time: .shortened))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
 
-            if isEditingText {
-                Button("Save") {
-                    saveTextEditing()
-                }
-                .buttonStyle(.orbitSecondary)
-                .disabled(trimmedText.isEmpty)
-            }
+                Spacer()
 
-            if isDeleteConfirmationPending {
-                Button("Confirm Deletion", role: .destructive) {
-                    onDelete()
-                }
-                .buttonStyle(.orbitDestructive)
-            } else {
                 Button {
-                    isDeleteConfirmationPending = true
-                    scheduleDeleteConfirmationReset()
+                    onEdit()
                 } label: {
-                    Image(systemName: "trash")
+                    Image(systemName: "pencil")
                         .font(.subheadline.weight(.semibold))
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
-                .accessibilityLabel("Delete note")
+                .accessibilityLabel("Edit note")
+                .help("Edit note")
+
+                deleteAction
             }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(noteBackgroundColor(for: draft.priority))
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(noteBorderColor(for: draft.priority), lineWidth: 1.2)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .task(id: draft.id) {
+            resetDeleteConfirmation()
         }
     }
 
     @ViewBuilder
-    private var textSection: some View {
-        if isEditingText {
-            MarkdownFormattingBar { action in
-                formatActionTapped(action)
-            }
-
-            MarkdownSourceTextView(
-                text: $editorState.text,
-                selectionRange: $editorState.selectionRange,
-                isFocused: $isTextEditorFocused,
-                onSubmit: {
-                    saveTextEditing()
-                },
-                onCancel: {
-                    cancelTextEditing()
+    private var tagsSection: some View {
+        if !draft.tags.isEmpty {
+            ScrollView(.horizontal) {
+                HStack(spacing: 6) {
+                    ForEach(draft.tags, id: \.self) { tag in
+                        ReadOnlyTagChip(tag: tag)
+                    }
                 }
-            )
-            .frame(minHeight: 96, maxHeight: 220)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
+                .padding(.vertical, 2)
+            }
+            .scrollIndicators(.hidden)
+        }
+    }
+
+    @ViewBuilder
+    private var deleteAction: some View {
+        if isDeleteConfirmationPending {
+            Button("Confirm Deletion", role: .destructive) {
+                onDelete()
+            }
+            .buttonStyle(.orbitDestructive)
         } else {
-            MarkdownRenderedNoteView(
-                markdown: editorState.text,
-                onToggleTask: onToggleTask
-            )
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .onTapGesture {
-                beginTextEditing()
+            Button {
+                isDeleteConfirmationPending = true
+                scheduleDeleteConfirmationReset()
+            } label: {
+                Image(systemName: "trash")
+                    .font(.subheadline.weight(.semibold))
             }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .accessibilityLabel("Delete note")
         }
     }
 
-    private var metadataSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            tagsRow
-            if isAddingTag {
-                addTagRow
-            }
-        }
-    }
-
-    private var tagsRow: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 8) {
-                priorityMenu
-
-                if tags.isEmpty {
-                    Text("No tags")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                ForEach(tags, id: \.self) { tag in
-                    TagChip(tag: tag) {
-                        removeTag(tag)
-                    }
-                }
-
-                Button {
-                    addTagButtonTapped()
-                } label: {
-                    Image(systemName: isAddingTag ? "xmark.circle.fill" : "plus.circle.fill")
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 2)
-        }
-    }
-
-    private var priorityMenu: some View {
-        Menu {
-            ForEach(NotePriority.allCases, id: \.self) { item in
-                Button {
-                    prioritySelected(item)
-                } label: {
-                    if item == priority {
-                        Label(item.title, systemImage: "checkmark")
-                    } else {
-                        Text(item.title)
-                    }
-                }
-            }
-        } label: {
-            priorityLabel(for: priority)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Change priority")
-    }
-
-    private func priorityLabel(for priority: NotePriority) -> some View {
-        HStack(spacing: 6) {
-            Text(priority.title.uppercased())
-                .font(.caption)
-            Image(systemName: "chevron.down")
-                .font(.caption2.weight(.semibold))
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(
-            Capsule()
-                .fill(priorityColor(for: priority).opacity(0.2))
-        )
-        .overlay(
-            Capsule()
-                .stroke(priorityColor(for: priority).opacity(0.7), lineWidth: 1)
-        )
-    }
-
-    private var addTagRow: some View {
-        HStack(spacing: 8) {
-            TextField("New tag", text: $pendingTag)
-                .textFieldStyle(.roundedBorder)
-                .focused($isTagFieldFocused)
-                .onSubmit {
-                    addTag()
-                }
-
-            Button("Add") {
-                addTag()
-            }
-            .buttonStyle(.orbitSecondary)
-            .disabled(trimmedPendingTag.isEmpty)
-        }
-    }
-
-    private func priorityColor(for priority: NotePriority) -> Color {
+    private func noteBackgroundColor(for priority: NotePriority) -> Color {
         switch priority {
         case .none:
-            return .gray
+            return Color.gray.opacity(0.05)
         case .low:
-            return .blue
+            return Color.blue.opacity(0.08)
         case .medium:
-            return .orange
+            return Color.orange.opacity(0.09)
         case .high:
-            return .red
+            return Color.red.opacity(0.10)
         }
     }
 
-    private var trimmedText: String {
-        editorState.text.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var trimmedPendingTag: String {
-        pendingTag.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private func beginTextEditing() {
-        isEditingText = true
-        DispatchQueue.main.async {
-            isTextEditorFocused = true
+    private func noteBorderColor(for priority: NotePriority) -> Color {
+        switch priority {
+        case .none:
+            return Color.gray.opacity(0.32)
+        case .low:
+            return Color.blue.opacity(0.55)
+        case .medium:
+            return Color.orange.opacity(0.60)
+        case .high:
+            return Color.red.opacity(0.62)
         }
     }
 
-    private func saveTextEditing() {
-        guard !trimmedText.isEmpty else { return }
-        persistChanges()
-        isEditingText = false
-        isTextEditorFocused = false
-    }
-
-    private func cancelTextEditing() {
-        editorState.text = draft.text
-        editorState.selectionRange = NSRange(location: (draft.text as NSString).length, length: 0)
-        isEditingText = false
-        isTextEditorFocused = false
-    }
-
-    private func prioritySelected(_ newPriority: NotePriority) {
-        guard priority != newPriority else { return }
-        priority = newPriority
-        persistChanges()
-    }
-
-    private func formatActionTapped(_ action: MarkdownFormatAction) {
-        let result = MarkdownEditingCore.apply(
-            action: action,
-            to: editorState.text,
-            selection: editorState.selectionRange
-        )
-        editorState.text = result.text
-        editorState.selectionRange = result.selection
-    }
-
-    private func addTag() {
-        let normalizedTag = FocusDefaults.normalizedTag(trimmedPendingTag)
-        guard !normalizedTag.isEmpty else { return }
-        guard !tags.contains(where: { FocusDefaults.normalizedTag($0) == normalizedTag }) else {
-            pendingTag = ""
-            return
-        }
-
-        tags.append(normalizedTag)
-        pendingTag = ""
-        isAddingTag = false
-        isTagFieldFocused = false
-        persistChanges()
-    }
-
-    private func addTagButtonTapped() {
-        if isAddingTag {
-            pendingTag = ""
-            isAddingTag = false
-            isTagFieldFocused = false
-        } else {
-            isAddingTag = true
-            DispatchQueue.main.async {
-                isTagFieldFocused = true
-            }
-        }
-    }
-
-    private func removeTag(_ tag: String) {
-        tags.removeAll(where: { FocusDefaults.normalizedTag($0) == FocusDefaults.normalizedTag(tag) })
-        persistChanges()
-    }
-
-    private func persistChanges() {
-        guard !trimmedText.isEmpty else { return }
-        onSave(editorState.text, tags, priority)
+    private func resetDeleteConfirmation() {
+        isDeleteConfirmationPending = false
+        deleteConfirmationToken += 1
     }
 
     private func scheduleDeleteConfirmationReset() {
@@ -633,35 +447,85 @@ private struct NoteEditorRow: View {
     }
 }
 
+private struct ReadOnlyTagChip: View {
+    let tag: String
+
+    var body: some View {
+        Text(tag)
+            .font(.caption2)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+            )
+            .foregroundStyle(.secondary)
+    }
+}
+
 private struct MarkdownRenderedNoteView: View {
     let markdown: String
     let onToggleTask: (Int) -> Void
 
     var body: some View {
+        let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
         let taskLines = MarkdownEditingCore.taskLines(in: markdown)
+        let tasksByLine = Dictionary(uniqueKeysWithValues: taskLines.map { ($0.lineIndex, $0) })
 
-        if taskLines.isEmpty {
-            Text(MarkdownAttributedRenderer.renderAttributed(markdown: markdown))
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(Array(lines.enumerated()), id: \.offset) { offset, line in
+                lineView(line: line, lineIndex: offset, task: tasksByLine[offset])
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func lineView(line: String, lineIndex: Int, task: MarkdownTaskLine?) -> some View {
+        if let task {
+            taskLineRow(task)
+        } else if let heading = parseHeadingLine(line) {
+            headingLineRow(heading)
+        } else if let unordered = parseUnorderedListLine(line) {
+            listLineRow(
+                marker: "•",
+                text: unordered.text,
+                indentation: unordered.indentation
+            )
+        } else if let ordered = parseOrderedListLine(line) {
+            listLineRow(
+                marker: "\(ordered.number).",
+                text: ordered.text,
+                indentation: ordered.indentation
+            )
+        } else if line.isEmpty {
+            Text(" ")
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
-            let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-            let tasksByLine = Dictionary(uniqueKeysWithValues: taskLines.map { ($0.lineIndex, $0) })
-
-            VStack(alignment: .leading, spacing: 3) {
-                ForEach(Array(lines.enumerated()), id: \.offset) { offset, line in
-                    if let task = tasksByLine[offset] {
-                        taskLineRow(task)
-                    } else if line.isEmpty {
-                        Text(" ")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        Text(MarkdownAttributedRenderer.renderAttributed(markdown: line))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text(MarkdownAttributedRenderer.renderAttributed(markdown: line))
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    @ViewBuilder
+    private func headingLineRow(_ heading: HeadingLine) -> some View {
+        Text(MarkdownAttributedRenderer.renderAttributed(markdown: heading.text.isEmpty ? " " : heading.text))
+            .font(font(for: heading.level))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, indentationWidth(for: heading.indentation))
+    }
+
+    @ViewBuilder
+    private func listLineRow(marker: String, text: String, indentation: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(marker)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Text(MarkdownAttributedRenderer.renderAttributed(markdown: text.isEmpty ? " " : text))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.leading, indentationWidth(for: indentation))
     }
 
     @ViewBuilder
@@ -687,32 +551,94 @@ private struct MarkdownRenderedNoteView: View {
         }
         return CGFloat(columns) * 6
     }
-}
 
-private struct TagChip: View {
-    let tag: String
-    let onRemove: () -> Void
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Text(tag)
-                .font(.caption)
-            Button(role: .destructive) {
-                onRemove()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.caption2.weight(.bold))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+    private func font(for headingLevel: Int) -> Font {
+        switch headingLevel {
+        case 1:
+            return .title3.weight(.bold)
+        case 2:
+            return .headline.weight(.semibold)
+        default:
+            return .subheadline.weight(.semibold)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(
-            Capsule()
-                .fill(.ultraThinMaterial)
+    }
+
+    private func parseHeadingLine(_ line: String) -> HeadingLine? {
+        let range = NSRange(location: 0, length: (line as NSString).length)
+        guard let match = Self.headingRegex.firstMatch(in: line, options: [], range: range),
+              let indentation = substring(line, match.range(at: 1)),
+              let marker = substring(line, match.range(at: 2)),
+              let text = substring(line, match.range(at: 3))
+        else {
+            return nil
+        }
+
+        return HeadingLine(
+            level: min(max(marker.count, 1), 6),
+            indentation: indentation,
+            text: text
         )
     }
+
+    private func parseUnorderedListLine(_ line: String) -> ListLine? {
+        let range = NSRange(location: 0, length: (line as NSString).length)
+        guard let match = Self.unorderedListRegex.firstMatch(in: line, options: [], range: range),
+              let indentation = substring(line, match.range(at: 1)),
+              let text = substring(line, match.range(at: 3))
+        else {
+            return nil
+        }
+
+        return ListLine(indentation: indentation, text: text)
+    }
+
+    private func parseOrderedListLine(_ line: String) -> OrderedListLine? {
+        let range = NSRange(location: 0, length: (line as NSString).length)
+        guard let match = Self.orderedListRegex.firstMatch(in: line, options: [], range: range),
+              let indentation = substring(line, match.range(at: 1)),
+              let number = substring(line, match.range(at: 2)),
+              let text = substring(line, match.range(at: 4))
+        else {
+            return nil
+        }
+
+        return OrderedListLine(indentation: indentation, number: number, text: text)
+    }
+
+    private func substring(_ line: String, _ range: NSRange) -> String? {
+        guard range.location != NSNotFound else { return nil }
+        guard let swiftRange = Range(range, in: line) else { return nil }
+        return String(line[swiftRange])
+    }
+
+    private struct HeadingLine {
+        let level: Int
+        let indentation: String
+        let text: String
+    }
+
+    private struct ListLine {
+        let indentation: String
+        let text: String
+    }
+
+    private struct OrderedListLine {
+        let indentation: String
+        let number: String
+        let text: String
+    }
+
+    private static let headingRegex = try! NSRegularExpression(
+        pattern: #"^([ \t]*)(#{1,6})\s+(.*)$"#
+    )
+
+    private static let unorderedListRegex = try! NSRegularExpression(
+        pattern: #"^([ \t]*)([-*+])\s+(.*)$"#
+    )
+
+    private static let orderedListRegex = try! NSRegularExpression(
+        pattern: #"^([ \t]*)(\d+)([.)])\s+(.*)$"#
+    )
 }
 
 private extension Color {

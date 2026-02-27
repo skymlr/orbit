@@ -123,9 +123,28 @@ struct MarkdownSourceTextView: NSViewRepresentable {
         }
 
         func scheduleFocusUpdate(for textView: NSTextView, isFocused: Bool) {
+            scheduleFocusUpdate(for: textView, isFocused: isFocused, remainingRetries: 6)
+        }
+
+        private func scheduleFocusUpdate(
+            for textView: NSTextView,
+            isFocused: Bool,
+            remainingRetries: Int
+        ) {
             DispatchQueue.main.async { [weak textView] in
                 guard let textView else { return }
-                guard let window = textView.window else { return }
+                guard let window = textView.window else {
+                    guard remainingRetries > 0 else { return }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) { [weak self, weak textView] in
+                        guard let self, let textView else { return }
+                        self.scheduleFocusUpdate(
+                            for: textView,
+                            isFocused: isFocused,
+                            remainingRetries: remainingRetries - 1
+                        )
+                    }
+                    return
+                }
 
                 if isFocused, window.firstResponder !== textView {
                     window.makeFirstResponder(textView)

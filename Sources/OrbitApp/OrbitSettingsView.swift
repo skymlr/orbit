@@ -34,6 +34,7 @@ struct OrbitSettingsView: View {
     }
 
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Environment(\.openWindow) private var openWindow
     @State private var selectedSection: SettingsSection = .sessions
     @State private var newCategoryName = ""
     @State private var newCategoryColor = Color(categoryHex: FocusDefaults.defaultCategoryColorHex)
@@ -170,8 +171,18 @@ struct OrbitSettingsView: View {
     private var sessionsSection: some View {
         sectionCard {
             VStack(alignment: .leading, spacing: 14) {
+                if let activeSession = store.activeSession {
+                    ActiveSessionHero(
+                        session: activeSession,
+                        categoryColorHex: categoryColorHex(for: activeSession.categoryID),
+                        onOpenSession: {
+                            openActiveSessionButtonTapped()
+                        }
+                    )
+                }
+
                 if sessionGroups.isEmpty {
-                    Text("No sessions yet.")
+                    Text("No completed sessions yet.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -206,7 +217,7 @@ struct OrbitSettingsView: View {
                         exportAllSessionsButtonTapped()
                     }
                     .buttonStyle(.orbitSecondary)
-                    .disabled(store.settings.sessions.isEmpty)
+                    .disabled(historicalSessions.isEmpty)
                 }
             }
         }
@@ -214,8 +225,14 @@ struct OrbitSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
+    private var historicalSessions: [FocusSessionRecord] {
+        store.settings.sessions.filter { session in
+            session.endedAt != nil && session.id != store.activeSession?.id
+        }
+    }
+
     private var sessionGroups: [SessionDayGroup] {
-        let grouped = Dictionary(grouping: store.settings.sessions) { session in
+        let grouped = Dictionary(grouping: historicalSessions) { session in
             Calendar.current.startOfDay(for: session.startedAt)
         }
 
@@ -258,6 +275,20 @@ struct OrbitSettingsView: View {
     private func exportSessionButtonTapped(sessionID: UUID) {
         chooseExportDirectory { url in
             store.send(.settingsExportSessionTapped(sessionID, url))
+        }
+    }
+
+    private func openActiveSessionButtonTapped() {
+        store.send(.openSessionTapped)
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        openWindow(id: "session-window")
+
+        DispatchQueue.main.async {
+            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit Session" }) else {
+                return
+            }
+            window.orderFrontRegardless()
+            window.makeKey()
         }
     }
 
@@ -358,10 +389,10 @@ private struct SessionRow: View {
                 .buttonStyle(.orbitSecondary)
                 .disabled(isRenaming && trimmedName.isEmpty)
 
-                Button("Delete", role: .destructive) {
-                    onDelete()
+                Button("Export") {
+                    onExport()
                 }
-                .buttonStyle(.orbitDestructive)
+                .buttonStyle(.orbitSecondary)
             }
 
             HStack(spacing: 8) {
@@ -388,10 +419,10 @@ private struct SessionRow: View {
 
                 Spacer()
 
-                Button("Export") {
-                    onExport()
+                Button("Delete", role: .destructive) {
+                    onDelete()
                 }
-                .buttonStyle(.orbitSecondary)
+                .buttonStyle(.orbitDestructive)
             }
         }
         .padding(10)
@@ -416,6 +447,71 @@ private struct SessionRow: View {
         } else {
             isRenaming = true
         }
+    }
+}
+
+private struct ActiveSessionHero: View {
+    let session: FocusSessionRecord
+    let categoryColorHex: String
+    let onOpenSession: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Current Session")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    Text(session.name)
+                        .font(.title3.weight(.bold))
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Button("Open Session") {
+                    onOpenSession()
+                }
+                .buttonStyle(.orbitPrimary)
+            }
+
+            HStack(spacing: 8) {
+                Text(session.categoryName.uppercased())
+                    .font(.caption2.weight(.bold))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color(categoryHex: categoryColorHex).opacity(0.25))
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(Color(categoryHex: categoryColorHex).opacity(0.95), lineWidth: 1)
+                    )
+
+                Text("\(session.notes.count) \(session.notes.count == 1 ? "note" : "notes")")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Text("Started \(session.startedAt, style: .time)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text("Elapsed \(session.startedAt, style: .timer)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.thinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color(categoryHex: categoryColorHex).opacity(0.60), lineWidth: 1)
+                )
+        )
     }
 }
 

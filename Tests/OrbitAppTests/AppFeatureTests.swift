@@ -6,6 +6,156 @@ import Testing
 @MainActor
 struct AppFeatureTests {
     @Test
+    func sessionNoteEditTappedPrefillsCaptureAndOpensWindow() async {
+        let active = makeActiveSession()
+        let note = active.notes[0]
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+        initial.noteDrafts = [
+            AppFeature.State.NoteDraft(
+                id: note.id,
+                text: note.text,
+                tags: note.tags,
+                priority: note.priority,
+                createdAt: note.createdAt
+            )
+        ]
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        }
+
+        await store.send(.sessionNoteEditTapped(note.id)) {
+            $0.captureDraft.text = note.text
+            $0.captureDraft.tags = note.tags.joined(separator: ", ")
+            $0.captureDraft.priority = note.priority
+            $0.captureDraft.editingNoteID = note.id
+            $0.windowDestinations.insert(.captureWindow)
+        }
+    }
+
+    @Test
+    func sessionAddNoteTappedResetsEditContext() async {
+        var initial = AppFeature.State()
+        initial.captureDraft.text = "Existing text"
+        initial.captureDraft.tags = "tag-a"
+        initial.captureDraft.priority = .high
+        initial.captureDraft.editingNoteID = UUID(uuidString: "44D1A620-53B0-49D7-9B60-2A1BA056EA28")!
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        }
+
+        await store.send(.sessionAddNoteTapped) {
+            $0.captureDraft = AppFeature.State.CaptureDraft()
+            $0.windowDestinations.insert(.captureWindow)
+        }
+    }
+
+    @Test
+    func captureSubmitTappedInEditModeUpdatesExistingNote() async {
+        let active = makeActiveSession()
+        let note = active.notes[0]
+        let tracker = NoteMutationTracker()
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+        initial.captureDraft.text = "Updated body"
+        initial.captureDraft.tags = "alpha, beta"
+        initial.captureDraft.priority = .medium
+        initial.captureDraft.editingNoteID = note.id
+        initial.windowDestinations.insert(.captureWindow)
+
+        var repository = FocusRepository.testValue
+        repository.updateNote = { noteID, _, _, _, _ in
+            await tracker.recordUpdate(noteID: noteID)
+            return nil
+        }
+        repository.createNote = { sessionID, _, _, _, _ in
+            await tracker.recordCreate(sessionID: sessionID)
+            return nil
+        }
+        repository.loadActiveSession = { nil }
+        repository.listSessions = { [] }
+        repository.listCategories = { [] }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.focusRepository = repository
+            $0.date.now = Date(timeIntervalSince1970: 1_700_000_000)
+        }
+
+        await store.send(.captureSubmitTapped) {
+            $0.captureDraft = AppFeature.State.CaptureDraft()
+            $0.windowDestinations.remove(.captureWindow)
+        }
+        await store.receive(\.loadActiveSessionResponse) {
+            $0.activeSession = nil
+            $0.noteDrafts = []
+            $0.endSessionDraft = nil
+            $0.windowDestinations = []
+        }
+        await store.receive(\.settingsRefreshTapped)
+        await store.receive(\.settingsDataResponse)
+
+        let counts = await tracker.counts()
+        #expect(counts.updated == [note.id])
+        #expect(counts.created.isEmpty)
+    }
+
+    @Test
+    func captureSubmitTappedWithoutEditModeCreatesNewNote() async {
+        let active = makeActiveSession()
+        let tracker = NoteMutationTracker()
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+        initial.captureDraft.text = "New note body"
+        initial.captureDraft.tags = "alpha, beta"
+        initial.captureDraft.priority = .low
+        initial.windowDestinations.insert(.captureWindow)
+
+        var repository = FocusRepository.testValue
+        repository.updateNote = { noteID, _, _, _, _ in
+            await tracker.recordUpdate(noteID: noteID)
+            return nil
+        }
+        repository.createNote = { sessionID, _, _, _, _ in
+            await tracker.recordCreate(sessionID: sessionID)
+            return nil
+        }
+        repository.loadActiveSession = { nil }
+        repository.listSessions = { [] }
+        repository.listCategories = { [] }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.focusRepository = repository
+            $0.date.now = Date(timeIntervalSince1970: 1_700_000_000)
+        }
+
+        await store.send(.captureSubmitTapped) {
+            $0.captureDraft = AppFeature.State.CaptureDraft()
+            $0.windowDestinations.remove(.captureWindow)
+        }
+        await store.receive(\.loadActiveSessionResponse) {
+            $0.activeSession = nil
+            $0.noteDrafts = []
+            $0.endSessionDraft = nil
+            $0.windowDestinations = []
+        }
+        await store.receive(\.settingsRefreshTapped)
+        await store.receive(\.settingsDataResponse)
+
+        let counts = await tracker.counts()
+        #expect(counts.created == [active.id])
+        #expect(counts.updated.isEmpty)
+    }
+
+    @Test
     func endSessionTappedCreatesDraft() async {
         let active = makeActiveSession()
         var initial = AppFeature.State()
@@ -94,6 +244,23 @@ struct AppFeatureTests {
             $0.endSessionDraft = nil
             $0.windowDestinations = []
         }
+    }
+}
+
+actor NoteMutationTracker {
+    private(set) var created: [UUID] = []
+    private(set) var updated: [UUID] = []
+
+    func recordCreate(sessionID: UUID) {
+        created.append(sessionID)
+    }
+
+    func recordUpdate(noteID: UUID) {
+        updated.append(noteID)
+    }
+
+    func counts() -> (created: [UUID], updated: [UUID]) {
+        (created, updated)
     }
 }
 
