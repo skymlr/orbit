@@ -8,6 +8,8 @@ struct MarkdownSourceTextView: NSViewRepresentable {
 
     var onSubmit: (() -> Void)?
     var onCancel: (() -> Void)?
+    var onMoveToNextField: (() -> Void)?
+    var onMoveToPreviousField: (() -> Void)?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -42,6 +44,8 @@ struct MarkdownSourceTextView: NSViewRepresentable {
         textView.setSelectedRange(selectionRange)
         textView.onSubmit = onSubmit
         textView.onCancel = onCancel
+        textView.onMoveToNextField = onMoveToNextField
+        textView.onMoveToPreviousField = onMoveToPreviousField
 
         if let textContainer = textView.textContainer {
             textContainer.containerSize = NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
@@ -58,6 +62,8 @@ struct MarkdownSourceTextView: NSViewRepresentable {
         guard let textView = nsView.documentView as? CommandTextView else { return }
         textView.onSubmit = onSubmit
         textView.onCancel = onCancel
+        textView.onMoveToNextField = onMoveToNextField
+        textView.onMoveToPreviousField = onMoveToPreviousField
 
         context.coordinator.isSynchronizingFromSwiftUI = true
         defer {
@@ -178,6 +184,8 @@ private final class CommandTextView: NSTextView {
 
     var onSubmit: (() -> Void)?
     var onCancel: (() -> Void)?
+    var onMoveToNextField: (() -> Void)?
+    var onMoveToPreviousField: (() -> Void)?
 
     override func doCommand(by selector: Selector) {
         if selector == #selector(insertNewline(_:)) {
@@ -194,6 +202,20 @@ private final class CommandTextView: NSTextView {
         if selector == #selector(cancelOperation(_:)) {
             onCancel?()
             return
+        }
+
+        if selector == #selector(insertTab(_:)) {
+            if let onMoveToNextField {
+                onMoveToNextField()
+                return
+            }
+        }
+
+        if selector == #selector(insertBacktab(_:)) {
+            if let onMoveToPreviousField {
+                onMoveToPreviousField()
+                return
+            }
         }
 
         super.doCommand(by: selector)

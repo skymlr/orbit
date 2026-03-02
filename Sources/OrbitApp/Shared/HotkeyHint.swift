@@ -51,6 +51,82 @@ enum HotkeyHintFormatter {
     }
 }
 
+struct OrbitKeyboardShortcut {
+    var key: KeyEquivalent
+    var modifiers: EventModifiers
+}
+
+enum OrbitKeyboardShortcutParser {
+    static func parse(_ shortcut: String) -> OrbitKeyboardShortcut? {
+        let components = shortcut
+            .split(separator: "+")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+
+        guard let keyPart = components.last, !keyPart.isEmpty else {
+            return nil
+        }
+
+        var modifiers: EventModifiers = []
+        for modifier in components.dropLast() {
+            switch modifier {
+            case "ctrl", "control":
+                modifiers.insert(.control)
+            case "option", "opt", "alt":
+                modifiers.insert(.option)
+            case "shift":
+                modifiers.insert(.shift)
+            case "cmd", "command":
+                modifiers.insert(.command)
+            default:
+                continue
+            }
+        }
+
+        guard let key = keyEquivalent(for: String(keyPart)) else {
+            return nil
+        }
+
+        return OrbitKeyboardShortcut(key: key, modifiers: modifiers)
+    }
+
+    private static func keyEquivalent(for key: String) -> KeyEquivalent? {
+        switch key.lowercased() {
+        case "space":
+            return .space
+        case "return", "enter":
+            return .return
+        case "tab":
+            return .tab
+        case "escape", "esc":
+            return .escape
+        case "up":
+            return .upArrow
+        case "down":
+            return .downArrow
+        case "left":
+            return .leftArrow
+        case "right":
+            return .rightArrow
+        default:
+            guard key.count == 1, let scalar = key.unicodeScalars.first else {
+                return nil
+            }
+            return KeyEquivalent(Character(scalar))
+        }
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func orbitKeyboardShortcut(_ shortcut: String) -> some View {
+        if let parsed = OrbitKeyboardShortcutParser.parse(shortcut) {
+            self.keyboardShortcut(parsed.key, modifiers: parsed.modifiers)
+        } else {
+            self
+        }
+    }
+}
+
 struct HotkeyHintLabel: View {
     enum Tone {
         case standard

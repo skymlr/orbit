@@ -2,11 +2,10 @@ import SwiftUI
 
 struct EndSessionPromptView: View {
     let draft: AppFeature.State.EndSessionDraft
-    let onConfirm: (String, UUID?) -> Void
+    let onConfirm: (String) -> Void
     let onCancel: () -> Void
 
     @State private var name = ""
-    @State private var selectedCategoryID = FocusDefaults.focusCategoryID
 
     var body: some View {
         Group {
@@ -22,19 +21,6 @@ struct EndSessionPromptView: View {
                         .textFieldStyle(.roundedBorder)
                 }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Category")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Picker("Category", selection: $selectedCategoryID) {
-                        ForEach(draft.categories) { category in
-                            Text(category.name).tag(category.id)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-
                 HStack {
                     Button("Cancel") {
                         onCancel()
@@ -44,7 +30,7 @@ struct EndSessionPromptView: View {
                     Spacer()
 
                     Button("End Session") {
-                        onConfirm(name, selectedCategoryID)
+                        onConfirm(name)
                     }
                     .buttonStyle(.orbitDestructive)
                 }
@@ -68,7 +54,6 @@ struct EndSessionPromptView: View {
         .toolbarBackground(.hidden, for: .windowToolbar)
         .task {
             name = draft.name
-            selectedCategoryID = draft.selectedCategoryID
         }
     }
 }

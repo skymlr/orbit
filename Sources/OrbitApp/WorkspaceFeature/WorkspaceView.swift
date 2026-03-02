@@ -10,7 +10,7 @@ struct WorkspaceView: View {
     private enum WorkspaceSection: String, CaseIterable, Identifiable {
         case session = "Session"
         case history = "History"
-        case categories = "Categories"
+        case categories = "Note Categories"
         case hotkeys = "Hotkeys"
         case about = "About"
 
@@ -145,6 +145,15 @@ struct WorkspaceView: View {
                 TextField("ctrl+option+cmd+j", text: $store.settings.captureShortcut)
                     .textFieldStyle(.roundedBorder)
 
+                Divider()
+                    .padding(.vertical, 2)
+
+                Text("Quick Capture: Next Priority")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                TextField("cmd+.", text: $store.settings.captureNextPriorityShortcut)
+                    .textFieldStyle(.roundedBorder)
+
                 HStack {
                     Button("Reset Hotkeys") {
                         store.send(.settingsResetHotkeysTapped)
@@ -203,7 +212,6 @@ struct WorkspaceView: View {
                 if let activeSession = store.activeSession {
                     ActiveSessionHero(
                         session: activeSession,
-                        categoryColorHex: categoryColorHex(for: activeSession.categoryID),
                         onOpenSession: {
                             openSessionSectionButtonTapped()
                         }
@@ -227,7 +235,6 @@ struct WorkspaceView: View {
                         ForEach(group.sessions) { session in
                             SessionRow(
                                 session: session,
-                                categoryColorHex: categoryColorHex(for: session.categoryID),
                                 onRename: { newName in
                                     store.send(.settingsRenameSessionTapped(session.id, newName))
                                 },
@@ -280,7 +287,7 @@ struct WorkspaceView: View {
                         .font(.headline.weight(.semibold))
                     Text("• Menu bar-first session management")
                     Text("• Quick capture with markdown notes")
-                    Text("• Tags, priorities, categories, and session exports")
+                    Text("• Note categories, filters, priorities, and session exports")
                     Text("• Local-first SQLite persistence")
                 }
                 .font(.subheadline)
@@ -292,6 +299,7 @@ struct WorkspaceView: View {
                         .font(.headline.weight(.semibold))
                     Text("Open/Start Session: \(store.settings.startShortcut)")
                     Text("Quick Capture: \(store.settings.captureShortcut)")
+                    Text("Capture Next Priority: \(store.settings.captureNextPriorityShortcut)")
                 }
                 .font(.subheadline)
             }
@@ -376,11 +384,6 @@ struct WorkspaceView: View {
         }
     }
 
-    private func categoryColorHex(for categoryID: UUID) -> String {
-        store.settings.categories.first(where: { $0.id == categoryID })?.colorHex
-            ?? FocusDefaults.defaultCategoryColorHex
-    }
-
     private func sectionMaxWidth(for section: WorkspaceSection) -> CGFloat {
         SectionWidth.section
     }
@@ -427,7 +430,7 @@ private struct CategoryRow: View {
             HStack(spacing: 8) {
                 TextField("Category", text: $name)
                     .textFieldStyle(.roundedBorder)
-                    .disabled(category.id == FocusDefaults.focusCategoryID)
+                    .disabled(category.id == FocusDefaults.uncategorizedCategoryID)
 
                 Button("Save") {
                     onRename(name, selectedColorHex)
@@ -438,7 +441,7 @@ private struct CategoryRow: View {
                     onDelete()
                 }
                 .buttonStyle(.orbitDestructive)
-                .disabled(category.id == FocusDefaults.focusCategoryID)
+                .disabled(category.id == FocusDefaults.uncategorizedCategoryID)
             }
 
             CategoryColorPalettePicker(selectedHex: $selectedColorHex)
@@ -498,7 +501,6 @@ private struct CategoryColorPalettePicker: View {
 
 private struct SessionRow: View {
     let session: FocusSessionRecord
-    let categoryColorHex: String
     let onRename: (String) -> Void
     let onDelete: () -> Void
     let onExport: () -> Void
@@ -533,19 +535,6 @@ private struct SessionRow: View {
             }
 
             HStack(spacing: 8) {
-                Text(session.categoryName.uppercased())
-                    .font(.caption2.weight(.bold))
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(Color(categoryHex: categoryColorHex).opacity(0.25))
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(Color(categoryHex: categoryColorHex).opacity(0.95), lineWidth: 1)
-                    )
-
                 Text("\(session.notes.count) \(session.notes.count == 1 ? "note" : "notes")")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -589,7 +578,6 @@ private struct SessionRow: View {
 
 private struct ActiveSessionHero: View {
     let session: FocusSessionRecord
-    let categoryColorHex: String
     let onOpenSession: () -> Void
 
     var body: some View {
@@ -614,19 +602,6 @@ private struct ActiveSessionHero: View {
             }
 
             HStack(spacing: 8) {
-                Text(session.categoryName.uppercased())
-                    .font(.caption2.weight(.bold))
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(Color(categoryHex: categoryColorHex).opacity(0.25))
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(Color(categoryHex: categoryColorHex).opacity(0.95), lineWidth: 1)
-                    )
-
                 Text("\(session.notes.count) \(session.notes.count == 1 ? "note" : "notes")")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -646,7 +621,7 @@ private struct ActiveSessionHero: View {
                 .fill(.thinMaterial)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color(categoryHex: categoryColorHex).opacity(0.60), lineWidth: 1)
+                        .stroke(Color.cyan.opacity(0.60), lineWidth: 1)
                 )
         )
     }

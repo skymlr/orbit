@@ -16,6 +16,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.8.0"),
         .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-structured-queries", from: "0.1.0"),
+        .package(url: "https://github.com/tevelee/SwiftUI-Flow.git", from: "3.1.1"),
     ],
     targets: [
         .executableTarget(
@@ -26,6 +27,7 @@ let package = Package(
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "SQLiteData", package: "sqlite-data"),
                 .product(name: "StructuredQueries", package: "swift-structured-queries"),
+                .product(name: "Flow", package: "swiftui-flow"),
             ]
         ),
         .testTarget(

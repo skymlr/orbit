@@ -37,9 +37,6 @@ struct MenuBarView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(activeSession.name)
                             .font(.title3.weight(.semibold))
-                        Text("Category: \(activeSession.categoryName)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
 
                     HStack(spacing: 10) {

@@ -31,11 +31,12 @@
 		B58893B59D3CCFCD6A37589C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C539D5AC9B61A2745598F2C /* Models.swift */; };
 		B6A3A2B569277402C4E3B228 /* Schema.swift in Sources */ = {isa = PBXBuildFile; fileRef = F647314B9140B90A4D91A1FE /* Schema.swift */; };
 		C1941AAA53B6E6A12C5F3D8F /* HotkeyHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = C23484D86A339BABFCE21B79 /* HotkeyHint.swift */; };
-		C25523DE190914A0EEAC223E /* FocusDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88312D129C5CA0F27CBCF28F /* FocusDomain.swift */; };
-		C409D433F828E8C4704FF434 /* EndSessionPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D233237DD037E5C4ACE0DDC9 /* EndSessionPromptView.swift */; };
-		C5F44C028A93DA20427BACCE /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B976253DEEE87CEF658191F /* AppFeature.swift */; };
-		CF6FD4FB57612D275C562C55 /* MarkdownEditingCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60A9C526798D1F4E7B8615C /* MarkdownEditingCore.swift */; };
-		F1C3716C6DB7F4A0E45A4840 /* InactivityClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35F269DC84311AEF962A906A /* InactivityClient.swift */; };
+			C25523DE190914A0EEAC223E /* FocusDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88312D129C5CA0F27CBCF28F /* FocusDomain.swift */; };
+			C409D433F828E8C4704FF434 /* EndSessionPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D233237DD037E5C4ACE0DDC9 /* EndSessionPromptView.swift */; };
+			C5F44C028A93DA20427BACCE /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B976253DEEE87CEF658191F /* AppFeature.swift */; };
+			CF6FD4FB57612D275C562C55 /* MarkdownEditingCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60A9C526798D1F4E7B8615C /* MarkdownEditingCore.swift */; };
+			F0A1B2C3D4E5F60718293A4B /* Flow in Frameworks */ = {isa = PBXBuildFile; productRef = F0A1B2C3D4E5F60718293A4C /* Flow */; };
+			F1C3716C6DB7F4A0E45A4840 /* InactivityClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35F269DC84311AEF962A906A /* InactivityClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -74,12 +75,13 @@
 				1648677C96E755210B40B545 /* Cocoa.framework in Frameworks */,
 				510A3D49BF048B5454665B17 /* ComposableArchitecture in Frameworks */,
 				AB6C444405882E05AADED0C9 /* CasePaths in Frameworks */,
-				8555587D3F4BEDE136D3B3D2 /* Dependencies in Frameworks */,
-				7CA2F5C988DE8FFFCF264367 /* SQLiteData in Frameworks */,
-				7B5C28F45D9E184E171F6FC2 /* StructuredQueries in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+					8555587D3F4BEDE136D3B3D2 /* Dependencies in Frameworks */,
+					7CA2F5C988DE8FFFCF264367 /* SQLiteData in Frameworks */,
+					7B5C28F45D9E184E171F6FC2 /* StructuredQueries in Frameworks */,
+					F0A1B2C3D4E5F60718293A4B /* Flow in Frameworks */,
+				);
+				runOnlyForDeploymentPostprocessing = 0;
+			};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -235,18 +237,20 @@
 			dependencies = (
 				C16A0CD2B314C182E4BEE116 /* PBXTargetDependency */,
 				0E10C950B8CBD91E9468B34C /* PBXTargetDependency */,
-				60E62E5FF00A5B2EB60B198C /* PBXTargetDependency */,
-				008CFACC628BAA4C1E889833 /* PBXTargetDependency */,
-				D67F237D1AB16168F3EC7B1B /* PBXTargetDependency */,
-			);
+					60E62E5FF00A5B2EB60B198C /* PBXTargetDependency */,
+					008CFACC628BAA4C1E889833 /* PBXTargetDependency */,
+					D67F237D1AB16168F3EC7B1B /* PBXTargetDependency */,
+					F0A1B2C3D4E5F60718293A4D /* PBXTargetDependency */,
+				);
 			name = Orbit;
 			packageProductDependencies = (
 				44492BB61285D2CADF1D3884 /* ComposableArchitecture */,
 				B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */,
-				C1F90FC1C0C31122E35D4F73 /* Dependencies */,
-				3AAF415269A2878FE0A31517 /* SQLiteData */,
-				D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */,
-			);
+					C1F90FC1C0C31122E35D4F73 /* Dependencies */,
+					3AAF415269A2878FE0A31517 /* SQLiteData */,
+					D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */,
+					F0A1B2C3D4E5F60718293A4C /* Flow */,
+				);
 			productName = Orbit;
 			productReference = DC70B03F528B2C69AA9ED812 /* Orbit.app */;
 			productType = "com.apple.product-type.application";
@@ -272,10 +276,11 @@
 			packageReferences = (
 				E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				CB2704642CDBA57F9A97A9DA /* XCRemoteSwiftPackageReference "swift-case-paths" */,
-				AA98A25D73F7F7F2EC1B04FD /* XCRemoteSwiftPackageReference "swift-dependencies" */,
-				0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */,
-				8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */,
-			);
+					AA98A25D73F7F7F2EC1B04FD /* XCRemoteSwiftPackageReference "swift-dependencies" */,
+					0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */,
+					8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */,
+					F0A1B2C3D4E5F60718293A4E /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */,
+				);
 			productRefGroup = 514FFC5756A823413452FB24 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -345,10 +350,14 @@
 			isa = PBXTargetDependency;
 			productRef = 44492BB61285D2CADF1D3884 /* ComposableArchitecture */;
 		};
-		D67F237D1AB16168F3EC7B1B /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */;
-		};
+			D67F237D1AB16168F3EC7B1B /* PBXTargetDependency */ = {
+				isa = PBXTargetDependency;
+				productRef = D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */;
+			};
+			F0A1B2C3D4E5F60718293A4D /* PBXTargetDependency */ = {
+				isa = PBXTargetDependency;
+				productRef = F0A1B2C3D4E5F60718293A4C /* Flow */;
+			};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -575,14 +584,22 @@
 				minimumVersion = 1.5.0;
 			};
 		};
-		E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.16.0;
+			E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
+				isa = XCRemoteSwiftPackageReference;
+				repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
+				requirement = {
+					kind = upToNextMajorVersion;
+					minimumVersion = 1.16.0;
+				};
 			};
-		};
+			F0A1B2C3D4E5F60718293A4E /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */ = {
+				isa = XCRemoteSwiftPackageReference;
+				repositoryURL = "https://github.com/tevelee/SwiftUI-Flow.git";
+				requirement = {
+					kind = upToNextMajorVersion;
+					minimumVersion = 3.1.1;
+				};
+			};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -606,11 +623,16 @@
 			package = AA98A25D73F7F7F2EC1B04FD /* XCRemoteSwiftPackageReference "swift-dependencies" */;
 			productName = Dependencies;
 		};
-		D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */;
-			productName = StructuredQueries;
-		};
+			D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */ = {
+				isa = XCSwiftPackageProductDependency;
+				package = 8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */;
+				productName = StructuredQueries;
+			};
+			F0A1B2C3D4E5F60718293A4C /* Flow */ = {
+				isa = XCSwiftPackageProductDependency;
+				package = F0A1B2C3D4E5F60718293A4E /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */;
+				productName = Flow;
+			};
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 644B92E60FA57CF80CFD80D7 /* Project object */;

@@ -1,5 +1,5 @@
 {
-  "originHash" : "2f0b22a8eb022c7d4441f6c60c2d1e2b2de7acdba714dbe9b6c40ba15e15439b",
+  "originHash" : "7dd540ea2b829b8e41c9671f15ea01483e4ccd4cdead23922648f84af5ea0996",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -152,6 +152,15 @@
       "state" : {
         "revision" : "4799286537280063c85a32f09884cfbca301b1a1",
         "version" : "602.0.0"
+      }
+    },
+    {
+      "identity" : "swiftui-flow",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tevelee/SwiftUI-Flow.git",
+      "state" : {
+        "revision" : "d227f999b2894ab737ef5786d9b14d02d3e5362e",
+        "version" : "3.1.1"
       }
     },
     {

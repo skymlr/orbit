@@ -17,16 +17,12 @@ struct SessionPageView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     SessionHeader(
                         session: activeSession,
-                        categories: store.categories,
-                        categoryColor: categoryColor(for: activeSession.categoryID),
                         onRename: { name in
                             store.send(.sessionRenameTapped(name))
-                        },
-                        onCategoryChange: { categoryID in
-                            store.send(.sessionCategoryChangedTapped(categoryID))
                         }
                     )
 
+                    noteCategoryFilterBar
                     notesContent
                     endSessionControl
                 }
@@ -46,6 +42,7 @@ struct SessionPageView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .keyboardShortcut("n", modifiers: [.command])
                 .help("Capture Note \(HotkeyHintFormatter.hint(from: store.hotkeys.captureShortcut))")
             }
         }
@@ -64,12 +61,16 @@ struct SessionPageView: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("No notes yet")
+            Text(emptyStateTitle)
                 .font(.title3.weight(.semibold))
             HStack(spacing: 6) {
-                Text("Use + or")
-                HotkeyHintLabel(shortcut: store.hotkeys.captureShortcut)
-                Text("to capture your first focus note for this session.")
+                if store.noteDrafts.isEmpty {
+                    Text("Use + or")
+                    HotkeyHintLabel(shortcut: store.hotkeys.captureShortcut)
+                    Text("to capture your first note for this session.")
+                } else {
+                    Text("Switch filters to view notes from other categories.")
+                }
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -153,13 +154,13 @@ struct SessionPageView: View {
 
     @ViewBuilder
     private var notesContent: some View {
-        if store.noteDrafts.isEmpty {
+        if store.filteredNoteDrafts.isEmpty {
             emptyState
                 .transition(.orbitMicro)
         } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(store.noteDrafts) { draft in
+                    ForEach(store.filteredNoteDrafts) { draft in
                         noteRow(for: draft)
                     }
                 }
@@ -167,6 +168,33 @@ struct SessionPageView: View {
             .scrollIndicators(.visible)
             .transition(.orbitMicro)
         }
+    }
+
+    private var noteCategoryFilterBar: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                filterChip(
+                    title: "All",
+                    count: store.noteDrafts.count,
+                    isSelected: isAllFilterSelected
+                ) {
+                    store.send(.sessionNoteCategoryFilterChangedTapped(.all))
+                }
+
+                ForEach(categoriesWithNotes) { category in
+                    filterChip(
+                        title: category.name,
+                        count: countForCategory(category.id),
+                        isSelected: isCategorySelected(category.id),
+                        tint: Color(categoryHex: category.colorHex)
+                    ) {
+                        store.send(.sessionNoteCategoryFilterChangedTapped(.category(category.id)))
+                    }
+                }
+            }
+            .padding(.vertical, 2)
+        }
+        .scrollIndicators(.hidden)
     }
 
     private var endSessionControl: some View {
@@ -190,7 +218,7 @@ struct SessionPageView: View {
     }
 
     private func noteRow(for draft: AppFeature.State.NoteDraft) -> some View {
-        NoteEditorRow(
+        NoteRow(
             draft: draft,
             onEdit: {
                 store.send(.sessionNoteEditTapped(draft.id))
@@ -204,10 +232,58 @@ struct SessionPageView: View {
         )
     }
 
-    private func categoryColor(for categoryID: UUID) -> Color {
-        let colorHex = store.categories.first(where: { $0.id == categoryID })?.colorHex
-            ?? FocusDefaults.defaultCategoryColorHex
-        return Color(categoryHex: colorHex)
+    private var isAllFilterSelected: Bool {
+        switch store.selectedNoteCategoryFilter {
+        case .all:
+            return true
+        case .category:
+            return false
+        }
+    }
+
+    private var emptyStateTitle: String {
+        if store.noteDrafts.isEmpty {
+            return "No notes yet"
+        }
+        return "No notes in this category"
+    }
+
+    private func isCategorySelected(_ categoryID: UUID) -> Bool {
+        switch store.selectedNoteCategoryFilter {
+        case .all:
+            return false
+        case let .category(selectedID):
+            return selectedID == categoryID
+        }
+    }
+
+    private func countForCategory(_ categoryID: UUID) -> Int {
+        store.noteDrafts.filter { draft in
+            draft.categories.contains(where: { $0.id == categoryID })
+        }
+        .count
+    }
+
+    private var categoriesWithNotes: [SessionCategoryRecord] {
+        store.categories.filter { countForCategory($0.id) > 0 }
+    }
+
+    private func filterChip(
+        title: String,
+        count: Int,
+        isSelected: Bool,
+        tint: Color = .secondary,
+        onTap: @escaping () -> Void
+    ) -> some View {
+        Button(action: onTap) {
+            OrbitCategoryChip(
+                title: title,
+                tint: tint,
+                isSelected: isSelected,
+                count: count
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private func endSessionButtonTapped() {
@@ -251,10 +327,7 @@ struct SessionPageView: View {
 
 private struct SessionHeader: View {
     let session: FocusSessionRecord
-    let categories: [SessionCategoryRecord]
-    let categoryColor: Color
     let onRename: (String) -> Void
-    let onCategoryChange: (UUID) -> Void
 
     @State private var isRenaming = false
     @State private var name = ""
@@ -297,46 +370,6 @@ private struct SessionHeader: View {
             }
 
             HStack(spacing: 8) {
-                Menu {
-                    ForEach(categories) { category in
-                        Button {
-                            onCategoryChange(category.id)
-                        } label: {
-                            if category.id == session.categoryID {
-                                Label(category.name, systemImage: "checkmark")
-                            } else {
-                                Text(category.name)
-                            }
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Text(session.categoryName.uppercased())
-                            .font(.caption.weight(.bold))
-                        Image(systemName: "chevron.down")
-                            .font(.caption2.weight(.semibold))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule()
-                            .fill(categoryColor.opacity(0.28))
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(categoryColor.opacity(0.95), lineWidth: 1.25)
-                    )
-                }
-                .buttonStyle(.plain)
-                .orbitInteractiveControl(
-                    scale: 1.015,
-                    lift: -1.0,
-                    shadowColor: Color.cyan.opacity(0.16),
-                    shadowRadius: 6
-                )
-                .disabled(categories.isEmpty)
-
-                Text("•")
                 Text("Started \(session.startedAt, style: .time)")
                 Text("•")
                 Text("Elapsed \(session.startedAt, style: .timer)")
@@ -382,7 +415,7 @@ private struct SessionHeader: View {
     }
 }
 
-private struct NoteEditorRow: View {
+private struct NoteRow: View {
     let draft: AppFeature.State.NoteDraft
     let onEdit: () -> Void
     let onToggleTask: (Int) -> Void
@@ -413,7 +446,7 @@ private struct NoteEditorRow: View {
                 .font(.body)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                tagsSection
+                categoriesSection
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -439,12 +472,16 @@ private struct NoteEditorRow: View {
     }
 
     @ViewBuilder
-    private var tagsSection: some View {
-        if !draft.tags.isEmpty {
+    private var categoriesSection: some View {
+        if !draft.categories.isEmpty {
             ScrollView(.horizontal) {
                 HStack(spacing: 6) {
-                    ForEach(draft.tags, id: \.self) { tag in
-                        ReadOnlyTagChip(tag: tag)
+                    ForEach(draft.categories) { category in
+                        OrbitCategoryChip(
+                            title: category.name,
+                            tint: Color(categoryHex: category.colorHex),
+                            isSelected: true
+                        )
                     }
                 }
                 .padding(.vertical, 2)
@@ -552,22 +589,6 @@ private struct NoteEditorRow: View {
             guard token == deleteConfirmationToken, isDeleteConfirmationPending else { return }
             isDeleteConfirmationPending = false
         }
-    }
-}
-
-private struct ReadOnlyTagChip: View {
-    let tag: String
-
-    var body: some View {
-        Text(tag)
-            .font(.caption2)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(.ultraThinMaterial)
-            )
-            .foregroundStyle(.secondary)
     }
 }
 

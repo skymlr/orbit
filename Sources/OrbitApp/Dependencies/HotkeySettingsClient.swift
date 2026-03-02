@@ -13,12 +13,19 @@ extension HotkeySettingsClient: DependencyKey {
                 let defaults = UserDefaults.standard
                 let start = defaults.string(forKey: Keys.startShortcut) ?? HotkeySettings.default.startShortcut
                 let capture = defaults.string(forKey: Keys.captureShortcut) ?? HotkeySettings.default.captureShortcut
-                return HotkeySettings(startShortcut: start, captureShortcut: capture)
+                let nextPriority = defaults.string(forKey: Keys.captureNextPriorityShortcut)
+                    ?? HotkeySettings.default.captureNextPriorityShortcut
+                return HotkeySettings(
+                    startShortcut: start,
+                    captureShortcut: capture,
+                    captureNextPriorityShortcut: nextPriority
+                )
             },
             save: { settings in
                 let defaults = UserDefaults.standard
                 defaults.set(settings.startShortcut, forKey: Keys.startShortcut)
                 defaults.set(settings.captureShortcut, forKey: Keys.captureShortcut)
+                defaults.set(settings.captureNextPriorityShortcut, forKey: Keys.captureNextPriorityShortcut)
             }
         )
     }
@@ -41,4 +48,5 @@ extension DependencyValues {
 private enum Keys {
     static let startShortcut = "orbit.hotkey.start"
     static let captureShortcut = "orbit.hotkey.capture"
+    static let captureNextPriorityShortcut = "orbit.hotkey.capture.nextPriority"
 }

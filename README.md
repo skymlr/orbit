@@ -7,8 +7,8 @@ Orbit is a menu bar-first macOS focus companion built with SwiftUI, TCA, and SQL
 - Start/open active session from menu or global hotkey.
 - Floating Quick Capture panel for fast note entry.
 - Notes support markdown source editing and attributed markdown rendering.
-- Note metadata includes tags and priority (`none`, `low`, `medium`, `high`).
-- Session categories with user-defined colors.
+- Note metadata includes priority (`none`, `low`, `medium`, `high`).
+- Notes support multiple user-defined categories.
 - Session management in Settings (rename, delete, export markdown).
 - Auto-end behavior:
   - 8 hours of inactivity.
@@ -52,4 +52,4 @@ swift test
 Orbit stores data in a local SQLite database at:
 - `~/Library/Application Support/Orbit/focus.sqlite`
 
-This includes sessions, categories, notes, tags, and note priorities.
+This includes sessions, categories, notes, note-category links, and note priorities.

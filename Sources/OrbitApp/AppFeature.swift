@@ -18,6 +18,11 @@ struct AppFeature {
 
     @ObservableState
     struct State: Equatable {
+        enum NoteCategoryFilter: Equatable {
+            case all
+            case category(UUID)
+        }
+
         enum SessionBootstrapState: Equatable {
             case idle
             case loading
@@ -27,22 +32,20 @@ struct AppFeature {
 
         struct CaptureDraft: Equatable {
             var text = ""
-            var tags = ""
             var priority: NotePriority = .none
+            var selectedCategoryIDs: [UUID] = [FocusDefaults.uncategorizedCategoryID]
             var editingNoteID: UUID?
         }
 
         struct EndSessionDraft: Equatable, Identifiable {
             var id = UUID()
             var name = ""
-            var selectedCategoryID = FocusDefaults.focusCategoryID
-            var categories: [SessionCategoryRecord] = []
         }
 
         struct NoteDraft: Equatable, Identifiable {
             var id: UUID
+            var categories: [NoteCategoryRecord]
             var text: String
-            var tags: [String]
             var priority: NotePriority
             var createdAt: Date
         }
@@ -52,6 +55,7 @@ struct AppFeature {
             var categories: [SessionCategoryRecord] = []
             var startShortcut = HotkeySettings.default.startShortcut
             var captureShortcut = HotkeySettings.default.captureShortcut
+            var captureNextPriorityShortcut = HotkeySettings.default.captureNextPriorityShortcut
             var statusMessage: String?
         }
 
@@ -64,12 +68,23 @@ struct AppFeature {
         var captureDraft = CaptureDraft()
         var endSessionDraft: EndSessionDraft?
 
+        var selectedNoteCategoryFilter: NoteCategoryFilter = .all
+
         var settings = SettingsState()
 
         var windowDestinations: Set<WindowDestination> = []
         var workspaceWindowFocusRequest = 0
         var sessionBootstrapState: SessionBootstrapState = .idle
         var hasLaunched = false
+
+        var filteredNoteDrafts: [NoteDraft] {
+            switch selectedNoteCategoryFilter {
+            case .all:
+                return Array(noteDrafts)
+            case let .category(categoryID):
+                return noteDrafts.filter { $0.categories.contains(where: { $0.id == categoryID }) }
+            }
+        }
     }
 
     enum Action: BindableAction {
@@ -94,14 +109,13 @@ struct AppFeature {
 
         case captureSubmitTapped
         case sessionAddNoteTapped
-        case sessionNoteEditTapped(UUID)
         case sessionRenameTapped(String)
-        case sessionCategoryChangedTapped(UUID)
-        case sessionNoteSaveTapped(UUID, String, [String], NotePriority)
-        case sessionNoteTaskToggleTapped(UUID, Int)
+        case sessionNoteCategoryFilterChangedTapped(State.NoteCategoryFilter)
         case sessionNoteDeleteTapped(UUID)
+        case sessionNoteEditTapped(UUID)
+        case sessionNoteTaskToggleTapped(UUID, Int)
 
-        case endSessionConfirmTapped(name: String, categoryID: UUID?)
+        case endSessionConfirmTapped(name: String)
         case endSessionCancelTapped
         case autoEndSession
 
@@ -151,6 +165,7 @@ struct AppFeature {
                 state.hotkeys = hotkeys
                 state.settings.startShortcut = hotkeys.startShortcut
                 state.settings.captureShortcut = hotkeys.captureShortcut
+                state.settings.captureNextPriorityShortcut = hotkeys.captureNextPriorityShortcut
 
                 return .merge(
                     .send(.registerHotkeys(hotkeys)),
@@ -173,7 +188,6 @@ struct AppFeature {
                 guard let activeSession = state.activeSession else { return .none }
                 try? focusRepository.endSessionSync(
                     activeSession.id,
-                    nil,
                     nil,
                     .appClosed,
                     now
@@ -278,9 +292,7 @@ struct AppFeature {
                 guard let active = state.activeSession else { return .none }
                 state.endSessionDraft = State.EndSessionDraft(
                     id: uuid(),
-                    name: active.name,
-                    selectedCategoryID: active.categoryID,
-                    categories: state.categories
+                    name: active.name
                 )
                 return .none
 
@@ -288,9 +300,7 @@ struct AppFeature {
                 guard let active = state.activeSession else { return .none }
                 state.endSessionDraft = State.EndSessionDraft(
                     id: uuid(),
-                    name: active.name,
-                    selectedCategoryID: active.categoryID,
-                    categories: state.categories
+                    name: active.name
                 )
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.workspaceWindow)
@@ -303,7 +313,9 @@ struct AppFeature {
 
             case .captureWindowClosed:
                 state.windowDestinations.remove(.captureWindow)
-                state.captureDraft = State.CaptureDraft()
+                state.captureDraft = State.CaptureDraft(
+                    selectedCategoryIDs: persistedCaptureCategoryIDs(state)
+                )
                 return .none
 
             case .endSessionWindowClosed:
@@ -314,18 +326,21 @@ struct AppFeature {
             case .captureSubmitTapped:
                 guard let activeSession = state.activeSession else { return .none }
                 let text = state.captureDraft.text
-                let tags = FocusDefaults.parseTagInput(state.captureDraft.tags)
                 let priority = state.captureDraft.priority
                 let editingNoteID = state.captureDraft.editingNoteID
+                let selectedCategoryIDs = normalizedCategoryIDs(
+                    state.captureDraft.selectedCategoryIDs,
+                    categories: state.categories
+                )
 
-                state.captureDraft = State.CaptureDraft()
+                state.captureDraft = State.CaptureDraft(selectedCategoryIDs: selectedCategoryIDs)
                 state.windowDestinations.remove(.captureWindow)
 
                 return .run { send in
                     if let noteID = editingNoteID {
-                        _ = try? await focusRepository.updateNote(noteID, text, priority, tags, now)
+                        _ = try? await focusRepository.updateNote(noteID, text, priority, selectedCategoryIDs, now)
                     } else {
-                        _ = try? await focusRepository.createNote(activeSession.id, text, priority, tags, now)
+                        _ = try? await focusRepository.createNote(activeSession.id, text, priority, selectedCategoryIDs, now)
                     }
                     let active = try? await focusRepository.loadActiveSession()
                     await send(.loadActiveSessionResponse(active))
@@ -333,7 +348,9 @@ struct AppFeature {
                 }
 
             case .sessionAddNoteTapped:
-                state.captureDraft = State.CaptureDraft()
+                state.captureDraft = State.CaptureDraft(
+                    selectedCategoryIDs: persistedCaptureCategoryIDs(state)
+                )
                 state.windowDestinations.insert(.captureWindow)
                 return .none
 
@@ -341,8 +358,11 @@ struct AppFeature {
                 guard let draft = state.noteDrafts[id: noteID] else { return .none }
 
                 state.captureDraft.text = draft.text
-                state.captureDraft.tags = draft.tags.joined(separator: ", ")
                 state.captureDraft.priority = draft.priority
+                state.captureDraft.selectedCategoryIDs = normalizedCategoryIDs(
+                    draft.categories.map(\.id),
+                    categories: state.categories
+                )
                 state.captureDraft.editingNoteID = noteID
                 state.windowDestinations.insert(.captureWindow)
                 return .none
@@ -357,25 +377,9 @@ struct AppFeature {
                     await send(.settingsRefreshTapped)
                 }
 
-            case let .sessionCategoryChangedTapped(categoryID):
-                guard let activeSession = state.activeSession else { return .none }
-
-                return .run { send in
-                    try? await focusRepository.updateSessionCategory(activeSession.id, categoryID)
-                    let active = try? await focusRepository.loadActiveSession()
-                    await send(.loadActiveSessionResponse(active))
-                    await send(.settingsRefreshTapped)
-                }
-
-            case let .sessionNoteSaveTapped(noteID, text, tags, priority):
-                guard state.activeSession != nil else { return .none }
-
-                return .run { send in
-                    _ = try? await focusRepository.updateNote(noteID, text, priority, tags, now)
-                    let active = try? await focusRepository.loadActiveSession()
-                    await send(.loadActiveSessionResponse(active))
-                    await send(.settingsRefreshTapped)
-                }
+            case let .sessionNoteCategoryFilterChangedTapped(filter):
+                state.selectedNoteCategoryFilter = filter
+                return .none
 
             case let .sessionNoteTaskToggleTapped(noteID, lineIndex):
                 guard state.activeSession != nil else { return .none }
@@ -387,7 +391,13 @@ struct AppFeature {
                 state.noteDrafts[id: noteID]?.text = toggledText
 
                 return .run { send in
-                    _ = try? await focusRepository.updateNote(noteID, toggledText, draft.priority, draft.tags, now)
+                    _ = try? await focusRepository.updateNote(
+                        noteID,
+                        toggledText,
+                        draft.priority,
+                        draft.categories.map(\.id),
+                        now
+                    )
                     let active = try? await focusRepository.loadActiveSession()
                     await send(.loadActiveSessionResponse(active))
                     await send(.settingsRefreshTapped)
@@ -403,7 +413,7 @@ struct AppFeature {
                     await send(.settingsRefreshTapped)
                 }
 
-            case let .endSessionConfirmTapped(name, categoryID):
+            case let .endSessionConfirmTapped(name):
                 guard let activeSession = state.activeSession else { return .none }
 
                 state.endSessionDraft = nil
@@ -415,7 +425,6 @@ struct AppFeature {
                     _ = try? await focusRepository.endSession(
                         activeSession.id,
                         name,
-                        categoryID,
                         .manual,
                         now
                     )
@@ -439,7 +448,6 @@ struct AppFeature {
                 return .run { send in
                     _ = try? await focusRepository.endSession(
                         activeSession.id,
-                        nil,
                         nil,
                         .inactivity,
                         now
@@ -471,10 +479,21 @@ struct AppFeature {
                     state.settings.captureShortcut = captureShortcut
                 }
 
+                var captureNextPriorityShortcut = state.settings.captureNextPriorityShortcut
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if captureNextPriorityShortcut.isEmpty {
+                    captureNextPriorityShortcut = HotkeySettings.default.captureNextPriorityShortcut
+                    state.settings.captureNextPriorityShortcut = captureNextPriorityShortcut
+                }
+
                 hotkeyManager.unregister(previous.startShortcut)
                 hotkeyManager.unregister(previous.captureShortcut)
 
-                let settings = HotkeySettings(startShortcut: startShortcut, captureShortcut: captureShortcut)
+                let settings = HotkeySettings(
+                    startShortcut: startShortcut,
+                    captureShortcut: captureShortcut,
+                    captureNextPriorityShortcut: captureNextPriorityShortcut
+                )
                 state.hotkeys = settings
                 hotkeySettingsClient.save(settings)
                 state.settings.statusMessage = "Hotkeys saved"
@@ -491,6 +510,7 @@ struct AppFeature {
                 state.hotkeys = defaults
                 state.settings.startShortcut = defaults.startShortcut
                 state.settings.captureShortcut = defaults.captureShortcut
+                state.settings.captureNextPriorityShortcut = defaults.captureNextPriorityShortcut
                 state.settings.statusMessage = "Hotkeys reset to defaults"
                 hotkeySettingsClient.save(defaults)
 
@@ -585,6 +605,7 @@ struct AppFeature {
                 state.endSessionDraft = nil
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.endSessionWindow)
+                state.selectedNoteCategoryFilter = .all
 
                 return .cancel(id: CancelID.inactivityMonitor)
 
@@ -593,13 +614,11 @@ struct AppFeature {
                 syncNoteDrafts(&state)
 
                 if let session {
-                    if var endSessionDraft = state.endSessionDraft {
-                        endSessionDraft.name = session.name
-                        if state.categories.contains(where: { $0.id == session.categoryID }) {
-                            endSessionDraft.selectedCategoryID = session.categoryID
-                        }
-                        state.endSessionDraft = endSessionDraft
-                    }
+                    state.captureDraft.selectedCategoryIDs = defaultCaptureCategoryIDs(
+                        session: session,
+                        categories: state.categories
+                    )
+                    ensureCategorySelections(&state)
 
                     return .run { send in
                         while !Task.isCancelled {
@@ -613,27 +632,41 @@ struct AppFeature {
                 state.endSessionDraft = nil
                 state.windowDestinations.remove(.endSessionWindow)
                 state.windowDestinations.remove(.captureWindow)
+                state.captureDraft = State.CaptureDraft(
+                    selectedCategoryIDs: [FocusDefaults.uncategorizedCategoryID]
+                )
+                state.selectedNoteCategoryFilter = .all
 
                 return .cancel(id: CancelID.inactivityMonitor)
 
             case let .loadCategoriesResponse(categories):
-                state.categories = categories.sorted(by: { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending })
+                state.categories = categories.sorted(by: {
+                    $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+                })
                 state.settings.categories = state.categories
-
-                if var endSessionDraft = state.endSessionDraft {
-                    endSessionDraft.categories = state.categories
-                    if !state.categories.contains(where: { $0.id == endSessionDraft.selectedCategoryID }) {
-                        endSessionDraft.selectedCategoryID = FocusDefaults.focusCategoryID
-                    }
-                    state.endSessionDraft = endSessionDraft
+                if let activeSession = state.activeSession, state.captureDraft.editingNoteID == nil {
+                    state.captureDraft.selectedCategoryIDs = defaultCaptureCategoryIDs(
+                        session: activeSession,
+                        categories: state.categories
+                    )
                 }
-
+                ensureCategorySelections(&state)
                 return .none
 
             case let .settingsDataResponse(sessions, categories):
+                let sortedCategories = categories.sorted(by: {
+                    $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+                })
                 state.settings.sessions = sessions
-                state.settings.categories = categories
-                state.categories = categories
+                state.settings.categories = sortedCategories
+                state.categories = sortedCategories
+                if let activeSession = state.activeSession, state.captureDraft.editingNoteID == nil {
+                    state.captureDraft.selectedCategoryIDs = defaultCaptureCategoryIDs(
+                        session: activeSession,
+                        categories: state.categories
+                    )
+                }
+                ensureCategorySelections(&state)
                 return .none
             }
         }
@@ -652,11 +685,73 @@ private func syncNoteDrafts(_ state: inout AppFeature.State) {
             .map {
                 AppFeature.State.NoteDraft(
                     id: $0.id,
+                    categories: $0.categories,
                     text: $0.text,
-                    tags: $0.tags,
                     priority: $0.priority,
                     createdAt: $0.createdAt
                 )
             }
     )
+}
+
+private func defaultCaptureCategoryIDs(
+    session: FocusSessionRecord,
+    categories: [SessionCategoryRecord]
+) -> [UUID] {
+    guard
+        let latestCategoryIDs = session.notes
+            .sorted(by: { $0.createdAt > $1.createdAt })
+            .first?
+            .categories
+            .map(\.id)
+    else {
+        return [FocusDefaults.uncategorizedCategoryID]
+    }
+
+    return normalizedCategoryIDs(latestCategoryIDs, categories: categories)
+}
+
+private func normalizedCategoryIDs(_ categoryIDs: [UUID], categories: [SessionCategoryRecord]) -> [UUID] {
+    var seen = Set<UUID>()
+    var normalized: [UUID] = []
+
+    for categoryID in categoryIDs {
+        guard !seen.contains(categoryID) else { continue }
+        guard categories.contains(where: { $0.id == categoryID }) else { continue }
+        seen.insert(categoryID)
+        normalized.append(categoryID)
+    }
+
+    if normalized.isEmpty {
+        return [FocusDefaults.uncategorizedCategoryID]
+    }
+
+    return normalized
+}
+
+private func persistedCaptureCategoryIDs(_ state: AppFeature.State) -> [UUID] {
+    normalizedCategoryIDs(
+        state.captureDraft.selectedCategoryIDs,
+        categories: state.categories
+    )
+}
+
+private func ensureCategorySelections(_ state: inout AppFeature.State) {
+    state.captureDraft.selectedCategoryIDs = normalizedCategoryIDs(
+        state.captureDraft.selectedCategoryIDs,
+        categories: state.categories
+    )
+
+    switch state.selectedNoteCategoryFilter {
+    case .all:
+        break
+    case let .category(categoryID):
+        if !state.categories.contains(where: { $0.id == categoryID })
+            || !state.noteDrafts.contains(where: { draft in
+                draft.categories.contains(where: { $0.id == categoryID })
+            })
+        {
+            state.selectedNoteCategoryFilter = .all
+        }
+    }
 }

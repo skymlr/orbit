@@ -21,15 +21,16 @@ import StructuredQueries
 @Table struct SessionNote: Identifiable, Sendable {
     let id: UUID
     var sessionID: FocusSession.ID
+    // Legacy column retained for compatibility/migration fallback.
+    var categoryID: SessionCategory.ID = FocusDefaults.uncategorizedCategoryID
     var text = ""
     var priority = ""
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
 }
 
-@Table struct SessionNoteTag: Identifiable, Sendable {
+@Table struct SessionNoteCategory: Identifiable, Sendable {
     let id: UUID
     var noteID: SessionNote.ID
-    var name = ""
-    var normalizedName = ""
+    var categoryID: SessionCategory.ID
 }

@@ -138,6 +138,156 @@ extension DependencyValues {
             .execute(db)
         }
 
+        migrator.registerMigration("Move category ownership to notes") { db in
+            try #sql(
+                """
+                UPDATE "focusSessions"
+                SET "categoryID" = 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
+                WHERE "categoryID" IN (
+                  SELECT "id"
+                  FROM "sessionCategories"
+                  WHERE "normalizedName" = 'uncategorized'
+                    AND "id" <> 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
+                )
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                DELETE FROM "sessionCategories"
+                WHERE "normalizedName" = 'uncategorized'
+                  AND "id" <> 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                INSERT INTO "sessionCategories" ("id", "name", "normalizedName", "colorHex")
+                VALUES (
+                  'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001',
+                  'uncategorized',
+                  'uncategorized',
+                  '#00B5FF'
+                )
+                ON CONFLICT("id") DO UPDATE
+                SET
+                  "name" = 'uncategorized',
+                  "normalizedName" = 'uncategorized',
+                  "colorHex" = '#00B5FF'
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                ALTER TABLE "sessionNotes"
+                ADD COLUMN "categoryID" TEXT NOT NULL REFERENCES "sessionCategories"("id") ON DELETE RESTRICT
+                DEFAULT 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                UPDATE "sessionNotes"
+                SET "categoryID" = COALESCE(
+                  (
+                    SELECT "focusSessions"."categoryID"
+                    FROM "focusSessions"
+                    WHERE "focusSessions"."id" = "sessionNotes"."sessionID"
+                  ),
+                  'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
+                )
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                UPDATE "sessionNotes"
+                SET "categoryID" = 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
+                WHERE "categoryID" IS NULL
+                  OR "categoryID" NOT IN (
+                    SELECT "id" FROM "sessionCategories"
+                  )
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                CREATE INDEX "index_sessionNotes_on_sessionID_categoryID_createdAt"
+                ON "sessionNotes"("sessionID", "categoryID", "createdAt" DESC)
+                """
+            )
+            .execute(db)
+        }
+
+        migrator.registerMigration("Support multiple categories per note") { db in
+            try #sql(
+                """
+                INSERT OR IGNORE INTO "sessionCategories" ("id", "name", "normalizedName", "colorHex")
+                VALUES ('c8b3b4cc-2928-4a84-9c3b-eb253e9d0001', 'uncategorized', 'uncategorized', '#00B5FF')
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                CREATE TABLE "sessionNoteCategories" (
+                  "id" TEXT PRIMARY KEY NOT NULL,
+                  "noteID" TEXT NOT NULL REFERENCES "sessionNotes"("id") ON DELETE CASCADE,
+                  "categoryID" TEXT NOT NULL REFERENCES "sessionCategories"("id") ON DELETE RESTRICT
+                ) STRICT
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                CREATE UNIQUE INDEX "index_sessionNoteCategories_on_noteID_categoryID"
+                ON "sessionNoteCategories"("noteID", "categoryID")
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                CREATE INDEX "index_sessionNoteCategories_on_categoryID_noteID"
+                ON "sessionNoteCategories"("categoryID", "noteID")
+                """
+            )
+            .execute(db)
+
+            let notes = try SessionNote.fetchAll(db)
+            for note in notes {
+                let resolvedCategoryID: UUID
+                if try SessionCategory.find(note.categoryID).fetchOne(db) != nil {
+                    resolvedCategoryID = note.categoryID
+                } else {
+                    resolvedCategoryID = FocusDefaults.uncategorizedCategoryID
+                }
+
+                try SessionNoteCategory.insert {
+                    ($0.id, $0.noteID, $0.categoryID)
+                } values: {
+                    (UUID(), note.id, resolvedCategoryID)
+                }
+                .execute(db)
+            }
+        }
+
+        migrator.registerMigration("Remove note tags table") { db in
+            try #sql(
+                """
+                DROP TABLE IF EXISTS "sessionNoteTags"
+                """
+            )
+            .execute(db)
+        }
+
         try migrator.migrate(database)
         defaultDatabase = database
     }

@@ -61,8 +61,8 @@ struct OrbitMenuBarApp: App {
             if store.windowDestinations.contains(.endSessionWindow), let draft = store.endSessionDraft {
                 EndSessionPromptView(
                     draft: draft,
-                    onConfirm: { name, categoryID in
-                        store.send(.endSessionConfirmTapped(name: name, categoryID: categoryID))
+                    onConfirm: { name in
+                        store.send(.endSessionConfirmTapped(name: name))
                     },
                     onCancel: {
                         store.send(.endSessionCancelTapped)
