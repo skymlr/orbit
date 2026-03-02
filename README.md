@@ -47,7 +47,6 @@ swift test
 - [Sources/OrbitApp](Sources/OrbitApp): App features, dependencies, shared UI components.
 - [Resources/Assets.xcassets](Resources/Assets.xcassets): App icon and asset catalog.
 - [Tests/OrbitAppTests](Tests/OrbitAppTests): Reducer and markdown editing tests.
-- [Scripts/generate_xcodeproj.rb](Scripts/generate_xcodeproj.rb): Regenerates the native Xcode project.
 
 ## Data Storage
 Orbit stores data in a local SQLite database at:
