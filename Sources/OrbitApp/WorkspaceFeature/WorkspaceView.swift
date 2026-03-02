@@ -2,13 +2,14 @@ import AppKit
 import ComposableArchitecture
 import SwiftUI
 
-struct OrbitSettingsView: View {
+struct WorkspaceView: View {
     private enum SectionWidth {
         static let section: CGFloat = 700
     }
 
-    private enum SettingsSection: String, CaseIterable, Identifiable {
-        case sessions = "Sessions"
+    private enum WorkspaceSection: String, CaseIterable, Identifiable {
+        case session = "Session"
+        case history = "History"
         case categories = "Categories"
         case hotkeys = "Hotkeys"
         case about = "About"
@@ -17,7 +18,9 @@ struct OrbitSettingsView: View {
 
         var iconName: String {
             switch self {
-            case .sessions:
+            case .session:
+                return "play.circle"
+            case .history:
                 return "clock.arrow.circlepath"
             case .categories:
                 return "folder"
@@ -37,18 +40,24 @@ struct OrbitSettingsView: View {
     }
 
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
-    @Environment(\.openWindow) private var openWindow
-    @State private var selectedSection: SettingsSection = .sessions
+    @State private var selectedSection: WorkspaceSection = .session
+    @State private var columnVisibility: NavigationSplitViewVisibility = .detailOnly
     @State private var newCategoryName = ""
     @State private var newCategoryColorHex = FocusDefaults.defaultCategoryColorHex
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             sidebar
         } detail: {
             detailContent
         }
         .navigationSplitViewStyle(.balanced)
+        .task {
+            store.send(.settingsRefreshTapped)
+        }
+        .onChange(of: store.workspaceWindowFocusRequest) { _, _ in
+            resetWorkspaceDestination()
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background {
             OrbitSpaceBackground()
@@ -56,10 +65,14 @@ struct OrbitSettingsView: View {
     }
 
     @ViewBuilder
-    private func selectedSectionContent(for section: SettingsSection) -> some View {
+    private func selectedSectionContent(for section: WorkspaceSection) -> some View {
         switch section {
-        case .sessions:
-            sessionsSection
+        case .session:
+            SessionPageView(store: store)
+                .id(section)
+                .transition(.orbitMicro)
+        case .history:
+            historySection
         case .categories:
             categoriesSection
         case .hotkeys:
@@ -71,7 +84,7 @@ struct OrbitSettingsView: View {
 
     private var sidebar: some View {
         List(selection: $selectedSection) {
-            ForEach(SettingsSection.allCases) { section in
+            ForEach(WorkspaceSection.allCases) { section in
                 Label(section.rawValue, systemImage: section.iconName)
                     .font(.body.weight(.semibold))
                     .tag(section)
@@ -87,23 +100,29 @@ struct OrbitSettingsView: View {
     }
 
     private var detailContent: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                ZStack(alignment: .topLeading) {
-                    selectedSectionContent(for: selectedSection)
-                        .id(selectedSection)
-                        .transition(.orbitMicro)
-                }
+        Group {
+            if selectedSection == .session {
+                selectedSectionContent(for: selectedSection)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        ZStack(alignment: .topLeading) {
+                            selectedSectionContent(for: selectedSection)
+                                .id(selectedSection)
+                                .transition(.orbitMicro)
+                        }
 
-                if let message = store.settings.statusMessage {
-                    Text(message)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .transition(.orbitMicro)
+                        if let message = store.settings.statusMessage {
+                            Text(message)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .transition(.orbitMicro)
+                        }
+                    }
+                    .padding(20)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle(selectedSection.rawValue)
@@ -178,7 +197,7 @@ struct OrbitSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
-    private var sessionsSection: some View {
+    private var historySection: some View {
         sectionCard {
             VStack(alignment: .leading, spacing: 14) {
                 if let activeSession = store.activeSession {
@@ -186,7 +205,7 @@ struct OrbitSettingsView: View {
                         session: activeSession,
                         categoryColorHex: categoryColorHex(for: activeSession.categoryID),
                         onOpenSession: {
-                            openActiveSessionButtonTapped()
+                            openSessionSectionButtonTapped()
                         }
                     )
                     .transition(.orbitMicro)
@@ -233,7 +252,7 @@ struct OrbitSettingsView: View {
                 }
             }
         }
-        .frame(maxWidth: sectionMaxWidth(for: .sessions))
+        .frame(maxWidth: sectionMaxWidth(for: .history))
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
@@ -334,18 +353,14 @@ struct OrbitSettingsView: View {
         }
     }
 
-    private func openActiveSessionButtonTapped() {
-        store.send(.openSessionTapped)
-        NSApplication.shared.activate(ignoringOtherApps: true)
-        openWindow(id: "session-window")
+    private func openSessionSectionButtonTapped() {
+        selectedSection = .session
+        columnVisibility = .detailOnly
+    }
 
-        DispatchQueue.main.async {
-            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit Session" }) else {
-                return
-            }
-            window.orderFrontRegardless()
-            window.makeKey()
-        }
+    private func resetWorkspaceDestination() {
+        selectedSection = .session
+        columnVisibility = .detailOnly
     }
 
     private func chooseExportDirectory(_ onURLSelected: (URL) -> Void) {
@@ -366,7 +381,7 @@ struct OrbitSettingsView: View {
             ?? FocusDefaults.defaultCategoryColorHex
     }
 
-    private func sectionMaxWidth(for section: SettingsSection) -> CGFloat {
+    private func sectionMaxWidth(for section: WorkspaceSection) -> CGFloat {
         SectionWidth.section
     }
 
@@ -592,7 +607,7 @@ private struct ActiveSessionHero: View {
 
                 Spacer()
 
-                Button("Open Session") {
+                Button("Go to Session") {
                     onOpenSession()
                 }
                 .buttonStyle(.orbitPrimary)

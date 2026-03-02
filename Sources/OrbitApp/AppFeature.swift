@@ -11,7 +11,7 @@ struct AppFeature {
 
     @CasePathable
     enum WindowDestination: Hashable, Sendable {
-        case sessionWindow
+        case workspaceWindow
         case captureWindow
         case endSessionWindow
     }
@@ -67,7 +67,7 @@ struct AppFeature {
         var settings = SettingsState()
 
         var windowDestinations: Set<WindowDestination> = []
-        var sessionWindowFocusRequest = 0
+        var workspaceWindowFocusRequest = 0
         var sessionBootstrapState: SessionBootstrapState = .idle
         var hasLaunched = false
     }
@@ -84,11 +84,11 @@ struct AppFeature {
 
         case startSessionTapped
         case captureTapped
-        case openSessionTapped
+        case openWorkspaceTapped
         case endSessionTapped
-        case sessionWindowEndSessionTapped
+        case workspaceWindowEndSessionTapped
 
-        case sessionWindowClosed
+        case workspaceWindowClosed
         case captureWindowClosed
         case endSessionWindowClosed
 
@@ -226,16 +226,16 @@ struct AppFeature {
 
             case .startSessionTapped:
                 if state.activeSession != nil {
-                    return .send(.openSessionTapped)
+                    return .send(.openWorkspaceTapped)
                 }
-                state.windowDestinations.insert(.sessionWindow)
+                state.windowDestinations.insert(.workspaceWindow)
 
                 return .run { send in
                     do {
                         _ = try await focusRepository.startSession(now)
                         let active = try await focusRepository.loadActiveSession()
                         await send(.loadActiveSessionResponse(active))
-                        await send(.openSessionTapped)
+                        await send(.openWorkspaceTapped)
                         await send(.settingsRefreshTapped)
                         if active == nil {
                             await send(.operationFailed("Failed to load the newly started session."))
@@ -250,7 +250,7 @@ struct AppFeature {
                     state.windowDestinations.insert(.captureWindow)
                     return .none
                 }
-                state.windowDestinations.insert(.sessionWindow)
+                state.windowDestinations.insert(.workspaceWindow)
                 state.windowDestinations.insert(.captureWindow)
 
                 return .run { send in
@@ -258,7 +258,7 @@ struct AppFeature {
                         _ = try await focusRepository.startSession(now)
                         let active = try await focusRepository.loadActiveSession()
                         await send(.loadActiveSessionResponse(active))
-                        await send(.openSessionTapped)
+                        await send(.openWorkspaceTapped)
                         await send(.captureTapped)
                         await send(.settingsRefreshTapped)
                         if active == nil {
@@ -269,9 +269,9 @@ struct AppFeature {
                     }
                 }
 
-            case .openSessionTapped:
-                state.windowDestinations.insert(.sessionWindow)
-                state.sessionWindowFocusRequest &+= 1
+            case .openWorkspaceTapped:
+                state.windowDestinations.insert(.workspaceWindow)
+                state.workspaceWindowFocusRequest &+= 1
                 return .none
 
             case .endSessionTapped:
@@ -284,7 +284,7 @@ struct AppFeature {
                 )
                 return .none
 
-            case .sessionWindowEndSessionTapped:
+            case .workspaceWindowEndSessionTapped:
                 guard let active = state.activeSession else { return .none }
                 state.endSessionDraft = State.EndSessionDraft(
                     id: uuid(),
@@ -293,12 +293,12 @@ struct AppFeature {
                     categories: state.categories
                 )
                 state.windowDestinations.remove(.captureWindow)
-                state.windowDestinations.remove(.sessionWindow)
+                state.windowDestinations.remove(.workspaceWindow)
                 state.windowDestinations.insert(.endSessionWindow)
                 return .none
 
-            case .sessionWindowClosed:
-                state.windowDestinations.remove(.sessionWindow)
+            case .workspaceWindowClosed:
+                state.windowDestinations.remove(.workspaceWindow)
                 return .none
 
             case .captureWindowClosed:
@@ -409,7 +409,7 @@ struct AppFeature {
                 state.endSessionDraft = nil
                 state.windowDestinations.remove(.endSessionWindow)
                 state.windowDestinations.remove(.captureWindow)
-                state.windowDestinations.remove(.sessionWindow)
+                state.windowDestinations.remove(.workspaceWindow)
 
                 return .run { send in
                     _ = try? await focusRepository.endSession(
@@ -434,7 +434,7 @@ struct AppFeature {
                 state.endSessionDraft = nil
                 state.windowDestinations.remove(.endSessionWindow)
                 state.windowDestinations.remove(.captureWindow)
-                state.windowDestinations.remove(.sessionWindow)
+                state.windowDestinations.remove(.workspaceWindow)
 
                 return .run { send in
                     _ = try? await focusRepository.endSession(

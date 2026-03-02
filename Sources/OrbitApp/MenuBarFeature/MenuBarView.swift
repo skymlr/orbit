@@ -1,11 +1,9 @@
 import ComposableArchitecture
 import SwiftUI
-import AppKit
 
 struct MenuBarView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -25,22 +23,6 @@ struct MenuBarView: View {
                 }
 
                 Spacer()
-
-                Button {
-                    dismissMenuThen {
-                        openSettingsWindow()
-                    }
-                } label: {
-                    Image(systemName: "gearshape")
-                }
-                .buttonStyle(.borderless)
-                .orbitInteractiveControl(
-                    scale: 1.08,
-                    lift: -1.2,
-                    shadowColor: Color.white.opacity(0.18),
-                    shadowRadius: 6
-                )
-                .help("Settings")
             }
 
             if let statusMessage = store.settings.statusMessage {
@@ -64,7 +46,6 @@ struct MenuBarView: View {
                         Button {
                             dismissMenuThen {
                                 store.send(.startSessionTapped)
-                                openSessionWindow()
                             }
                         } label: {
                             hotkeyButtonLabel(
@@ -90,7 +71,7 @@ struct MenuBarView: View {
 
                     Button("End Session") {
                         dismissMenuThen {
-                            store.send(.sessionWindowEndSessionTapped)
+                            store.send(.workspaceWindowEndSessionTapped)
                         }
                     }
                     .buttonStyle(.orbitQuiet)
@@ -161,31 +142,4 @@ private extension MenuBarView {
             HotkeyHintLabel(shortcut: shortcut)
         }
     }
-
-    func openSessionWindow() {
-        NSApplication.shared.activate(ignoringOtherApps: true)
-        openWindow(id: "session-window")
-
-        DispatchQueue.main.async {
-            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit Session" }) else {
-                return
-            }
-            window.orderFrontRegardless()
-            window.makeKey()
-        }
-    }
-
-    func openSettingsWindow() {
-        NSApplication.shared.activate(ignoringOtherApps: true)
-        openWindow(id: "settings-window")
-
-        DispatchQueue.main.async {
-            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit Settings" }) else {
-                return
-            }
-            window.orderFrontRegardless()
-            window.makeKey()
-        }
-    }
-
 }

@@ -7,260 +7,260 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0A2AECD5A0506945CEA2427C /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B530B8010CF8D16BE42A806 /* AppFeature.swift */; };
-		129108716B6D6454E9C049FB /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 939B4686F681D1AB1E86FEE3 /* HotkeyManager.swift */; };
-		18A310F719E11A8F6B79C202 /* HotkeySettingsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44490CE1643584D6C65E8E98 /* HotkeySettingsClient.swift */; };
-		3C482E3B3E36C47271434CF4 /* SessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC4ED013FA7E93095B1607D /* SessionView.swift */; };
-		40FB8FB982A901E2E676EF33 /* EndSessionPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0BE749A8AE1FBEC1ADE578 /* EndSessionPromptView.swift */; };
-		42BDFA1F95893036B537543C /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = B9FDA9C6F3A1812A35121240 /* ComposableArchitecture */; };
-		451ACBA049063CCD5E6F1F3E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 291708EC5BE70B08C0BE024D /* Assets.xcassets */; };
-		45A1A95C4CCDFC5469356EF7 /* OrbitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE06957523E45246BA60DA32 /* OrbitSettingsView.swift */; };
-		499F1D80E6D80A2FCC6045C0 /* HotkeyHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E40796C93534BE6F33252A /* HotkeyHint.swift */; };
-		49C6216B5FFED77CBC628BBC /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F3D42B26B834405B080A9 /* SQLiteData */; };
-		5B99B69A79ED935EE0697E31 /* OrbitSpaceBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51047D6A4CAEE07BAA7EC5AC /* OrbitSpaceBackground.swift */; };
-		5ED3EBE07034644BB6CBAA6A /* OrbitButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D62CEA84DB59F08A129516 /* OrbitButtonStyles.swift */; };
-		606F4B2E67606EBE2812681D /* MarkdownFormattingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB3D89EEA79A3398FA93988A /* MarkdownFormattingBar.swift */; };
-		616F55B69C8965B5E86006E6 /* MarkdownEditingCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F00FE2F626222FAFD1C553 /* MarkdownEditingCore.swift */; };
-		66ABC5DF1AB74B171926CDC6 /* QuickCapturePanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B506A9B68A7F83A885F957AF /* QuickCapturePanelController.swift */; };
-		871F2E6A55CA72D18F24302B /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2E9D98F420D66D714AD8BB4 /* App.swift */; };
-		9BBA6F384680BB482D421C91 /* MarkdownExportClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64A3200E14F7AA7EE8D1C0DA /* MarkdownExportClient.swift */; };
-		AB233A69302E0587CA7425FE /* FocusDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03ECC9E468033A3B565E6903 /* FocusDomain.swift */; };
-		ABAD4ABEB54CA1A903279E68 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 917CED81ABB623D45031BBF5 /* MenuBarView.swift */; };
-		AD9303D52E4DADB031A9A825 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC83B1EB70C124FA7CDE929F /* Models.swift */; };
-		B58B36FDFF82D895E3555D9D /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = E15831EEDCEF779BEC1B2A12 /* CasePaths */; };
-		B7432C3712B7134C4D391820 /* InactivityClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FDC5C7439DA09C3E6A669E3 /* InactivityClient.swift */; };
-		C319A8B9958C8FC1A90C06D4 /* QuickCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A470AACEF9FF6251F3248B09 /* QuickCaptureView.swift */; };
-		CF398F3433BC8C01DD424615 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E972D20F001E8433B06D38DB /* Cocoa.framework */; };
-		D7FFD3B06C0C0391A5EE96B9 /* MarkdownSourceTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DCED07DFAA15CC1579007D4 /* MarkdownSourceTextView.swift */; };
-		D9B95420E5CD1398EA2AFC06 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = DDDE93BFC2E32AF58D256595 /* Dependencies */; };
-		DC6D5534CF78F80E409AA61D /* StructuredQueries in Frameworks */ = {isa = PBXBuildFile; productRef = 7574805B15E40ABA4DCDC906 /* StructuredQueries */; };
-		E1855B23CCA3507FC83A16C9 /* Schema.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13D2EA78727984D05C809E7 /* Schema.swift */; };
-		EC7C1AB9CE91BED49A451B8E /* FocusRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C7F59AA463DAC3A74BF16D /* FocusRepository.swift */; };
+		014513AE2CD58CE20D97A2F3 /* QuickCapturePanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BFED63E38C932C97DD8C809 /* QuickCapturePanelController.swift */; };
+		1286FD6FED5E76D6BDD64FD2 /* OrbitSpaceBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F7DAB48B777F1E13ABC150 /* OrbitSpaceBackground.swift */; };
+		1648677C96E755210B40B545 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40539519CA0DC39A10932103 /* Cocoa.framework */; };
+		18071E49E8F5275C196D0F48 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A0366521FB1CC140F62320 /* HotkeyManager.swift */; };
+		1EAC93A0DCC35E3ACFEFD029 /* MarkdownFormattingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D965877A754D1CD6916D76 /* MarkdownFormattingBar.swift */; };
+		3040F4F279F0358D23F1BA92 /* HotkeySettingsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF187644B7FBFA30F89A5C8 /* HotkeySettingsClient.swift */; };
+		3FE62E41E35956AD6FA0CC99 /* QuickCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119D9CC13DB5BBE6A54B8DF5 /* QuickCaptureView.swift */; };
+		510A3D49BF048B5454665B17 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 44492BB61285D2CADF1D3884 /* ComposableArchitecture */; };
+		5D9BCD66DCAE6DE5376C3393 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD45782742C5B3180A06E9EE /* App.swift */; };
+		64E6437C65D8B82F9E6BA576 /* FocusRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB6775658599F836CBD40C4 /* FocusRepository.swift */; };
+		6D82F121BC31112CEBD1F9B5 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F44EC4CCDFA295B81FFEDF3 /* MenuBarView.swift */; };
+		7B5C28F45D9E184E171F6FC2 /* StructuredQueries in Frameworks */ = {isa = PBXBuildFile; productRef = D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */; };
+		7CA2F5C988DE8FFFCF264367 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 3AAF415269A2878FE0A31517 /* SQLiteData */; };
+		8184011CBB40FF439A2FADC0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9589E10F327CF6C7BCA98486 /* Assets.xcassets */; };
+		8555587D3F4BEDE136D3B3D2 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = C1F90FC1C0C31122E35D4F73 /* Dependencies */; };
+		8EDFE4861A5383A70956B635 /* MarkdownSourceTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C50C0AF4229125CAF4C6A99 /* MarkdownSourceTextView.swift */; };
+		96CC123BA8B91E42BD24988B /* OrbitButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC3E60A795D51747E39D007 /* OrbitButtonStyles.swift */; };
+		A4B4B69DDCEF26B1A3F4998A /* MarkdownExportClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC36E74A03098D2843A1524B /* MarkdownExportClient.swift */; };
+		A91044BC5CD8B609A747ECEE /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F88D4E1F70F7B6FB8EFDDC /* WorkspaceView.swift */; };
+		AB6C444405882E05AADED0C9 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */; };
+		B4FC2B004887F046D550D8F4 /* SessionPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2740EBBEC4BEB38C2A7E3164 /* SessionPageView.swift */; };
+		B58893B59D3CCFCD6A37589C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C539D5AC9B61A2745598F2C /* Models.swift */; };
+		B6A3A2B569277402C4E3B228 /* Schema.swift in Sources */ = {isa = PBXBuildFile; fileRef = F647314B9140B90A4D91A1FE /* Schema.swift */; };
+		C1941AAA53B6E6A12C5F3D8F /* HotkeyHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = C23484D86A339BABFCE21B79 /* HotkeyHint.swift */; };
+		C25523DE190914A0EEAC223E /* FocusDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88312D129C5CA0F27CBCF28F /* FocusDomain.swift */; };
+		C409D433F828E8C4704FF434 /* EndSessionPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D233237DD037E5C4ACE0DDC9 /* EndSessionPromptView.swift */; };
+		C5F44C028A93DA20427BACCE /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B976253DEEE87CEF658191F /* AppFeature.swift */; };
+		CF6FD4FB57612D275C562C55 /* MarkdownEditingCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60A9C526798D1F4E7B8615C /* MarkdownEditingCore.swift */; };
+		F1C3716C6DB7F4A0E45A4840 /* InactivityClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35F269DC84311AEF962A906A /* InactivityClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		03ECC9E468033A3B565E6903 /* FocusDomain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FocusDomain.swift; sourceTree = "<group>"; };
-		291708EC5BE70B08C0BE024D /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		44490CE1643584D6C65E8E98 /* HotkeySettingsClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeySettingsClient.swift; sourceTree = "<group>"; };
-		51047D6A4CAEE07BAA7EC5AC /* OrbitSpaceBackground.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitSpaceBackground.swift; sourceTree = "<group>"; };
-		5B530B8010CF8D16BE42A806 /* AppFeature.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppFeature.swift; sourceTree = "<group>"; };
-		5FDC5C7439DA09C3E6A669E3 /* InactivityClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InactivityClient.swift; sourceTree = "<group>"; };
-		64A3200E14F7AA7EE8D1C0DA /* MarkdownExportClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownExportClient.swift; sourceTree = "<group>"; };
-		69D62CEA84DB59F08A129516 /* OrbitButtonStyles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitButtonStyles.swift; sourceTree = "<group>"; };
-		75E40796C93534BE6F33252A /* HotkeyHint.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeyHint.swift; sourceTree = "<group>"; };
-		7FC4ED013FA7E93095B1607D /* SessionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionView.swift; sourceTree = "<group>"; };
-		8DCED07DFAA15CC1579007D4 /* MarkdownSourceTextView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownSourceTextView.swift; sourceTree = "<group>"; };
-		917CED81ABB623D45031BBF5 /* MenuBarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
-		939B4686F681D1AB1E86FEE3 /* HotkeyManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
-		9D878C4B6F87DB3FF6FB2231 /* Orbit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Orbit.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A13D2EA78727984D05C809E7 /* Schema.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Schema.swift; sourceTree = "<group>"; };
-		A2E9D98F420D66D714AD8BB4 /* App.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
-		A470AACEF9FF6251F3248B09 /* QuickCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
-		B506A9B68A7F83A885F957AF /* QuickCapturePanelController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickCapturePanelController.swift; sourceTree = "<group>"; };
-		BC83B1EB70C124FA7CDE929F /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		D6F00FE2F626222FAFD1C553 /* MarkdownEditingCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownEditingCore.swift; sourceTree = "<group>"; };
-		E7C7F59AA463DAC3A74BF16D /* FocusRepository.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FocusRepository.swift; sourceTree = "<group>"; };
-		E972D20F001E8433B06D38DB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
-		EE06957523E45246BA60DA32 /* OrbitSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitSettingsView.swift; sourceTree = "<group>"; };
-		FB3D89EEA79A3398FA93988A /* MarkdownFormattingBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownFormattingBar.swift; sourceTree = "<group>"; };
-		FC0BE749A8AE1FBEC1ADE578 /* EndSessionPromptView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EndSessionPromptView.swift; sourceTree = "<group>"; };
+		0B976253DEEE87CEF658191F /* AppFeature.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppFeature.swift; sourceTree = "<group>"; };
+		0BF187644B7FBFA30F89A5C8 /* HotkeySettingsClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeySettingsClient.swift; sourceTree = "<group>"; };
+		119D9CC13DB5BBE6A54B8DF5 /* QuickCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
+		1BFED63E38C932C97DD8C809 /* QuickCapturePanelController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickCapturePanelController.swift; sourceTree = "<group>"; };
+		2740EBBEC4BEB38C2A7E3164 /* SessionPageView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionPageView.swift; sourceTree = "<group>"; };
+		35F269DC84311AEF962A906A /* InactivityClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InactivityClient.swift; sourceTree = "<group>"; };
+		40539519CA0DC39A10932103 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		66F7DAB48B777F1E13ABC150 /* OrbitSpaceBackground.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitSpaceBackground.swift; sourceTree = "<group>"; };
+		6C539D5AC9B61A2745598F2C /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		6F44EC4CCDFA295B81FFEDF3 /* MenuBarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		88312D129C5CA0F27CBCF28F /* FocusDomain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FocusDomain.swift; sourceTree = "<group>"; };
+		8C50C0AF4229125CAF4C6A99 /* MarkdownSourceTextView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownSourceTextView.swift; sourceTree = "<group>"; };
+		9589E10F327CF6C7BCA98486 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AAB6775658599F836CBD40C4 /* FocusRepository.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FocusRepository.swift; sourceTree = "<group>"; };
+		B8D965877A754D1CD6916D76 /* MarkdownFormattingBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownFormattingBar.swift; sourceTree = "<group>"; };
+		C23484D86A339BABFCE21B79 /* HotkeyHint.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeyHint.swift; sourceTree = "<group>"; };
+		CC36E74A03098D2843A1524B /* MarkdownExportClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownExportClient.swift; sourceTree = "<group>"; };
+		D233237DD037E5C4ACE0DDC9 /* EndSessionPromptView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EndSessionPromptView.swift; sourceTree = "<group>"; };
+		DC70B03F528B2C69AA9ED812 /* Orbit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Orbit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F4F88D4E1F70F7B6FB8EFDDC /* WorkspaceView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		F60A9C526798D1F4E7B8615C /* MarkdownEditingCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownEditingCore.swift; sourceTree = "<group>"; };
+		F647314B9140B90A4D91A1FE /* Schema.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Schema.swift; sourceTree = "<group>"; };
+		F6A0366521FB1CC140F62320 /* HotkeyManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
+		FD45782742C5B3180A06E9EE /* App.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		FDC3E60A795D51747E39D007 /* OrbitButtonStyles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitButtonStyles.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		08ACE1AFF659332E588375C9 /* Frameworks */ = {
+		343EF250862A705649ED23BB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CF398F3433BC8C01DD424615 /* Cocoa.framework in Frameworks */,
-				42BDFA1F95893036B537543C /* ComposableArchitecture in Frameworks */,
-				B58B36FDFF82D895E3555D9D /* CasePaths in Frameworks */,
-				D9B95420E5CD1398EA2AFC06 /* Dependencies in Frameworks */,
-				49C6216B5FFED77CBC628BBC /* SQLiteData in Frameworks */,
-				DC6D5534CF78F80E409AA61D /* StructuredQueries in Frameworks */,
+				1648677C96E755210B40B545 /* Cocoa.framework in Frameworks */,
+				510A3D49BF048B5454665B17 /* ComposableArchitecture in Frameworks */,
+				AB6C444405882E05AADED0C9 /* CasePaths in Frameworks */,
+				8555587D3F4BEDE136D3B3D2 /* Dependencies in Frameworks */,
+				7CA2F5C988DE8FFFCF264367 /* SQLiteData in Frameworks */,
+				7B5C28F45D9E184E171F6FC2 /* StructuredQueries in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		05818FFC4346EA17D2F3AAA3 /* Sources */ = {
+		36A4DAFAAD04A70CAFF19B7B /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				AF65549547F3EBD20B3419CC /* OrbitApp */,
-			);
-			name = Sources;
-			path = Sources;
-			sourceTree = "<group>";
-		};
-		284D4D58F13EB41F56A4E277 /* Shared */ = {
-			isa = PBXGroup;
-			children = (
-				FC0BE749A8AE1FBEC1ADE578 /* EndSessionPromptView.swift */,
-				03ECC9E468033A3B565E6903 /* FocusDomain.swift */,
-				75E40796C93534BE6F33252A /* HotkeyHint.swift */,
-				D6F00FE2F626222FAFD1C553 /* MarkdownEditingCore.swift */,
-				FB3D89EEA79A3398FA93988A /* MarkdownFormattingBar.swift */,
-				8DCED07DFAA15CC1579007D4 /* MarkdownSourceTextView.swift */,
-				69D62CEA84DB59F08A129516 /* OrbitButtonStyles.swift */,
-				51047D6A4CAEE07BAA7EC5AC /* OrbitSpaceBackground.swift */,
-				B506A9B68A7F83A885F957AF /* QuickCapturePanelController.swift */,
-			);
-			name = Shared;
-			path = Shared;
-			sourceTree = "<group>";
-		};
-		2F5A59C2240F8BB543EB3866 /* Persistence */ = {
-			isa = PBXGroup;
-			children = (
-				BC83B1EB70C124FA7CDE929F /* Models.swift */,
-			);
-			name = Persistence;
-			path = Persistence;
-			sourceTree = "<group>";
-		};
-		4135EC12FD58755A8298D5F1 = {
-			isa = PBXGroup;
-			children = (
-				88B53B6D82BF78AFC875B5FD /* Products */,
-				6E1029E72C02450AB1BCB211 /* Frameworks */,
-				05818FFC4346EA17D2F3AAA3 /* Sources */,
-				B89F993EE0AC80E4D7ECD1E9 /* Resources */,
-			);
-			sourceTree = "<group>";
-		};
-		46A1C3437395DA46C2A4D040 /* MenuBarFeature */ = {
-			isa = PBXGroup;
-			children = (
-				917CED81ABB623D45031BBF5 /* MenuBarView.swift */,
-			);
-			name = MenuBarFeature;
-			path = MenuBarFeature;
-			sourceTree = "<group>";
-		};
-		6E1029E72C02450AB1BCB211 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				C500409A8C3BEF7679650305 /* OS X */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		88B53B6D82BF78AFC875B5FD /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				9D878C4B6F87DB3FF6FB2231 /* Orbit.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		89069B19BA6C809146ABE848 /* QuickCaptureFeature */ = {
-			isa = PBXGroup;
-			children = (
-				A470AACEF9FF6251F3248B09 /* QuickCaptureView.swift */,
-			);
-			name = QuickCaptureFeature;
-			path = QuickCaptureFeature;
-			sourceTree = "<group>";
-		};
-		AF65549547F3EBD20B3419CC /* OrbitApp */ = {
-			isa = PBXGroup;
-			children = (
-				A2E9D98F420D66D714AD8BB4 /* App.swift */,
-				5B530B8010CF8D16BE42A806 /* AppFeature.swift */,
-				F6263B6E46E9F6E2A6AD9358 /* Dependencies */,
-				46A1C3437395DA46C2A4D040 /* MenuBarFeature */,
-				EE06957523E45246BA60DA32 /* OrbitSettingsView.swift */,
-				2F5A59C2240F8BB543EB3866 /* Persistence */,
-				89069B19BA6C809146ABE848 /* QuickCaptureFeature */,
-				A13D2EA78727984D05C809E7 /* Schema.swift */,
-				FF0764D04630812E639C48D1 /* SessionFeature */,
-				284D4D58F13EB41F56A4E277 /* Shared */,
-			);
-			name = OrbitApp;
-			path = OrbitApp;
-			sourceTree = "<group>";
-		};
-		B89F993EE0AC80E4D7ECD1E9 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				291708EC5BE70B08C0BE024D /* Assets.xcassets */,
+				9589E10F327CF6C7BCA98486 /* Assets.xcassets */,
 			);
 			name = Resources;
 			path = Resources;
 			sourceTree = "<group>";
 		};
-		C500409A8C3BEF7679650305 /* OS X */ = {
+		4CD45FD8A10F96BCA35D64B8 /* OS X */ = {
 			isa = PBXGroup;
 			children = (
-				E972D20F001E8433B06D38DB /* Cocoa.framework */,
+				40539519CA0DC39A10932103 /* Cocoa.framework */,
 			);
 			name = "OS X";
 			sourceTree = "<group>";
 		};
-		F6263B6E46E9F6E2A6AD9358 /* Dependencies */ = {
+		4E7306FD5537C1CE4A3EA528 /* MenuBarFeature */ = {
 			isa = PBXGroup;
 			children = (
-				E7C7F59AA463DAC3A74BF16D /* FocusRepository.swift */,
-				939B4686F681D1AB1E86FEE3 /* HotkeyManager.swift */,
-				44490CE1643584D6C65E8E98 /* HotkeySettingsClient.swift */,
-				5FDC5C7439DA09C3E6A669E3 /* InactivityClient.swift */,
-				64A3200E14F7AA7EE8D1C0DA /* MarkdownExportClient.swift */,
+				6F44EC4CCDFA295B81FFEDF3 /* MenuBarView.swift */,
+			);
+			name = MenuBarFeature;
+			path = MenuBarFeature;
+			sourceTree = "<group>";
+		};
+		514FFC5756A823413452FB24 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DC70B03F528B2C69AA9ED812 /* Orbit.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5237878ED1375E65C64987B7 = {
+			isa = PBXGroup;
+			children = (
+				514FFC5756A823413452FB24 /* Products */,
+				EE2408C857E0647D5F9208EA /* Frameworks */,
+				996616A39D66EE1A5B049447 /* Sources */,
+				36A4DAFAAD04A70CAFF19B7B /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+		81FDE7F96248D28C065316A7 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				D233237DD037E5C4ACE0DDC9 /* EndSessionPromptView.swift */,
+				88312D129C5CA0F27CBCF28F /* FocusDomain.swift */,
+				C23484D86A339BABFCE21B79 /* HotkeyHint.swift */,
+				F60A9C526798D1F4E7B8615C /* MarkdownEditingCore.swift */,
+				B8D965877A754D1CD6916D76 /* MarkdownFormattingBar.swift */,
+				8C50C0AF4229125CAF4C6A99 /* MarkdownSourceTextView.swift */,
+				FDC3E60A795D51747E39D007 /* OrbitButtonStyles.swift */,
+				66F7DAB48B777F1E13ABC150 /* OrbitSpaceBackground.swift */,
+				1BFED63E38C932C97DD8C809 /* QuickCapturePanelController.swift */,
+			);
+			name = Shared;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		831FC8A49ED0D9C9504B99CE /* OrbitApp */ = {
+			isa = PBXGroup;
+			children = (
+				FD45782742C5B3180A06E9EE /* App.swift */,
+				0B976253DEEE87CEF658191F /* AppFeature.swift */,
+				F9AA0DBB2391D047BB8070EC /* Dependencies */,
+				4E7306FD5537C1CE4A3EA528 /* MenuBarFeature */,
+				B932C15A3FF09684DFB12B49 /* Persistence */,
+				D29FEC83C70DEC6B841FF701 /* QuickCaptureFeature */,
+				F647314B9140B90A4D91A1FE /* Schema.swift */,
+				81FDE7F96248D28C065316A7 /* Shared */,
+				C83D2FC61A7E199793B2880E /* WorkspaceFeature */,
+			);
+			name = OrbitApp;
+			path = OrbitApp;
+			sourceTree = "<group>";
+		};
+		996616A39D66EE1A5B049447 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				831FC8A49ED0D9C9504B99CE /* OrbitApp */,
+			);
+			name = Sources;
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		B932C15A3FF09684DFB12B49 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				6C539D5AC9B61A2745598F2C /* Models.swift */,
+			);
+			name = Persistence;
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		C83D2FC61A7E199793B2880E /* WorkspaceFeature */ = {
+			isa = PBXGroup;
+			children = (
+				2740EBBEC4BEB38C2A7E3164 /* SessionPageView.swift */,
+				F4F88D4E1F70F7B6FB8EFDDC /* WorkspaceView.swift */,
+			);
+			name = WorkspaceFeature;
+			path = WorkspaceFeature;
+			sourceTree = "<group>";
+		};
+		D29FEC83C70DEC6B841FF701 /* QuickCaptureFeature */ = {
+			isa = PBXGroup;
+			children = (
+				119D9CC13DB5BBE6A54B8DF5 /* QuickCaptureView.swift */,
+			);
+			name = QuickCaptureFeature;
+			path = QuickCaptureFeature;
+			sourceTree = "<group>";
+		};
+		EE2408C857E0647D5F9208EA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				4CD45FD8A10F96BCA35D64B8 /* OS X */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		F9AA0DBB2391D047BB8070EC /* Dependencies */ = {
+			isa = PBXGroup;
+			children = (
+				AAB6775658599F836CBD40C4 /* FocusRepository.swift */,
+				F6A0366521FB1CC140F62320 /* HotkeyManager.swift */,
+				0BF187644B7FBFA30F89A5C8 /* HotkeySettingsClient.swift */,
+				35F269DC84311AEF962A906A /* InactivityClient.swift */,
+				CC36E74A03098D2843A1524B /* MarkdownExportClient.swift */,
 			);
 			name = Dependencies;
 			path = Dependencies;
 			sourceTree = "<group>";
 		};
-		FF0764D04630812E639C48D1 /* SessionFeature */ = {
-			isa = PBXGroup;
-			children = (
-				7FC4ED013FA7E93095B1607D /* SessionView.swift */,
-			);
-			name = SessionFeature;
-			path = SessionFeature;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		F3E06B0D2578442A30B97606 /* Orbit */ = {
+		D5AFD5ECD954E79D19FE5594 /* Orbit */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 7891340EB46522886342F333 /* Build configuration list for PBXNativeTarget "Orbit" */;
+			buildConfigurationList = 333A124AC48A2F82B8899AA7 /* Build configuration list for PBXNativeTarget "Orbit" */;
 			buildPhases = (
-				3A6B86C5172FE4CE3E3D570B /* Sources */,
-				08ACE1AFF659332E588375C9 /* Frameworks */,
-				D5D274CD221B0837709BFA83 /* Resources */,
+				0F3CFBEA201BA52A9347A351 /* Sources */,
+				343EF250862A705649ED23BB /* Frameworks */,
+				7ADC0D1E32E61983A0524659 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				2ADEFC940C2EAEEEA7C15A32 /* PBXTargetDependency */,
-				B0EF052339D18B39CEE44503 /* PBXTargetDependency */,
-				08EBD1B2C1C978CBC7FD9CEE /* PBXTargetDependency */,
-				AEC8A134C27EB9B096C87BE2 /* PBXTargetDependency */,
-				18DF85531DB6BE3DEAFE39B2 /* PBXTargetDependency */,
+				C16A0CD2B314C182E4BEE116 /* PBXTargetDependency */,
+				0E10C950B8CBD91E9468B34C /* PBXTargetDependency */,
+				60E62E5FF00A5B2EB60B198C /* PBXTargetDependency */,
+				008CFACC628BAA4C1E889833 /* PBXTargetDependency */,
+				D67F237D1AB16168F3EC7B1B /* PBXTargetDependency */,
 			);
 			name = Orbit;
 			packageProductDependencies = (
-				B9FDA9C6F3A1812A35121240 /* ComposableArchitecture */,
-				E15831EEDCEF779BEC1B2A12 /* CasePaths */,
-				DDDE93BFC2E32AF58D256595 /* Dependencies */,
-				CA6F3D42B26B834405B080A9 /* SQLiteData */,
-				7574805B15E40ABA4DCDC906 /* StructuredQueries */,
+				44492BB61285D2CADF1D3884 /* ComposableArchitecture */,
+				B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */,
+				C1F90FC1C0C31122E35D4F73 /* Dependencies */,
+				3AAF415269A2878FE0A31517 /* SQLiteData */,
+				D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */,
 			);
 			productName = Orbit;
-			productReference = 9D878C4B6F87DB3FF6FB2231 /* Orbit.app */;
+			productReference = DC70B03F528B2C69AA9ED812 /* Orbit.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		5E01970D091EFAEEC26ECF7B /* Project object */ = {
+		644B92E60FA57CF80CFD80D7 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1300;
 				LastUpgradeCheck = 1300;
 			};
-			buildConfigurationList = DA1103692C2E1E3D25B0AB61 /* Build configuration list for PBXProject "Orbit" */;
+			buildConfigurationList = 49D69A10863BBC2F992FAC1F /* Build configuration list for PBXProject "Orbit" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -268,141 +268,91 @@
 				en,
 				Base,
 			);
-			mainGroup = 4135EC12FD58755A8298D5F1;
+			mainGroup = 5237878ED1375E65C64987B7;
 			packageReferences = (
-				3B8C61BA604A3CCDB839E0E7 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
-				34B7070745E7FFFE541E0C7E /* XCRemoteSwiftPackageReference "swift-case-paths" */,
-				7BFEE2D00F5F7C0E799081CA /* XCRemoteSwiftPackageReference "swift-dependencies" */,
-				CD99FF1E5DFBADE4B7A07ED8 /* XCRemoteSwiftPackageReference "sqlite-data" */,
-				3F444906A0EDCD50EE06433A /* XCRemoteSwiftPackageReference "swift-structured-queries" */,
+				E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				CB2704642CDBA57F9A97A9DA /* XCRemoteSwiftPackageReference "swift-case-paths" */,
+				AA98A25D73F7F7F2EC1B04FD /* XCRemoteSwiftPackageReference "swift-dependencies" */,
+				0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */,
+				8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */,
 			);
-			productRefGroup = 88B53B6D82BF78AFC875B5FD /* Products */;
+			productRefGroup = 514FFC5756A823413452FB24 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				F3E06B0D2578442A30B97606 /* Orbit */,
+				D5AFD5ECD954E79D19FE5594 /* Orbit */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		D5D274CD221B0837709BFA83 /* Resources */ = {
+		7ADC0D1E32E61983A0524659 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				451ACBA049063CCD5E6F1F3E /* Assets.xcassets in Resources */,
+				8184011CBB40FF439A2FADC0 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		3A6B86C5172FE4CE3E3D570B /* Sources */ = {
+		0F3CFBEA201BA52A9347A351 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				871F2E6A55CA72D18F24302B /* App.swift in Sources */,
-				0A2AECD5A0506945CEA2427C /* AppFeature.swift in Sources */,
-				EC7C1AB9CE91BED49A451B8E /* FocusRepository.swift in Sources */,
-				129108716B6D6454E9C049FB /* HotkeyManager.swift in Sources */,
-				18A310F719E11A8F6B79C202 /* HotkeySettingsClient.swift in Sources */,
-				B7432C3712B7134C4D391820 /* InactivityClient.swift in Sources */,
-				9BBA6F384680BB482D421C91 /* MarkdownExportClient.swift in Sources */,
-				ABAD4ABEB54CA1A903279E68 /* MenuBarView.swift in Sources */,
-				45A1A95C4CCDFC5469356EF7 /* OrbitSettingsView.swift in Sources */,
-				AD9303D52E4DADB031A9A825 /* Models.swift in Sources */,
-				C319A8B9958C8FC1A90C06D4 /* QuickCaptureView.swift in Sources */,
-				E1855B23CCA3507FC83A16C9 /* Schema.swift in Sources */,
-				3C482E3B3E36C47271434CF4 /* SessionView.swift in Sources */,
-				40FB8FB982A901E2E676EF33 /* EndSessionPromptView.swift in Sources */,
-				AB233A69302E0587CA7425FE /* FocusDomain.swift in Sources */,
-				499F1D80E6D80A2FCC6045C0 /* HotkeyHint.swift in Sources */,
-				616F55B69C8965B5E86006E6 /* MarkdownEditingCore.swift in Sources */,
-				606F4B2E67606EBE2812681D /* MarkdownFormattingBar.swift in Sources */,
-				D7FFD3B06C0C0391A5EE96B9 /* MarkdownSourceTextView.swift in Sources */,
-				5ED3EBE07034644BB6CBAA6A /* OrbitButtonStyles.swift in Sources */,
-				5B99B69A79ED935EE0697E31 /* OrbitSpaceBackground.swift in Sources */,
-				66ABC5DF1AB74B171926CDC6 /* QuickCapturePanelController.swift in Sources */,
+				5D9BCD66DCAE6DE5376C3393 /* App.swift in Sources */,
+				C5F44C028A93DA20427BACCE /* AppFeature.swift in Sources */,
+				64E6437C65D8B82F9E6BA576 /* FocusRepository.swift in Sources */,
+				18071E49E8F5275C196D0F48 /* HotkeyManager.swift in Sources */,
+				3040F4F279F0358D23F1BA92 /* HotkeySettingsClient.swift in Sources */,
+				F1C3716C6DB7F4A0E45A4840 /* InactivityClient.swift in Sources */,
+				A4B4B69DDCEF26B1A3F4998A /* MarkdownExportClient.swift in Sources */,
+				6D82F121BC31112CEBD1F9B5 /* MenuBarView.swift in Sources */,
+				B58893B59D3CCFCD6A37589C /* Models.swift in Sources */,
+				3FE62E41E35956AD6FA0CC99 /* QuickCaptureView.swift in Sources */,
+				B6A3A2B569277402C4E3B228 /* Schema.swift in Sources */,
+				C409D433F828E8C4704FF434 /* EndSessionPromptView.swift in Sources */,
+				C25523DE190914A0EEAC223E /* FocusDomain.swift in Sources */,
+				C1941AAA53B6E6A12C5F3D8F /* HotkeyHint.swift in Sources */,
+				CF6FD4FB57612D275C562C55 /* MarkdownEditingCore.swift in Sources */,
+				1EAC93A0DCC35E3ACFEFD029 /* MarkdownFormattingBar.swift in Sources */,
+				8EDFE4861A5383A70956B635 /* MarkdownSourceTextView.swift in Sources */,
+				96CC123BA8B91E42BD24988B /* OrbitButtonStyles.swift in Sources */,
+				1286FD6FED5E76D6BDD64FD2 /* OrbitSpaceBackground.swift in Sources */,
+				014513AE2CD58CE20D97A2F3 /* QuickCapturePanelController.swift in Sources */,
+				B4FC2B004887F046D550D8F4 /* SessionPageView.swift in Sources */,
+				A91044BC5CD8B609A747ECEE /* WorkspaceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		08EBD1B2C1C978CBC7FD9CEE /* PBXTargetDependency */ = {
+		008CFACC628BAA4C1E889833 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = DDDE93BFC2E32AF58D256595 /* Dependencies */;
+			productRef = 3AAF415269A2878FE0A31517 /* SQLiteData */;
 		};
-		18DF85531DB6BE3DEAFE39B2 /* PBXTargetDependency */ = {
+		0E10C950B8CBD91E9468B34C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = 7574805B15E40ABA4DCDC906 /* StructuredQueries */;
+			productRef = B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */;
 		};
-		2ADEFC940C2EAEEEA7C15A32 /* PBXTargetDependency */ = {
+		60E62E5FF00A5B2EB60B198C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = B9FDA9C6F3A1812A35121240 /* ComposableArchitecture */;
+			productRef = C1F90FC1C0C31122E35D4F73 /* Dependencies */;
 		};
-		AEC8A134C27EB9B096C87BE2 /* PBXTargetDependency */ = {
+		C16A0CD2B314C182E4BEE116 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = CA6F3D42B26B834405B080A9 /* SQLiteData */;
+			productRef = 44492BB61285D2CADF1D3884 /* ComposableArchitecture */;
 		};
-		B0EF052339D18B39CEE44503 /* PBXTargetDependency */ = {
+		D67F237D1AB16168F3EC7B1B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = E15831EEDCEF779BEC1B2A12 /* CasePaths */;
+			productRef = D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		292D26E82C8965BD133233EC /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
-				PRODUCT_NAME = Orbit;
-				SDKROOT = macosx;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
-			};
-			name = Debug;
-		};
-		37F41FC57433478EF21E34C1 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
-				PRODUCT_NAME = Orbit;
-				SDKROOT = macosx;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
-			};
-			name = Release;
-		};
-		523055AD466F972DCE274FC0 /* Debug */ = {
+		27D2E14370796CE178D5D9F2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -464,7 +414,57 @@
 			};
 			name = Debug;
 		};
-		6DCC158CD301411130F8D928 /* Release */ = {
+		6E81EF3A8016BF01B836BCA9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
+				PRODUCT_NAME = Orbit;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		901279EA3F2897B8172F9823 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
+				PRODUCT_NAME = Orbit;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		CE7A894EE1D1C71B330CDD7C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -522,20 +522,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		7891340EB46522886342F333 /* Build configuration list for PBXNativeTarget "Orbit" */ = {
+		333A124AC48A2F82B8899AA7 /* Build configuration list for PBXNativeTarget "Orbit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				37F41FC57433478EF21E34C1 /* Release */,
-				292D26E82C8965BD133233EC /* Debug */,
+				6E81EF3A8016BF01B836BCA9 /* Release */,
+				901279EA3F2897B8172F9823 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		DA1103692C2E1E3D25B0AB61 /* Build configuration list for PBXProject "Orbit" */ = {
+		49D69A10863BBC2F992FAC1F /* Build configuration list for PBXProject "Orbit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				523055AD466F972DCE274FC0 /* Debug */,
-				6DCC158CD301411130F8D928 /* Release */,
+				27D2E14370796CE178D5D9F2 /* Debug */,
+				CE7A894EE1D1C71B330CDD7C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -543,39 +543,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		34B7070745E7FFFE541E0C7E /* XCRemoteSwiftPackageReference "swift-case-paths" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-case-paths";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.0;
-			};
-		};
-		3B8C61BA604A3CCDB839E0E7 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.16.0;
-			};
-		};
-		3F444906A0EDCD50EE06433A /* XCRemoteSwiftPackageReference "swift-structured-queries" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-structured-queries";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.0;
-			};
-		};
-		7BFEE2D00F5F7C0E799081CA /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-dependencies";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.8.0;
-			};
-		};
-		CD99FF1E5DFBADE4B7A07ED8 /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
+		0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/sqlite-data";
 			requirement = {
@@ -583,35 +551,67 @@
 				minimumVersion = 1.0.0;
 			};
 		};
+		8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-structured-queries";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
+		AA98A25D73F7F7F2EC1B04FD /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-dependencies";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.8.0;
+			};
+		};
+		CB2704642CDBA57F9A97A9DA /* XCRemoteSwiftPackageReference "swift-case-paths" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-case-paths";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.0;
+			};
+		};
+		E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.16.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		7574805B15E40ABA4DCDC906 /* StructuredQueries */ = {
+		3AAF415269A2878FE0A31517 /* SQLiteData */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3F444906A0EDCD50EE06433A /* XCRemoteSwiftPackageReference "swift-structured-queries" */;
-			productName = StructuredQueries;
-		};
-		B9FDA9C6F3A1812A35121240 /* ComposableArchitecture */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3B8C61BA604A3CCDB839E0E7 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
-			productName = ComposableArchitecture;
-		};
-		CA6F3D42B26B834405B080A9 /* SQLiteData */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CD99FF1E5DFBADE4B7A07ED8 /* XCRemoteSwiftPackageReference "sqlite-data" */;
+			package = 0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */;
 			productName = SQLiteData;
 		};
-		DDDE93BFC2E32AF58D256595 /* Dependencies */ = {
+		44492BB61285D2CADF1D3884 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 7BFEE2D00F5F7C0E799081CA /* XCRemoteSwiftPackageReference "swift-dependencies" */;
+			package = E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			productName = ComposableArchitecture;
+		};
+		B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CB2704642CDBA57F9A97A9DA /* XCRemoteSwiftPackageReference "swift-case-paths" */;
+			productName = CasePaths;
+		};
+		C1F90FC1C0C31122E35D4F73 /* Dependencies */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA98A25D73F7F7F2EC1B04FD /* XCRemoteSwiftPackageReference "swift-dependencies" */;
 			productName = Dependencies;
 		};
-		E15831EEDCEF779BEC1B2A12 /* CasePaths */ = {
+		D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 34B7070745E7FFFE541E0C7E /* XCRemoteSwiftPackageReference "swift-case-paths" */;
-			productName = CasePaths;
+			package = 8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */;
+			productName = StructuredQueries;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 5E01970D091EFAEEC26ECF7B /* Project object */;
+	rootObject = 644B92E60FA57CF80CFD80D7 /* Project object */;
 }

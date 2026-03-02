@@ -4,9 +4,8 @@ import SwiftUI
 import AppKit
 
 private enum OrbitWindowID {
-    static let session = "session-window"
+    static let workspace = "workspace-window"
     static let endSession = "end-session-window"
-    static let settings = "settings-window"
 }
 
 private extension Notification.Name {
@@ -45,11 +44,11 @@ struct OrbitMenuBarApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Window("Orbit: A Focus Manager", id: OrbitWindowID.session) {
-            if store.windowDestinations.contains(.sessionWindow) {
-                SessionView(store: store)
+        Window("Orbit: A Focus Manager", id: OrbitWindowID.workspace) {
+            if store.windowDestinations.contains(.workspaceWindow) {
+                WorkspaceView(store: store)
                     .onDisappear {
-                        store.send(.sessionWindowClosed)
+                        store.send(.workspaceWindowClosed)
                     }
             } else {
                 Color.clear
@@ -79,14 +78,6 @@ struct OrbitMenuBarApp: App {
         }
         .defaultSize(width: 400, height: 260)
 
-        Window("Orbit Settings", id: OrbitWindowID.settings) {
-            OrbitSettingsView(store: store)
-                .frame(minWidth: 820, minHeight: 620)
-                .task {
-                    store.send(.settingsRefreshTapped)
-                }
-        }
-        .defaultSize(width: 980, height: 700)
     }
 }
 
@@ -123,12 +114,12 @@ private struct WindowStateCoordinator: View {
             .onChange(of: store.windowDestinations) { oldValue, newValue in
                 syncWindows(from: oldValue, to: newValue)
             }
-            .onChange(of: store.sessionWindowFocusRequest) { _, _ in
-                guard store.windowDestinations.contains(.sessionWindow) else {
+            .onChange(of: store.workspaceWindowFocusRequest) { _, _ in
+                guard store.windowDestinations.contains(.workspaceWindow) else {
                     return
                 }
-                openWindow(id: OrbitWindowID.session)
-                bringSessionWindowToFront()
+                openWindow(id: OrbitWindowID.workspace)
+                bringWorkspaceWindowToFront()
             }
     }
 
@@ -139,16 +130,16 @@ private struct WindowStateCoordinator: View {
         if removed.contains(.captureWindow) {
             QuickCapturePanelController.shared.dismiss()
         }
-        if removed.contains(.sessionWindow) {
-            dismissWindow(id: OrbitWindowID.session)
+        if removed.contains(.workspaceWindow) {
+            dismissWindow(id: OrbitWindowID.workspace)
         }
         if removed.contains(.endSessionWindow) {
             dismissWindow(id: OrbitWindowID.endSession)
         }
 
-        if added.contains(.sessionWindow) {
-            openWindow(id: OrbitWindowID.session)
-            bringSessionWindowToFront()
+        if added.contains(.workspaceWindow) {
+            openWindow(id: OrbitWindowID.workspace)
+            bringWorkspaceWindowToFront()
         }
         if added.contains(.captureWindow) {
             QuickCapturePanelController.shared.present(store: store)
@@ -159,10 +150,10 @@ private struct WindowStateCoordinator: View {
         }
     }
 
-    private func bringSessionWindowToFront() {
+    private func bringWorkspaceWindowToFront() {
         DispatchQueue.main.async {
             NSApplication.shared.activate(ignoringOtherApps: true)
-            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit Session" }) else {
+            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit: A Focus Manager" }) else {
                 return
             }
             window.orderFrontRegardless()
@@ -192,7 +183,7 @@ private struct AppLifecycleCoordinator: View {
                 store.send(.appWillTerminate)
             }
             .onReceive(NotificationCenter.default.publisher(for: .orbitReopenRequested)) { _ in
-                store.send(.openSessionTapped)
+                store.send(.openWorkspaceTapped)
             }
     }
 }
@@ -205,7 +196,7 @@ private struct AppLaunchCoordinator: View {
             .frame(width: 0, height: 0)
             .task {
                 store.send(.onLaunch)
-                store.send(.openSessionTapped)
+                store.send(.openWorkspaceTapped)
             }
     }
 }

@@ -215,30 +215,30 @@ struct AppFeatureTests {
     }
 
     @Test
-    func openSessionTappedOpensWindowWithoutActiveSession() async {
+    func openWorkspaceTappedOpensWindowWithoutActiveSession() async {
         let store = TestStore(initialState: AppFeature.State()) {
             AppFeature()
         }
 
-        await store.send(.openSessionTapped) {
-            $0.windowDestinations.insert(.sessionWindow)
-            $0.sessionWindowFocusRequest = 1
+        await store.send(.openWorkspaceTapped) {
+            $0.windowDestinations.insert(.workspaceWindow)
+            $0.workspaceWindowFocusRequest = 1
         }
     }
 
     @Test
-    func openSessionTappedIncrementsFocusRequestWhenAlreadyOpen() async {
+    func openWorkspaceTappedIncrementsFocusRequestWhenAlreadyOpen() async {
         var initial = AppFeature.State()
-        initial.windowDestinations = [.sessionWindow]
-        initial.sessionWindowFocusRequest = 7
+        initial.windowDestinations = [.workspaceWindow]
+        initial.workspaceWindowFocusRequest = 7
 
         let store = TestStore(initialState: initial) {
             AppFeature()
         }
 
-        await store.send(.openSessionTapped) {
-            $0.windowDestinations.insert(.sessionWindow)
-            $0.sessionWindowFocusRequest = 8
+        await store.send(.openWorkspaceTapped) {
+            $0.windowDestinations.insert(.workspaceWindow)
+            $0.workspaceWindowFocusRequest = 8
         }
     }
 
@@ -288,7 +288,7 @@ struct AppFeatureTests {
             )
         ]
         initial.endSessionDraft = AppFeature.State.EndSessionDraft()
-        initial.windowDestinations = [.sessionWindow, .captureWindow, .endSessionWindow]
+        initial.windowDestinations = [.workspaceWindow, .captureWindow, .endSessionWindow]
         initial.sessionBootstrapState = .loading
 
         let store = TestStore(initialState: initial) {
@@ -300,7 +300,7 @@ struct AppFeatureTests {
             $0.activeSession = nil
             $0.noteDrafts = []
             $0.endSessionDraft = nil
-            $0.windowDestinations = [.sessionWindow]
+            $0.windowDestinations = [.workspaceWindow]
         }
     }
 
@@ -349,7 +349,7 @@ struct AppFeatureTests {
         let active = makeActiveSession()
 
         var initial = AppFeature.State()
-        initial.windowDestinations = [.captureWindow, .sessionWindow]
+        initial.windowDestinations = [.captureWindow, .workspaceWindow]
 
         let store = TestStore(initialState: initial) {
             AppFeature()
@@ -372,7 +372,7 @@ struct AppFeatureTests {
             $0.activeSession = nil
             $0.noteDrafts = []
             $0.endSessionDraft = nil
-            $0.windowDestinations = [.sessionWindow]
+            $0.windowDestinations = [.workspaceWindow]
         }
     }
 }

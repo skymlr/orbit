@@ -1,15 +1,13 @@
 import ComposableArchitecture
 import Foundation
-import AppKit
 import SwiftUI
 
-struct SessionView: View {
+struct SessionPageView: View {
     private enum Layout {
         static let contentMaxWidth: CGFloat = 700
     }
 
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
-    @Environment(\.openWindow) private var openWindow
     @State private var isEndSessionConfirmationPending = false
     @State private var endSessionConfirmationToken = 0
 
@@ -49,13 +47,6 @@ struct SessionView: View {
                     Image(systemName: "plus")
                 }
                 .help("Capture Note \(HotkeyHintFormatter.hint(from: store.hotkeys.captureShortcut))")
-
-                Button {
-                    openSettingsWindow()
-                } label: {
-                    Image(systemName: "gearshape")
-                }
-                .help("Open Settings")
             }
         }
         .toolbarBackground(.hidden, for: .windowToolbar)
@@ -183,7 +174,7 @@ struct SessionView: View {
             Spacer()
             if isEndSessionConfirmationPending {
                 Button("Confirm End Session", role: .destructive) {
-                    store.send(.sessionWindowEndSessionTapped)
+                    store.send(.workspaceWindowEndSessionTapped)
                 }
                 .buttonStyle(.orbitDestructive)
                 .transition(.orbitMicro)
@@ -222,19 +213,6 @@ struct SessionView: View {
     private func endSessionButtonTapped() {
         isEndSessionConfirmationPending = true
         scheduleEndSessionConfirmationReset()
-    }
-
-    private func openSettingsWindow() {
-        NSApplication.shared.activate(ignoringOtherApps: true)
-        openWindow(id: "settings-window")
-
-        DispatchQueue.main.async {
-            guard let window = NSApplication.shared.windows.first(where: { $0.title == "Orbit Settings" }) else {
-                return
-            }
-            window.orderFrontRegardless()
-            window.makeKey()
-        }
     }
 
     private func startSessionButtonTapped() {
