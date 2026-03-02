@@ -27,6 +27,7 @@ struct QuickCaptureView: View {
                             Capsule()
                                 .fill(.ultraThinMaterial)
                         )
+                        .transition(.orbitMicro)
                 }
 
                 Spacer()
@@ -37,35 +38,30 @@ struct QuickCaptureView: View {
                     Image(systemName: "xmark.circle.fill")
                 }
                 .buttonStyle(.plain)
+                .orbitInteractiveControl(
+                    scale: 1.08,
+                    lift: -1.0,
+                    shadowColor: Color.white.opacity(0.14),
+                    shadowRadius: 5
+                )
                 .foregroundStyle(.secondary)
             }
 
-            MarkdownFormattingBar { action in
-                formatActionTapped(action)
+            if !editorState.isPreviewVisible {
+                MarkdownFormattingBar { action in
+                    formatActionTapped(action)
+                }
+                .transition(.orbitMicro)
             }
 
-            ZStack(alignment: .topLeading) {
-                MarkdownSourceTextView(
-                    text: $editorState.text,
-                    selectionRange: $editorState.selectionRange,
-                    isFocused: $isEditorFocused,
-                    onSubmit: {
-                        saveButtonTapped()
-                    },
-                    onCancel: {
-                        dismissCapture()
-                    }
-                )
-                .frame(minHeight: 96, maxHeight: 220)
-
-                if editorState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("Capture your focus note...")
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, 12)
-                        .padding(.top, 10)
-                        .allowsHitTesting(false)
+            Group {
+                if editorState.isPreviewVisible {
+                    notesPreviewView
+                } else {
+                    notesEditorView
                 }
             }
+            .transition(.orbitMicro)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(.ultraThinMaterial)
@@ -75,19 +71,6 @@ struct QuickCaptureView: View {
                 editorState.isPreviewVisible.toggle()
             }
             .buttonStyle(.orbitQuiet)
-
-            if editorState.isPreviewVisible {
-                ScrollView {
-                    Text(MarkdownAttributedRenderer.renderAttributed(markdown: editorState.text))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(maxHeight: 160)
-                .padding(10)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(.thinMaterial)
-                )
-            }
 
             TextField("Tags (comma-separated, optional)", text: $store.captureDraft.tags)
                 .textFieldStyle(.plain)
@@ -133,6 +116,13 @@ struct QuickCaptureView: View {
         .onChange(of: store.captureDraft.editingNoteID) { _, _ in
             requestEditorFocus()
         }
+        .onChange(of: editorState.isPreviewVisible) { _, newValue in
+            if !newValue {
+                requestEditorFocus()
+            } else {
+                isEditorFocused = false
+            }
+        }
         .onChange(of: editorState.text) { _, newValue in
             store.captureDraft.text = newValue
         }
@@ -154,6 +144,54 @@ struct QuickCaptureView: View {
         .onExitCommand {
             dismissCapture()
         }
+        .animation(.easeInOut(duration: 0.16), value: editorState.isPreviewVisible)
+        .animation(.easeInOut(duration: 0.16), value: store.captureDraft.editingNoteID != nil)
+    }
+
+    private var notesEditorView: some View {
+        ZStack(alignment: .topLeading) {
+            MarkdownSourceTextView(
+                text: $editorState.text,
+                selectionRange: $editorState.selectionRange,
+                isFocused: $isEditorFocused,
+                onSubmit: {
+                    saveButtonTapped()
+                },
+                onCancel: {
+                    dismissCapture()
+                }
+            )
+            .frame(minHeight: 96, maxHeight: 220)
+
+            if editorState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text("Capture your focus note...")
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 12)
+                    .padding(.top, 10)
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+
+    private var notesPreviewView: some View {
+        ScrollView {
+            if editorState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text("Nothing to preview yet.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+            } else {
+                MarkdownRenderedNoteView(
+                    markdown: editorState.text,
+                    onToggleTask: nil
+                )
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+            }
+        }
+        .frame(minHeight: 96, maxHeight: 220)
     }
 
     private var canSave: Bool {

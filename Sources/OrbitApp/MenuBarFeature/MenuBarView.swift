@@ -34,6 +34,12 @@ struct MenuBarView: View {
                     Image(systemName: "gearshape")
                 }
                 .buttonStyle(.borderless)
+                .orbitInteractiveControl(
+                    scale: 1.08,
+                    lift: -1.2,
+                    shadowColor: Color.white.opacity(0.18),
+                    shadowRadius: 6
+                )
                 .help("Settings")
             }
 
@@ -41,51 +47,55 @@ struct MenuBarView: View {
                 Text(statusMessage)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .transition(.orbitMicro)
             }
 
             if let activeSession = store.activeSession {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(activeSession.name)
-                        .font(.title3.weight(.semibold))
-                    Text("Category: \(activeSession.categoryName)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(activeSession.name)
+                            .font(.title3.weight(.semibold))
+                        Text("Category: \(activeSession.categoryName)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
-                HStack(spacing: 10) {
-                    Button {
-                        dismissMenuThen {
-                            store.send(.startSessionTapped)
-                            openSessionWindow()
+                    HStack(spacing: 10) {
+                        Button {
+                            dismissMenuThen {
+                                store.send(.startSessionTapped)
+                                openSessionWindow()
+                            }
+                        } label: {
+                            hotkeyButtonLabel(
+                                title: "Session",
+                                shortcut: store.hotkeys.startShortcut
+                            )
                         }
-                    } label: {
-                        hotkeyButtonLabel(
-                            title: "Session",
-                            shortcut: store.hotkeys.startShortcut
-                        )
-                    }
-                    .buttonStyle(.orbitPrimary)
-                    .help("Open or Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))")
+                        .buttonStyle(.orbitPrimary)
+                        .help("Open or Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))")
 
-                    Button {
-                        dismissMenuThen {
-                            store.send(.captureTapped)
+                        Button {
+                            dismissMenuThen {
+                                store.send(.captureTapped)
+                            }
+                        } label: {
+                            hotkeyButtonLabel(
+                                title: "Capture",
+                                shortcut: store.hotkeys.captureShortcut
+                            )
                         }
-                    } label: {
-                        hotkeyButtonLabel(
-                            title: "Capture",
-                            shortcut: store.hotkeys.captureShortcut
-                        )
+                        .buttonStyle(.orbitSecondary)
                     }
-                    .buttonStyle(.orbitSecondary)
-                }
 
-                Button("End Session") {
-                    dismissMenuThen {
-                        store.send(.sessionWindowEndSessionTapped)
+                    Button("End Session") {
+                        dismissMenuThen {
+                            store.send(.sessionWindowEndSessionTapped)
+                        }
                     }
+                    .buttonStyle(.orbitQuiet)
                 }
-                .buttonStyle(.orbitQuiet)
+                .transition(.orbitMicro)
             } else {
                 Button {
                     dismissMenuThen {
@@ -95,11 +105,14 @@ struct MenuBarView: View {
                     sessionHeroLabel(shortcut: store.hotkeys.startShortcut)
                 }
                 .buttonStyle(.orbitHero)
-                .help("Open or Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))")
+                .help("Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))")
+                .transition(.orbitMicro)
             }
         }
         .padding(14)
         .frame(width: 360)
+        .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
+        .animation(.easeInOut(duration: 0.18), value: store.settings.statusMessage)
         .background {
             ZStack {
                 OrbitSpaceBackground()
@@ -127,14 +140,14 @@ private extension MenuBarView {
             HStack {
                 Image(systemName: "atom")
                     .font(.title3.weight(.semibold))
-                Text("Open or Start Session")
+                Text("Start Session")
                     .font(.title3.weight(.bold))
                 Spacer()
                 HotkeyHintLabel(shortcut: shortcut, tone: .inverted)
                     .font(.caption.monospacedDigit().weight(.semibold))
             }
 
-            Text("Open your focus orbit or ignite a new one")
+            Text("Ignite a new focus orbit")
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.86))
         }

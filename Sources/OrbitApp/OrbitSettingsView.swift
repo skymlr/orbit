@@ -76,6 +76,7 @@ struct OrbitSettingsView: View {
                     .font(.body.weight(.semibold))
                     .tag(section)
                     .contentShape(Rectangle())
+                    .orbitPointerCursor()
                     .onTapGesture {
                         selectedSection = section
                     }
@@ -88,12 +89,17 @@ struct OrbitSettingsView: View {
     private var detailContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                selectedSectionContent(for: selectedSection)
+                ZStack(alignment: .topLeading) {
+                    selectedSectionContent(for: selectedSection)
+                        .id(selectedSection)
+                        .transition(.orbitMicro)
+                }
 
                 if let message = store.settings.statusMessage {
                     Text(message)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .transition(.orbitMicro)
                 }
             }
             .padding(20)
@@ -101,6 +107,8 @@ struct OrbitSettingsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle(selectedSection.rawValue)
+        .animation(.easeInOut(duration: 0.18), value: selectedSection)
+        .animation(.easeInOut(duration: 0.18), value: store.settings.statusMessage)
     }
 
     private var hotkeysSection: some View {
@@ -181,12 +189,14 @@ struct OrbitSettingsView: View {
                             openActiveSessionButtonTapped()
                         }
                     )
+                    .transition(.orbitMicro)
                 }
 
                 if sessionGroups.isEmpty {
                     Text("No completed sessions yet.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .transition(.orbitMicro)
                 }
 
                 ForEach(sessionGroups) { group in
@@ -458,6 +468,12 @@ private struct CategoryColorPalettePicker: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .orbitInteractiveControl(
+                    scale: 1.12,
+                    lift: -1.0,
+                    shadowColor: Color.white.opacity(0.18),
+                    shadowRadius: 4
+                )
                 .help(colorHex)
                 .accessibilityLabel("Category color \(colorHex)")
             }

@@ -8,7 +8,7 @@ final class QuickCapturePanelController {
 
     private enum Layout {
         static let width: CGFloat = 480
-        static let height: CGFloat = 520
+        static let height: CGFloat = 320
         static let bottomInset: CGFloat = 36
     }
 

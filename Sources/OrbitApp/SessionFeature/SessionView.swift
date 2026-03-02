@@ -33,10 +33,9 @@ struct SessionView: View {
                     endSessionControl
                 }
                 .frame(maxWidth: Layout.contentMaxWidth, alignment: .leading)
+                .transition(.orbitMicro)
             } else {
-                Text("No active session")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: Layout.contentMaxWidth, alignment: .leading)
+                noActiveSessionContent
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -67,6 +66,9 @@ struct SessionView: View {
         .background {
             OrbitSpaceBackground()
         }
+        .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
+        .animation(.easeInOut(duration: 0.16), value: store.noteDrafts.count)
+        .animation(.easeInOut(duration: 0.16), value: isEndSessionConfirmationPending)
     }
 
     private var emptyState: some View {
@@ -89,10 +91,80 @@ struct SessionView: View {
         )
     }
 
+    private var noActiveSessionView: some View {
+        VStack {
+            Button {
+                startSessionButtonTapped()
+            } label: {
+                sessionHeroLabel(shortcut: store.hotkeys.startShortcut)
+            }
+            .buttonStyle(.orbitHero)
+            .frame(maxWidth: 500)
+            .help("Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))")
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .offset(y: -48)
+    }
+
+    @ViewBuilder
+    private var noActiveSessionContent: some View {
+        switch store.sessionBootstrapState {
+        case .loading:
+            startupLoadingView
+                .transition(.orbitMicro)
+
+        case let .failed(message):
+            startupLoadErrorView(message: message)
+                .transition(.orbitMicro)
+
+        case .idle, .loaded:
+            noActiveSessionView
+                .transition(.orbitMicro)
+        }
+    }
+
+    private var startupLoadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .controlSize(.large)
+            Text("Loading active session…")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .offset(y: -34)
+    }
+
+    private func startupLoadErrorView(message: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title2)
+                .foregroundStyle(.orange)
+
+            Text("Could not load active session")
+                .font(.headline)
+
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                .frame(maxWidth: 480)
+
+            Button("Retry") {
+                store.send(.retryBootstrapActiveSessionButtonTapped)
+            }
+            .buttonStyle(.orbitSecondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .offset(y: -34)
+    }
+
     @ViewBuilder
     private var notesContent: some View {
         if store.noteDrafts.isEmpty {
             emptyState
+                .transition(.orbitMicro)
         } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
@@ -102,6 +174,7 @@ struct SessionView: View {
                 }
             }
             .scrollIndicators(.visible)
+            .transition(.orbitMicro)
         }
     }
 
@@ -113,11 +186,13 @@ struct SessionView: View {
                     store.send(.sessionWindowEndSessionTapped)
                 }
                 .buttonStyle(.orbitDestructive)
+                .transition(.orbitMicro)
             } else {
                 Button("End Session") {
                     endSessionButtonTapped()
                 }
                 .buttonStyle(.orbitQuiet)
+                .transition(.orbitMicro)
             }
         }
         .padding(.top, 2)
@@ -162,6 +237,30 @@ struct SessionView: View {
         }
     }
 
+    private func startSessionButtonTapped() {
+        store.send(.startSessionTapped)
+    }
+
+    @ViewBuilder
+    private func sessionHeroLabel(shortcut: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: "atom")
+                    .font(.title3.weight(.semibold))
+                Text("Start Session")
+                    .font(.title3.weight(.bold))
+                Spacer()
+                HotkeyHintLabel(shortcut: shortcut, tone: .inverted)
+                    .font(.caption.monospacedDigit().weight(.semibold))
+            }
+
+            Text("Ignite a new focus orbit")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.86))
+        }
+        .foregroundStyle(.white)
+    }
+
     private func scheduleEndSessionConfirmationReset() {
         endSessionConfirmationToken += 1
         let token = endSessionConfirmationToken
@@ -202,6 +301,7 @@ private struct SessionHeader: View {
                         .font(.largeTitle.weight(.bold))
                         .lineLimit(2)
                         .contentShape(Rectangle())
+                        .orbitPointerCursor()
                         .onTapGesture {
                             beginRenaming()
                         }
@@ -250,6 +350,12 @@ private struct SessionHeader: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .orbitInteractiveControl(
+                    scale: 1.015,
+                    lift: -1.0,
+                    shadowColor: Color.cyan.opacity(0.16),
+                    shadowRadius: 6
+                )
                 .disabled(categories.isEmpty)
 
                 Text("•")
@@ -320,36 +426,20 @@ private struct NoteEditorRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            MarkdownRenderedNoteView(
-                markdown: draft.text,
-                onToggleTask: onToggleTask
-            )
-            .font(.body)
+        HStack(alignment: .top, spacing: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                MarkdownRenderedNoteView(
+                    markdown: draft.text,
+                    onToggleTask: onToggleTask
+                )
+                .font(.body)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                tagsSection
+            }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            tagsSection
-
-            HStack(alignment: .center, spacing: 10) {
-                Text(draft.createdAt.formatted(date: .omitted, time: .shortened))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                Button {
-                    onEdit()
-                } label: {
-                    Image(systemName: "pencil")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("Edit note")
-                .help("Edit note")
-
-                deleteAction
-            }
+            noteTools
         }
         .padding(12)
         .background(
@@ -385,6 +475,40 @@ private struct NoteEditorRow: View {
         }
     }
 
+    private var noteTools: some View {
+        VStack(alignment: .trailing, spacing: 8) {
+            HStack(spacing: 10) {
+                editAction
+                deleteAction
+            }
+
+            Text(draft.createdAt.formatted(date: .omitted, time: .shortened))
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
+        .padding(.leading, 10)
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private var editAction: some View {
+        Button {
+            onEdit()
+        } label: {
+            Image(systemName: "pencil")
+                .font(.subheadline.weight(.semibold))
+        }
+        .buttonStyle(.plain)
+        .orbitInteractiveControl(
+            scale: 1.06,
+            lift: -1.0,
+            shadowColor: Color.white.opacity(0.14),
+            shadowRadius: 5
+        )
+        .foregroundStyle(.secondary)
+        .accessibilityLabel("Edit note")
+        .help("Edit note")
+    }
+
     @ViewBuilder
     private var deleteAction: some View {
         if isDeleteConfirmationPending {
@@ -401,6 +525,12 @@ private struct NoteEditorRow: View {
                     .font(.subheadline.weight(.semibold))
             }
             .buttonStyle(.plain)
+            .orbitInteractiveControl(
+                scale: 1.06,
+                lift: -1.0,
+                shadowColor: Color.white.opacity(0.14),
+                shadowRadius: 5
+            )
             .foregroundStyle(.secondary)
             .accessibilityLabel("Delete note")
         }
@@ -463,9 +593,9 @@ private struct ReadOnlyTagChip: View {
     }
 }
 
-private struct MarkdownRenderedNoteView: View {
+struct MarkdownRenderedNoteView: View {
     let markdown: String
-    let onToggleTask: (Int) -> Void
+    let onToggleTask: ((Int) -> Void)?
 
     var body: some View {
         let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
@@ -531,13 +661,24 @@ private struct MarkdownRenderedNoteView: View {
     @ViewBuilder
     private func taskLineRow(_ task: MarkdownTaskLine) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Button {
-                onToggleTask(task.lineIndex)
-            } label: {
+            if let onToggleTask {
+                Button {
+                    onToggleTask(task.lineIndex)
+                } label: {
+                    Image(systemName: task.isChecked ? "checkmark.square.fill" : "square")
+                }
+                .buttonStyle(.plain)
+                .orbitInteractiveControl(
+                    scale: 1.05,
+                    lift: -0.8,
+                    shadowColor: Color.white.opacity(0.12),
+                    shadowRadius: 4
+                )
+                .foregroundStyle(task.isChecked ? .green : .secondary)
+            } else {
                 Image(systemName: task.isChecked ? "checkmark.square.fill" : "square")
+                    .foregroundStyle(task.isChecked ? .green : .secondary)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(task.isChecked ? .green : .secondary)
 
             Text(MarkdownAttributedRenderer.renderAttributed(markdown: task.lineText.isEmpty ? " " : task.lineText))
                 .frame(maxWidth: .infinity, alignment: .leading)

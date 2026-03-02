@@ -18,9 +18,9 @@ struct OrbitSpaceBackground: View {
                         Color(red: 0.20, green: 0.42, blue: 0.56).opacity(0.28),
                         .clear
                     ],
-                    center: .init(x: 0.6, y: 0.32),
+                    center: .init(x: 1, y: 1),
                     startRadius: 10,
-                    endRadius: max(proxy.size.width, proxy.size.height) * 0.75
+                    endRadius: max(proxy.size.width, proxy.size.height) * 2.10
                 )
 
                 OrbitStarField()
@@ -72,22 +72,19 @@ private struct OrbitMotif: View {
         var color: Color
     }
 
-    private let orbitFractions: [CGFloat] = [0.34, 0.49, 0.64, 0.79]
+    private let orbitFractions: [CGFloat] = [0.40, 0.55, 0.70, 0.85, 1.00]
     private let planets: [PlanetSpec] = [
-        PlanetSpec(orbitIndex: 0, angle: 32, size: 0.011, color: Color(red: 0.67, green: 0.88, blue: 0.97)),
-        PlanetSpec(orbitIndex: 0, angle: 228, size: 0.010, color: Color(red: 0.92, green: 0.61, blue: 0.42)),
-        PlanetSpec(orbitIndex: 1, angle: 106, size: 0.012, color: Color(red: 0.97, green: 0.74, blue: 0.44)),
-        PlanetSpec(orbitIndex: 1, angle: 304, size: 0.013, color: Color(red: 0.57, green: 0.75, blue: 0.93)),
-        PlanetSpec(orbitIndex: 2, angle: 64, size: 0.015, color: Color(red: 0.63, green: 0.83, blue: 0.95)),
-        PlanetSpec(orbitIndex: 2, angle: 176, size: 0.014, color: Color(red: 0.94, green: 0.66, blue: 0.49)),
-        PlanetSpec(orbitIndex: 3, angle: 136, size: 0.017, color: Color(red: 0.89, green: 0.56, blue: 0.36)),
-        PlanetSpec(orbitIndex: 3, angle: 286, size: 0.016, color: Color(red: 0.66, green: 0.81, blue: 0.95)),
+        PlanetSpec(orbitIndex: 0, angle: 238, size: 0.011, color: Color(red: 0.67, green: 0.88, blue: 0.97)),
+        PlanetSpec(orbitIndex: 1, angle: 212, size: 0.013, color: Color(red: 0.97, green: 0.74, blue: 0.44)),
+        PlanetSpec(orbitIndex: 2, angle: 252, size: 0.015, color: Color(red: 0.94, green: 0.66, blue: 0.49)),
+        PlanetSpec(orbitIndex: 3, angle: 226, size: 0.017, color: Color(red: 0.66, green: 0.81, blue: 0.95)),
+        PlanetSpec(orbitIndex: 4, angle: 244, size: 0.018, color: Color(red: 0.96, green: 0.70, blue: 0.43)),
     ]
 
     var body: some View {
         GeometryReader { proxy in
             let size = min(proxy.size.width, proxy.size.height)
-            let center = CGPoint(x: proxy.size.width * 0.82, y: proxy.size.height * 0.80)
+            let center = CGPoint(x: proxy.size.width, y: proxy.size.height)
 
             ZStack {
                 sun(center: center, size: size)
@@ -128,10 +125,10 @@ private struct OrbitMotif: View {
                         ],
                         center: .center,
                         startRadius: 2,
-                        endRadius: size * 0.13
+                        endRadius: size * 0.40
                     )
                 )
-                .frame(width: size * 0.30, height: size * 0.30)
+                .frame(width: size * 0.88, height: size * 0.88)
 
             Circle()
                 .fill(
@@ -142,14 +139,14 @@ private struct OrbitMotif: View {
                         ],
                         center: .center,
                         startRadius: 1,
-                        endRadius: size * 0.031
+                        endRadius: size * 0.086
                     )
                 )
                 .overlay(
                     Circle()
                         .stroke(Color.white.opacity(0.35), lineWidth: 0.8)
                 )
-                .frame(width: size * 0.062, height: size * 0.062)
+                .frame(width: size * 0.170, height: size * 0.170)
         }
         .position(center)
     }

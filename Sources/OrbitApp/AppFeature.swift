@@ -18,6 +18,13 @@ struct AppFeature {
 
     @ObservableState
     struct State: Equatable {
+        enum SessionBootstrapState: Equatable {
+            case idle
+            case loading
+            case failed(String)
+            case loaded
+        }
+
         struct CaptureDraft: Equatable {
             var text = ""
             var tags = ""
@@ -61,6 +68,7 @@ struct AppFeature {
 
         var windowDestinations: Set<WindowDestination> = []
         var sessionWindowFocusRequest = 0
+        var sessionBootstrapState: SessionBootstrapState = .idle
         var hasLaunched = false
     }
 
@@ -109,7 +117,10 @@ struct AppFeature {
         case settingsExportSessionTapped(UUID, URL)
         case settingsExportCompleted(Int)
         case operationFailed(String)
+        case retryBootstrapActiveSessionButtonTapped
 
+        case bootstrapActiveSessionLoaded(FocusSessionRecord?)
+        case bootstrapActiveSessionFailed(String)
         case loadActiveSessionResponse(FocusSessionRecord?)
         case loadCategoriesResponse([SessionCategoryRecord])
         case settingsDataResponse([FocusSessionRecord], [SessionCategoryRecord])
@@ -134,6 +145,7 @@ struct AppFeature {
             case .onLaunch:
                 guard !state.hasLaunched else { return .none }
                 state.hasLaunched = true
+                state.sessionBootstrapState = .loading
 
                 let hotkeys = hotkeySettingsClient.load()
                 state.hotkeys = hotkeys
@@ -143,8 +155,12 @@ struct AppFeature {
                 return .merge(
                     .send(.registerHotkeys(hotkeys)),
                     .run { send in
-                        let active = try? await focusRepository.loadActiveSession()
-                        await send(.loadActiveSessionResponse(active))
+                        do {
+                            let activeSession = try await focusRepository.loadActiveSession()
+                            await send(.bootstrapActiveSessionLoaded(activeSession))
+                        } catch {
+                            await send(.bootstrapActiveSessionFailed(error.localizedDescription))
+                        }
                     },
                     .run { send in
                         let categories = (try? await focusRepository.listCategories()) ?? []
@@ -254,7 +270,6 @@ struct AppFeature {
                 }
 
             case .openSessionTapped:
-                guard state.activeSession != nil else { return .none }
                 state.windowDestinations.insert(.sessionWindow)
                 state.sessionWindowFocusRequest &+= 1
                 return .none
@@ -547,6 +562,32 @@ struct AppFeature {
                 state.settings.statusMessage = message
                 return .none
 
+            case .retryBootstrapActiveSessionButtonTapped:
+                state.sessionBootstrapState = .loading
+
+                return .run { send in
+                    do {
+                        let activeSession = try await focusRepository.loadActiveSession()
+                        await send(.bootstrapActiveSessionLoaded(activeSession))
+                    } catch {
+                        await send(.bootstrapActiveSessionFailed(error.localizedDescription))
+                    }
+                }
+
+            case let .bootstrapActiveSessionLoaded(session):
+                state.sessionBootstrapState = .loaded
+                return .send(.loadActiveSessionResponse(session))
+
+            case let .bootstrapActiveSessionFailed(message):
+                state.sessionBootstrapState = .failed(message)
+                state.activeSession = nil
+                state.noteDrafts = []
+                state.endSessionDraft = nil
+                state.windowDestinations.remove(.captureWindow)
+                state.windowDestinations.remove(.endSessionWindow)
+
+                return .cancel(id: CancelID.inactivityMonitor)
+
             case let .loadActiveSessionResponse(session):
                 state.activeSession = session
                 syncNoteDrafts(&state)
@@ -572,7 +613,6 @@ struct AppFeature {
                 state.endSessionDraft = nil
                 state.windowDestinations.remove(.endSessionWindow)
                 state.windowDestinations.remove(.captureWindow)
-                state.windowDestinations.remove(.sessionWindow)
 
                 return .cancel(id: CancelID.inactivityMonitor)
 

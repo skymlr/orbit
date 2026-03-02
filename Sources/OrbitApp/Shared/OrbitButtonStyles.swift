@@ -1,4 +1,112 @@
+import AppKit
 import SwiftUI
+
+extension AnyTransition {
+    static var orbitMicro: AnyTransition {
+        .asymmetric(
+            insertion: .opacity.combined(with: .scale(scale: 0.985)),
+            removal: .opacity.combined(with: .scale(scale: 1.01))
+        )
+    }
+}
+
+private struct OrbitPointerCursorModifier: ViewModifier {
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var hasPushedCursor = false
+
+    func body(content: Content) -> some View {
+        content
+            .onHover { isHovered in
+                if isHovered && isEnabled {
+                    pushCursorIfNeeded()
+                } else {
+                    popCursorIfNeeded()
+                }
+            }
+            .onChange(of: isEnabled) { _, enabled in
+                guard !enabled else { return }
+                popCursorIfNeeded()
+            }
+            .onDisappear {
+                popCursorIfNeeded()
+            }
+    }
+
+    private func pushCursorIfNeeded() {
+        guard !hasPushedCursor else { return }
+        NSCursor.pointingHand.push()
+        hasPushedCursor = true
+    }
+
+    private func popCursorIfNeeded() {
+        guard hasPushedCursor else { return }
+        NSCursor.pop()
+        hasPushedCursor = false
+    }
+}
+
+private struct OrbitHoverEffectModifier: ViewModifier {
+    let scale: CGFloat
+    let lift: CGFloat
+    let shadowColor: Color
+    let shadowRadius: CGFloat
+
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var isHovered = false
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isHovered && isEnabled ? scale : 1)
+            .offset(y: isHovered && isEnabled ? lift : 0)
+            .shadow(
+                color: isHovered && isEnabled ? shadowColor : .clear,
+                radius: shadowRadius,
+                x: 0,
+                y: abs(lift) + 2
+            )
+            .animation(.easeOut(duration: 0.14), value: isHovered)
+            .onHover { hovering in
+                isHovered = hovering
+            }
+    }
+}
+
+extension View {
+    func orbitPointerCursor() -> some View {
+        modifier(OrbitPointerCursorModifier())
+    }
+
+    func orbitHoverEffect(
+        scale: CGFloat = 1.02,
+        lift: CGFloat = -1.5,
+        shadowColor: Color = Color.cyan.opacity(0.22),
+        shadowRadius: CGFloat = 10
+    ) -> some View {
+        modifier(
+            OrbitHoverEffectModifier(
+                scale: scale,
+                lift: lift,
+                shadowColor: shadowColor,
+                shadowRadius: shadowRadius
+            )
+        )
+    }
+
+    func orbitInteractiveControl(
+        scale: CGFloat = 1.02,
+        lift: CGFloat = -1.5,
+        shadowColor: Color = Color.cyan.opacity(0.22),
+        shadowRadius: CGFloat = 10
+    ) -> some View {
+        orbitHoverEffect(
+            scale: scale,
+            lift: lift,
+            shadowColor: shadowColor,
+            shadowRadius: shadowRadius
+        )
+        .orbitPointerCursor()
+    }
+}
 
 private enum OrbitButtonPalette {
     static let heroBackground = LinearGradient(
@@ -49,6 +157,12 @@ struct OrbitHeroButtonStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.96 : 1)
             .scaleEffect(configuration.isPressed ? 0.99 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .orbitInteractiveControl(
+                scale: 1.015,
+                lift: -2.0,
+                shadowColor: Color.cyan.opacity(0.32),
+                shadowRadius: 12
+            )
     }
 }
 
@@ -70,6 +184,12 @@ struct OrbitPrimaryButtonStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.9 : 1)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .orbitInteractiveControl(
+                scale: 1.014,
+                lift: -1.4,
+                shadowColor: Color.cyan.opacity(0.24),
+                shadowRadius: 10
+            )
     }
 }
 
@@ -91,6 +211,12 @@ struct OrbitSecondaryButtonStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.9 : 1)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .orbitInteractiveControl(
+                scale: 1.012,
+                lift: -1.2,
+                shadowColor: Color.cyan.opacity(0.16),
+                shadowRadius: 8
+            )
     }
 }
 
@@ -103,6 +229,12 @@ struct OrbitQuietButtonStyle: ButtonStyle {
             .padding(.vertical, 4)
             .opacity(configuration.isPressed ? 0.7 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .orbitInteractiveControl(
+                scale: 1.01,
+                lift: -1.0,
+                shadowColor: Color.white.opacity(0.14),
+                shadowRadius: 6
+            )
     }
 }
 
@@ -116,6 +248,12 @@ struct OrbitDestructiveButtonStyle: ButtonStyle {
             .padding(.vertical, 4)
             .opacity(configuration.isPressed ? 0.7 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .orbitInteractiveControl(
+                scale: 1.01,
+                lift: -1.0,
+                shadowColor: Color.red.opacity(0.18),
+                shadowRadius: 6
+            )
     }
 }
 

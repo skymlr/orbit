@@ -9,8 +9,20 @@ private enum OrbitWindowID {
     static let settings = "settings-window"
 }
 
+private extension Notification.Name {
+    static let orbitReopenRequested = Notification.Name("OrbitApp.reopenRequested")
+}
+
+private final class OrbitApplicationDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        NotificationCenter.default.post(name: .orbitReopenRequested, object: nil)
+        return true
+    }
+}
+
 @main
 struct OrbitMenuBarApp: App {
+    @NSApplicationDelegateAdaptor(OrbitApplicationDelegate.self) private var appDelegate
     let store: StoreOf<AppFeature>
 
     init() {
@@ -33,7 +45,7 @@ struct OrbitMenuBarApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Window("Orbit Session", id: OrbitWindowID.session) {
+        Window("Orbit: A Focus Manager", id: OrbitWindowID.session) {
             if store.windowDestinations.contains(.sessionWindow) {
                 SessionView(store: store)
                     .onDisappear {
@@ -65,7 +77,6 @@ struct OrbitMenuBarApp: App {
                     .frame(width: 1, height: 1)
             }
         }
-        .windowResizability(.contentSize)
         .defaultSize(width: 400, height: 260)
 
         Window("Orbit Settings", id: OrbitWindowID.settings) {
@@ -180,6 +191,9 @@ private struct AppLifecycleCoordinator: View {
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                 store.send(.appWillTerminate)
             }
+            .onReceive(NotificationCenter.default.publisher(for: .orbitReopenRequested)) { _ in
+                store.send(.openSessionTapped)
+            }
     }
 }
 
@@ -191,6 +205,7 @@ private struct AppLaunchCoordinator: View {
             .frame(width: 0, height: 0)
             .task {
                 store.send(.onLaunch)
+                store.send(.openSessionTapped)
             }
     }
 }

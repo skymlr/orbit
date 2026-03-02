@@ -215,6 +215,136 @@ struct AppFeatureTests {
     }
 
     @Test
+    func openSessionTappedOpensWindowWithoutActiveSession() async {
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        }
+
+        await store.send(.openSessionTapped) {
+            $0.windowDestinations.insert(.sessionWindow)
+            $0.sessionWindowFocusRequest = 1
+        }
+    }
+
+    @Test
+    func openSessionTappedIncrementsFocusRequestWhenAlreadyOpen() async {
+        var initial = AppFeature.State()
+        initial.windowDestinations = [.sessionWindow]
+        initial.sessionWindowFocusRequest = 7
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        }
+
+        await store.send(.openSessionTapped) {
+            $0.windowDestinations.insert(.sessionWindow)
+            $0.sessionWindowFocusRequest = 8
+        }
+    }
+
+    @Test
+    func bootstrapActiveSessionResponseSuccessMarksLoadedAndForwardsSession() async {
+        let active = makeActiveSession()
+        var initial = AppFeature.State()
+        initial.sessionBootstrapState = .loading
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        }
+
+        await store.send(.bootstrapActiveSessionLoaded(active)) {
+            $0.sessionBootstrapState = .loaded
+        }
+        await store.receive(\.loadActiveSessionResponse) {
+            $0.activeSession = active
+            $0.noteDrafts = [
+                AppFeature.State.NoteDraft(
+                    id: active.notes[0].id,
+                    text: active.notes[0].text,
+                    tags: active.notes[0].tags,
+                    priority: active.notes[0].priority,
+                    createdAt: active.notes[0].createdAt
+                )
+            ]
+        }
+        await store.send(.loadActiveSessionResponse(nil)) {
+            $0.activeSession = nil
+            $0.noteDrafts = []
+            $0.endSessionDraft = nil
+        }
+    }
+
+    @Test
+    func bootstrapActiveSessionResponseFailureMarksFailedAndClearsTransientWindows() async {
+        var initial = AppFeature.State()
+        initial.activeSession = makeActiveSession()
+        initial.noteDrafts = [
+            AppFeature.State.NoteDraft(
+                id: UUID(uuidString: "A6E2C2D2-53AF-4D10-ACE2-761B700A1DB1")!,
+                text: "Ship Orbit session window",
+                tags: ["shipping", "ui"],
+                priority: .high,
+                createdAt: Date(timeIntervalSince1970: 1_700_000_000)
+            )
+        ]
+        initial.endSessionDraft = AppFeature.State.EndSessionDraft()
+        initial.windowDestinations = [.sessionWindow, .captureWindow, .endSessionWindow]
+        initial.sessionBootstrapState = .loading
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        }
+
+        await store.send(.bootstrapActiveSessionFailed("Database unavailable")) {
+            $0.sessionBootstrapState = .failed("Database unavailable")
+            $0.activeSession = nil
+            $0.noteDrafts = []
+            $0.endSessionDraft = nil
+            $0.windowDestinations = [.sessionWindow]
+        }
+    }
+
+    @Test
+    func retryBootstrapActiveSessionButtonTappedLoadsSession() async {
+        let active = makeActiveSession()
+        var initial = AppFeature.State()
+        initial.sessionBootstrapState = .failed("Previous failure")
+
+        var repository = FocusRepository.testValue
+        repository.loadActiveSession = { active }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.focusRepository = repository
+        }
+
+        await store.send(.retryBootstrapActiveSessionButtonTapped) {
+            $0.sessionBootstrapState = .loading
+        }
+        await store.receive(\.bootstrapActiveSessionLoaded) {
+            $0.sessionBootstrapState = .loaded
+        }
+        await store.receive(\.loadActiveSessionResponse) {
+            $0.activeSession = active
+            $0.noteDrafts = [
+                AppFeature.State.NoteDraft(
+                    id: active.notes[0].id,
+                    text: active.notes[0].text,
+                    tags: active.notes[0].tags,
+                    priority: active.notes[0].priority,
+                    createdAt: active.notes[0].createdAt
+                )
+            ]
+        }
+        await store.send(.loadActiveSessionResponse(nil)) {
+            $0.activeSession = nil
+            $0.noteDrafts = []
+            $0.endSessionDraft = nil
+        }
+    }
+
+    @Test
     func loadingAndClearingActiveSessionSynchronizesDraftsAndWindows() async {
         let active = makeActiveSession()
 
@@ -242,7 +372,7 @@ struct AppFeatureTests {
             $0.activeSession = nil
             $0.noteDrafts = []
             $0.endSessionDraft = nil
-            $0.windowDestinations = []
+            $0.windowDestinations = [.sessionWindow]
         }
     }
 }

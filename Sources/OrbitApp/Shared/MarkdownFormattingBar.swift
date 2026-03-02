@@ -25,6 +25,13 @@ struct MarkdownFormattingBar: View {
                         .font(.caption.weight(.semibold))
                         .frame(width: 28, height: 24)
                 }
+                .buttonStyle(.plain)
+                .orbitInteractiveControl(
+                    scale: 1.08,
+                    lift: -1.0,
+                    shadowColor: Color.white.opacity(0.12),
+                    shadowRadius: 4
+                )
                 .help(action.title)
             }
         }
