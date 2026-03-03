@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -31,12 +31,12 @@
 		B58893B59D3CCFCD6A37589C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C539D5AC9B61A2745598F2C /* Models.swift */; };
 		B6A3A2B569277402C4E3B228 /* Schema.swift in Sources */ = {isa = PBXBuildFile; fileRef = F647314B9140B90A4D91A1FE /* Schema.swift */; };
 		C1941AAA53B6E6A12C5F3D8F /* HotkeyHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = C23484D86A339BABFCE21B79 /* HotkeyHint.swift */; };
-			C25523DE190914A0EEAC223E /* FocusDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88312D129C5CA0F27CBCF28F /* FocusDomain.swift */; };
-			C409D433F828E8C4704FF434 /* EndSessionPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D233237DD037E5C4ACE0DDC9 /* EndSessionPromptView.swift */; };
-			C5F44C028A93DA20427BACCE /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B976253DEEE87CEF658191F /* AppFeature.swift */; };
-			CF6FD4FB57612D275C562C55 /* MarkdownEditingCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60A9C526798D1F4E7B8615C /* MarkdownEditingCore.swift */; };
-			F0A1B2C3D4E5F60718293A4B /* Flow in Frameworks */ = {isa = PBXBuildFile; productRef = F0A1B2C3D4E5F60718293A4C /* Flow */; };
-			F1C3716C6DB7F4A0E45A4840 /* InactivityClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35F269DC84311AEF962A906A /* InactivityClient.swift */; };
+		C25523DE190914A0EEAC223E /* FocusDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88312D129C5CA0F27CBCF28F /* FocusDomain.swift */; };
+		C409D433F828E8C4704FF434 /* EndSessionPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D233237DD037E5C4ACE0DDC9 /* EndSessionPromptView.swift */; };
+		C5F44C028A93DA20427BACCE /* AppFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B976253DEEE87CEF658191F /* AppFeature.swift */; };
+		CF6FD4FB57612D275C562C55 /* MarkdownEditingCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60A9C526798D1F4E7B8615C /* MarkdownEditingCore.swift */; };
+		F0A1B2C3D4E5F60718293A4B /* Flow in Frameworks */ = {isa = PBXBuildFile; productRef = F0A1B2C3D4E5F60718293A4C /* Flow */; };
+		F1C3716C6DB7F4A0E45A4840 /* InactivityClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35F269DC84311AEF962A906A /* InactivityClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,13 +75,13 @@
 				1648677C96E755210B40B545 /* Cocoa.framework in Frameworks */,
 				510A3D49BF048B5454665B17 /* ComposableArchitecture in Frameworks */,
 				AB6C444405882E05AADED0C9 /* CasePaths in Frameworks */,
-					8555587D3F4BEDE136D3B3D2 /* Dependencies in Frameworks */,
-					7CA2F5C988DE8FFFCF264367 /* SQLiteData in Frameworks */,
-					7B5C28F45D9E184E171F6FC2 /* StructuredQueries in Frameworks */,
-					F0A1B2C3D4E5F60718293A4B /* Flow in Frameworks */,
-				);
-				runOnlyForDeploymentPostprocessing = 0;
-			};
+				8555587D3F4BEDE136D3B3D2 /* Dependencies in Frameworks */,
+				7CA2F5C988DE8FFFCF264367 /* SQLiteData in Frameworks */,
+				7B5C28F45D9E184E171F6FC2 /* StructuredQueries in Frameworks */,
+				F0A1B2C3D4E5F60718293A4B /* Flow in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -90,7 +90,6 @@
 			children = (
 				9589E10F327CF6C7BCA98486 /* Assets.xcassets */,
 			);
-			name = Resources;
 			path = Resources;
 			sourceTree = "<group>";
 		};
@@ -107,7 +106,6 @@
 			children = (
 				6F44EC4CCDFA295B81FFEDF3 /* MenuBarView.swift */,
 			);
-			name = MenuBarFeature;
 			path = MenuBarFeature;
 			sourceTree = "<group>";
 		};
@@ -142,7 +140,6 @@
 				66F7DAB48B777F1E13ABC150 /* OrbitSpaceBackground.swift */,
 				1BFED63E38C932C97DD8C809 /* QuickCapturePanelController.swift */,
 			);
-			name = Shared;
 			path = Shared;
 			sourceTree = "<group>";
 		};
@@ -159,7 +156,6 @@
 				81FDE7F96248D28C065316A7 /* Shared */,
 				C83D2FC61A7E199793B2880E /* WorkspaceFeature */,
 			);
-			name = OrbitApp;
 			path = OrbitApp;
 			sourceTree = "<group>";
 		};
@@ -168,7 +164,6 @@
 			children = (
 				831FC8A49ED0D9C9504B99CE /* OrbitApp */,
 			);
-			name = Sources;
 			path = Sources;
 			sourceTree = "<group>";
 		};
@@ -177,7 +172,6 @@
 			children = (
 				6C539D5AC9B61A2745598F2C /* Models.swift */,
 			);
-			name = Persistence;
 			path = Persistence;
 			sourceTree = "<group>";
 		};
@@ -187,7 +181,6 @@
 				2740EBBEC4BEB38C2A7E3164 /* SessionPageView.swift */,
 				F4F88D4E1F70F7B6FB8EFDDC /* WorkspaceView.swift */,
 			);
-			name = WorkspaceFeature;
 			path = WorkspaceFeature;
 			sourceTree = "<group>";
 		};
@@ -196,7 +189,6 @@
 			children = (
 				119D9CC13DB5BBE6A54B8DF5 /* QuickCaptureView.swift */,
 			);
-			name = QuickCaptureFeature;
 			path = QuickCaptureFeature;
 			sourceTree = "<group>";
 		};
@@ -217,7 +209,6 @@
 				35F269DC84311AEF962A906A /* InactivityClient.swift */,
 				CC36E74A03098D2843A1524B /* MarkdownExportClient.swift */,
 			);
-			name = Dependencies;
 			path = Dependencies;
 			sourceTree = "<group>";
 		};
@@ -237,20 +228,20 @@
 			dependencies = (
 				C16A0CD2B314C182E4BEE116 /* PBXTargetDependency */,
 				0E10C950B8CBD91E9468B34C /* PBXTargetDependency */,
-					60E62E5FF00A5B2EB60B198C /* PBXTargetDependency */,
-					008CFACC628BAA4C1E889833 /* PBXTargetDependency */,
-					D67F237D1AB16168F3EC7B1B /* PBXTargetDependency */,
-					F0A1B2C3D4E5F60718293A4D /* PBXTargetDependency */,
-				);
+				60E62E5FF00A5B2EB60B198C /* PBXTargetDependency */,
+				008CFACC628BAA4C1E889833 /* PBXTargetDependency */,
+				D67F237D1AB16168F3EC7B1B /* PBXTargetDependency */,
+				F0A1B2C3D4E5F60718293A4D /* PBXTargetDependency */,
+			);
 			name = Orbit;
 			packageProductDependencies = (
 				44492BB61285D2CADF1D3884 /* ComposableArchitecture */,
 				B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */,
-					C1F90FC1C0C31122E35D4F73 /* Dependencies */,
-					3AAF415269A2878FE0A31517 /* SQLiteData */,
-					D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */,
-					F0A1B2C3D4E5F60718293A4C /* Flow */,
-				);
+				C1F90FC1C0C31122E35D4F73 /* Dependencies */,
+				3AAF415269A2878FE0A31517 /* SQLiteData */,
+				D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */,
+				F0A1B2C3D4E5F60718293A4C /* Flow */,
+			);
 			productName = Orbit;
 			productReference = DC70B03F528B2C69AA9ED812 /* Orbit.app */;
 			productType = "com.apple.product-type.application";
@@ -261,8 +252,9 @@
 		644B92E60FA57CF80CFD80D7 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1300;
-				LastUpgradeCheck = 1300;
+				LastUpgradeCheck = 2630;
 			};
 			buildConfigurationList = 49D69A10863BBC2F992FAC1F /* Build configuration list for PBXProject "Orbit" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -276,11 +268,11 @@
 			packageReferences = (
 				E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				CB2704642CDBA57F9A97A9DA /* XCRemoteSwiftPackageReference "swift-case-paths" */,
-					AA98A25D73F7F7F2EC1B04FD /* XCRemoteSwiftPackageReference "swift-dependencies" */,
-					0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */,
-					8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */,
-					F0A1B2C3D4E5F60718293A4E /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */,
-				);
+				AA98A25D73F7F7F2EC1B04FD /* XCRemoteSwiftPackageReference "swift-dependencies" */,
+				0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */,
+				8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */,
+				F0A1B2C3D4E5F60718293A4E /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */,
+			);
 			productRefGroup = 514FFC5756A823413452FB24 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -350,14 +342,14 @@
 			isa = PBXTargetDependency;
 			productRef = 44492BB61285D2CADF1D3884 /* ComposableArchitecture */;
 		};
-			D67F237D1AB16168F3EC7B1B /* PBXTargetDependency */ = {
-				isa = PBXTargetDependency;
-				productRef = D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */;
-			};
-			F0A1B2C3D4E5F60718293A4D /* PBXTargetDependency */ = {
-				isa = PBXTargetDependency;
-				productRef = F0A1B2C3D4E5F60718293A4C /* Flow */;
-			};
+		D67F237D1AB16168F3EC7B1B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */;
+		};
+		F0A1B2C3D4E5F60718293A4D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = F0A1B2C3D4E5F60718293A4C /* Flow */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -365,6 +357,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -395,9 +388,11 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -417,6 +412,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
@@ -431,13 +427,17 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
@@ -456,13 +456,17 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
@@ -477,6 +481,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -507,9 +512,11 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -522,6 +529,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;
@@ -584,22 +592,22 @@
 				minimumVersion = 1.5.0;
 			};
 		};
-			E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
-				isa = XCRemoteSwiftPackageReference;
-				repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
-				requirement = {
-					kind = upToNextMajorVersion;
-					minimumVersion = 1.16.0;
-				};
+		E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.16.0;
 			};
-			F0A1B2C3D4E5F60718293A4E /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */ = {
-				isa = XCRemoteSwiftPackageReference;
-				repositoryURL = "https://github.com/tevelee/SwiftUI-Flow.git";
-				requirement = {
-					kind = upToNextMajorVersion;
-					minimumVersion = 3.1.1;
-				};
+		};
+		F0A1B2C3D4E5F60718293A4E /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tevelee/SwiftUI-Flow.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.1;
 			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -623,16 +631,16 @@
 			package = AA98A25D73F7F7F2EC1B04FD /* XCRemoteSwiftPackageReference "swift-dependencies" */;
 			productName = Dependencies;
 		};
-			D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */ = {
-				isa = XCSwiftPackageProductDependency;
-				package = 8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */;
-				productName = StructuredQueries;
-			};
-			F0A1B2C3D4E5F60718293A4C /* Flow */ = {
-				isa = XCSwiftPackageProductDependency;
-				package = F0A1B2C3D4E5F60718293A4E /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */;
-				productName = Flow;
-			};
+		D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */;
+			productName = StructuredQueries;
+		};
+		F0A1B2C3D4E5F60718293A4C /* Flow */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F0A1B2C3D4E5F60718293A4E /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */;
+			productName = Flow;
+		};
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 644B92E60FA57CF80CFD80D7 /* Project object */;
