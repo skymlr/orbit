@@ -10,7 +10,7 @@ struct WorkspaceView: View {
     private enum WorkspaceSection: String, CaseIterable, Identifiable {
         case session = "Session"
         case history = "History"
-        case categories = "Note Categories"
+        case categories = "Task Categories"
         case hotkeys = "Hotkeys"
         case about = "About"
 
@@ -286,8 +286,8 @@ struct WorkspaceView: View {
                     Text("Features")
                         .font(.headline.weight(.semibold))
                     Text("• Menu bar-first session management")
-                    Text("• Quick capture with markdown notes")
-                    Text("• Note categories, filters, priorities, and session exports")
+                    Text("• Quick capture with markdown tasks")
+                    Text("• Task categories, filters, priorities, and session exports")
                     Text("• Local-first SQLite persistence")
                 }
                 .font(.subheadline)
@@ -533,7 +533,7 @@ private struct SessionRow: View {
             }
 
             HStack(spacing: 8) {
-                Text("\(session.notes.count) \(session.notes.count == 1 ? "note" : "notes")")
+                Text("\(session.tasks.count) \(session.tasks.count == 1 ? "task" : "tasks")")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
 
@@ -600,7 +600,7 @@ private struct ActiveSessionHero: View {
             }
 
             HStack(spacing: 8) {
-                Text("\(session.notes.count) \(session.notes.count == 1 ? "note" : "notes")")
+                Text("\(session.tasks.count) \(session.tasks.count == 1 ? "task" : "tasks")")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
 

@@ -17,9 +17,10 @@ struct FocusRepository: Sendable {
     var renameCategory: @Sendable (_ id: UUID, _ name: String, _ colorHex: String) async throws -> Void
     var deleteCategory: @Sendable (_ id: UUID) async throws -> Void
 
-    var createNote: @Sendable (_ sessionID: UUID, _ text: String, _ priority: NotePriority, _ categoryIDs: [UUID], _ now: Date) async throws -> FocusNoteRecord?
-    var updateNote: @Sendable (_ noteID: UUID, _ text: String, _ priority: NotePriority, _ categoryIDs: [UUID], _ now: Date) async throws -> FocusNoteRecord?
-    var deleteNote: @Sendable (_ noteID: UUID) async throws -> Void
+    var createTask: @Sendable (_ sessionID: UUID, _ markdown: String, _ priority: NotePriority, _ categoryIDs: [UUID], _ now: Date) async throws -> FocusTaskRecord?
+    var updateTask: @Sendable (_ taskID: UUID, _ markdown: String, _ priority: NotePriority, _ categoryIDs: [UUID], _ now: Date) async throws -> FocusTaskRecord?
+    var setTaskCompletion: @Sendable (_ taskID: UUID, _ isCompleted: Bool, _ now: Date) async throws -> FocusTaskRecord?
+    var deleteTask: @Sendable (_ taskID: UUID) async throws -> Void
 
     var exportSessionsMarkdown: @Sendable (_ sessionIDs: [UUID], _ directoryURL: URL) async throws -> [URL]
 }
@@ -31,16 +32,35 @@ extension FocusRepository: DependencyKey {
                 @Dependency(\.defaultDatabase) var database
                 @Dependency(\.uuid) var uuid
 
-                let sessionID = uuid()
-                let name = FocusDefaults.defaultSessionName(startedAt: now)
-
                 return try await database.write { db in
+                    let active = try FocusSession
+                        .where({ $0.endedAt.is(nil) })
+                        .order { $0.startedAt.desc() }
+                        .fetchOne(db)
+
+                    if let active, let record = try buildSessionRecord(db: db, sessionID: active.id) {
+                        return record
+                    }
+
+                    let sessionID = uuid()
+                    let name = FocusDefaults.defaultSessionName(startedAt: now)
+
                     try FocusSession.insert {
                         ($0.id, $0.name, $0.startedAt, $0.endedAt, $0.endedReason)
                     } values: {
                         (sessionID, name, now, nil, nil)
                     }
                     .execute(db)
+
+                    if let previousEndedSession = try mostRecentlyEndedSession(db: db, excluding: sessionID) {
+                        try copyIncompleteTasks(
+                            db: db,
+                            fromSessionID: previousEndedSession.id,
+                            toSessionID: sessionID,
+                            copiedAt: now,
+                            uuid: { uuid() }
+                        )
+                    }
 
                     guard let session = try buildSessionRecord(db: db, sessionID: sessionID) else {
                         throw FocusRepositoryError.notFound
@@ -130,7 +150,7 @@ extension FocusRepository: DependencyKey {
             listCategories: {
                 @Dependency(\.defaultDatabase) var database
 
-                return try await database.write { db in
+                return try await database.read { db in
                     let rows = try SessionCategory
                         .order(by: \.name)
                         .fetchAll(db)
@@ -204,68 +224,85 @@ extension FocusRepository: DependencyKey {
                 @Dependency(\.defaultDatabase) var database
 
                 try await database.write { db in
-                    try SessionNoteCategory.where { $0.categoryID.eq(id) }
+                    try SessionTaskCategory.where { $0.categoryID.eq(id) }
                         .delete()
                         .execute(db)
 
                     try SessionCategory.find(id).delete().execute(db)
                 }
             },
-            createNote: { sessionID, text, priority, categoryIDs, now in
+            createTask: { sessionID, markdown, priority, categoryIDs, now in
                 @Dependency(\.defaultDatabase) var database
                 @Dependency(\.uuid) var uuid
 
-                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmed = markdown.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !trimmed.isEmpty else { return nil }
-                let noteID = uuid()
+                let taskID = uuid()
 
                 return try await database.write { db in
                     if try FocusSession.find(sessionID).fetchOne(db) == nil {
                         return nil
                     }
 
-                    let resolvedCategoryIDs = try resolvedNoteCategoryIDs(db: db, requested: categoryIDs)
+                    let resolvedCategoryIDs = try resolvedTaskCategoryIDs(db: db, requested: categoryIDs)
 
-                    try SessionNote.insert {
-                        ($0.id, $0.sessionID, $0.text, $0.priority, $0.createdAt, $0.updatedAt)
+                    try SessionTask.insert {
+                        ($0.id, $0.sessionID, $0.markdown, $0.priority, $0.completedAt, $0.carriedFromTaskID, $0.createdAt, $0.updatedAt)
                     } values: {
-                        (noteID, sessionID, trimmed, priority.rawValue, now, now)
+                        (taskID, sessionID, trimmed, priority.rawValue, nil, nil, now, now)
                     }
                     .execute(db)
 
-                    try replaceNoteCategories(db: db, noteID: noteID, categoryIDs: resolvedCategoryIDs)
-                    return try buildNoteRecord(db: db, noteID: noteID)
+                    try replaceTaskCategories(db: db, taskID: taskID, categoryIDs: resolvedCategoryIDs)
+                    return try buildTaskRecord(db: db, taskID: taskID)
                 }
             },
-            updateNote: { noteID, text, priority, categoryIDs, now in
+            updateTask: { taskID, markdown, priority, categoryIDs, now in
                 @Dependency(\.defaultDatabase) var database
 
-                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmed = markdown.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !trimmed.isEmpty else { return nil }
 
                 return try await database.write { db in
-                    if try SessionNote.find(noteID).fetchOne(db) == nil {
+                    if try SessionTask.find(taskID).fetchOne(db) == nil {
                         return nil
                     }
 
-                    let resolvedCategoryIDs = try resolvedNoteCategoryIDs(db: db, requested: categoryIDs)
+                    let resolvedCategoryIDs = try resolvedTaskCategoryIDs(db: db, requested: categoryIDs)
 
-                    try SessionNote.find(noteID).update {
-                        $0.text = trimmed
+                    try SessionTask.find(taskID).update {
+                        $0.markdown = trimmed
                         $0.priority = priority.rawValue
                         $0.updatedAt = now
                     }
                     .execute(db)
 
-                    try replaceNoteCategories(db: db, noteID: noteID, categoryIDs: resolvedCategoryIDs)
-                    return try buildNoteRecord(db: db, noteID: noteID)
+                    try replaceTaskCategories(db: db, taskID: taskID, categoryIDs: resolvedCategoryIDs)
+                    return try buildTaskRecord(db: db, taskID: taskID)
                 }
             },
-            deleteNote: { noteID in
+            setTaskCompletion: { taskID, isCompleted, now in
+                @Dependency(\.defaultDatabase) var database
+
+                return try await database.write { db in
+                    if try SessionTask.find(taskID).fetchOne(db) == nil {
+                        return nil
+                    }
+
+                    try SessionTask.find(taskID).update {
+                        $0.completedAt = isCompleted ? #bind(now) : nil
+                        $0.updatedAt = now
+                    }
+                    .execute(db)
+
+                    return try buildTaskRecord(db: db, taskID: taskID)
+                }
+            },
+            deleteTask: { taskID in
                 @Dependency(\.defaultDatabase) var database
 
                 try await database.write { db in
-                    try SessionNote.find(noteID).delete().execute(db)
+                    try SessionTask.find(taskID).delete().execute(db)
                 }
             },
             exportSessionsMarkdown: { sessionIDs, directoryURL in
@@ -301,7 +338,7 @@ extension FocusRepository: DependencyKey {
                     startedAt: Date(),
                     endedAt: nil,
                     endedReason: nil,
-                    notes: []
+                    tasks: []
                 )
             },
             loadActiveSession: { nil },
@@ -314,9 +351,10 @@ extension FocusRepository: DependencyKey {
             addCategory: { _, _ in nil },
             renameCategory: { _, _, _ in },
             deleteCategory: { _ in },
-            createNote: { _, _, _, _, _ in nil },
-            updateNote: { _, _, _, _, _ in nil },
-            deleteNote: { _ in },
+            createTask: { _, _, _, _, _ in nil },
+            updateTask: { _, _, _, _, _ in nil },
+            setTaskCompletion: { _, _, _ in nil },
+            deleteTask: { _ in },
             exportSessionsMarkdown: { _, _ in [] }
         )
     }
@@ -338,13 +376,13 @@ private func buildSessionRecord(db: Database, sessionID: UUID) throws -> FocusSe
         return nil
     }
 
-    let notes = try SessionNote
+    let tasks = try SessionTask
         .where { $0.sessionID.eq(sessionID) }
         .order { $0.createdAt.asc() }
         .fetchAll(db)
 
-    let noteRecords = try notes.map { note in
-        guard let built = try buildNoteRecord(db: db, noteID: note.id) else {
+    let taskRecords = try tasks.map { task in
+        guard let built = try buildTaskRecord(db: db, taskID: task.id) else {
             throw FocusRepositoryError.notFound
         }
         return built
@@ -356,24 +394,28 @@ private func buildSessionRecord(db: Database, sessionID: UUID) throws -> FocusSe
         startedAt: session.startedAt,
         endedAt: session.endedAt,
         endedReason: session.endedReason.flatMap(SessionEndReason.init(rawValue:)),
-        notes: noteRecords
+        tasks: taskRecords
     )
 }
 
-private func buildNoteRecord(db: Database, noteID: UUID) throws -> FocusNoteRecord? {
-    guard let note = try SessionNote.find(noteID).fetchOne(db) else {
+private func buildTaskRecord(db: Database, taskID: UUID) throws -> FocusTaskRecord? {
+    guard let task = try SessionTask.find(taskID).fetchOne(db) else {
         return nil
     }
-    let categories = try loadNoteCategories(db: db, noteID: noteID)
+    let categories = try loadTaskCategories(db: db, taskID: taskID)
+    let carriedFromSessionName = try loadCarriedFromSessionName(db: db, carriedFromTaskID: task.carriedFromTaskID)
 
-    return FocusNoteRecord(
-        id: note.id,
-        sessionID: note.sessionID,
+    return FocusTaskRecord(
+        id: task.id,
+        sessionID: task.sessionID,
         categories: categories,
-        text: note.text,
-        priority: NotePriority(rawValue: note.priority) ?? .none,
-        createdAt: note.createdAt,
-        updatedAt: note.updatedAt
+        markdown: task.markdown,
+        priority: NotePriority(rawValue: task.priority) ?? .none,
+        completedAt: task.completedAt,
+        carriedFromTaskID: task.carriedFromTaskID,
+        carriedFromSessionName: carriedFromSessionName,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt
     )
 }
 
@@ -385,7 +427,7 @@ private func normalizedSessionName(_ input: String?, fallbackDate: Date) -> Stri
     return trimmed
 }
 
-private func resolvedNoteCategoryIDs(db: Database, requested: [UUID]) throws -> [UUID] {
+private func resolvedTaskCategoryIDs(db: Database, requested: [UUID]) throws -> [UUID] {
     var seen = Set<UUID>()
     var values: [UUID] = []
 
@@ -399,25 +441,25 @@ private func resolvedNoteCategoryIDs(db: Database, requested: [UUID]) throws -> 
     return values
 }
 
-private func replaceNoteCategories(db: Database, noteID: UUID, categoryIDs: [UUID]) throws {
-    try SessionNoteCategory.where { $0.noteID.eq(noteID) }.delete().execute(db)
+private func replaceTaskCategories(db: Database, taskID: UUID, categoryIDs: [UUID]) throws {
+    try SessionTaskCategory.where { $0.taskID.eq(taskID) }.delete().execute(db)
 
-    try SessionNoteCategory.insert {
-        ($0.id, $0.noteID, $0.categoryID)
+    try SessionTaskCategory.insert {
+        ($0.id, $0.taskID, $0.categoryID)
     } values: {
         for categoryID in categoryIDs {
-            (UUID(), noteID, categoryID)
+            (UUID(), taskID, categoryID)
         }
     }
     .execute(db)
 }
 
-private func loadNoteCategories(
+private func loadTaskCategories(
     db: Database,
-    noteID: UUID
+    taskID: UUID
 ) throws -> [NoteCategoryRecord] {
-    let linkedCategoryIDs = try SessionNoteCategory
-        .where { $0.noteID.eq(noteID) }
+    let linkedCategoryIDs = try SessionTaskCategory
+        .where { $0.taskID.eq(taskID) }
         .order(by: \.categoryID)
         .fetchAll(db)
         .map(\.categoryID)
@@ -438,6 +480,80 @@ private func loadNoteCategories(
     return categories
 }
 
+private func loadCarriedFromSessionName(
+    db: Database,
+    carriedFromTaskID: UUID?
+) throws -> String? {
+    guard let carriedFromTaskID else { return nil }
+    guard let sourceTask = try SessionTask.find(carriedFromTaskID).fetchOne(db) else { return nil }
+    guard let sourceSession = try FocusSession.find(sourceTask.sessionID).fetchOne(db) else { return nil }
+    return sourceSession.name
+}
+
+private func mostRecentlyEndedSession(
+    db: Database,
+    excluding excludedSessionID: UUID
+) throws -> FocusSession? {
+    let sessions = try FocusSession
+        .order { $0.startedAt.desc() }
+        .fetchAll(db)
+
+    return sessions
+        .filter { $0.id != excludedSessionID && $0.endedAt != nil }
+        .sorted {
+            ($0.endedAt ?? .distantPast) > ($1.endedAt ?? .distantPast)
+        }
+        .first
+}
+
+private func copyIncompleteTasks(
+    db: Database,
+    fromSessionID: UUID,
+    toSessionID: UUID,
+    copiedAt: Date,
+    uuid: @escaping @Sendable () -> UUID
+) throws {
+    let sourceTasks = try SessionTask
+        .where { $0.sessionID.eq(fromSessionID) }
+        .order { $0.createdAt.asc() }
+        .fetchAll(db)
+        .filter { $0.completedAt == nil }
+
+    for sourceTask in sourceTasks {
+        let copiedTaskID = uuid()
+
+        try SessionTask.insert {
+            ($0.id, $0.sessionID, $0.markdown, $0.priority, $0.completedAt, $0.carriedFromTaskID, $0.createdAt, $0.updatedAt)
+        } values: {
+            (
+                copiedTaskID,
+                toSessionID,
+                sourceTask.markdown,
+                sourceTask.priority,
+                nil,
+                sourceTask.id,
+                copiedAt,
+                copiedAt
+            )
+        }
+        .execute(db)
+
+        let sourceCategoryIDs = try SessionTaskCategory
+            .where { $0.taskID.eq(sourceTask.id) }
+            .fetchAll(db)
+            .map(\.categoryID)
+
+        try SessionTaskCategory.insert {
+            ($0.id, $0.taskID, $0.categoryID)
+        } values: {
+            for categoryID in sourceCategoryIDs {
+                (uuid(), copiedTaskID, categoryID)
+            }
+        }
+        .execute(db)
+    }
+}
+
 private func renderMarkdown(for session: FocusSessionRecord) -> String {
     var lines: [String] = []
     lines.append("# Session: \(session.name)")
@@ -449,16 +565,25 @@ private func renderMarkdown(for session: FocusSessionRecord) -> String {
         lines.append("Ended Reason: \(reason.rawValue)")
     }
     lines.append("")
-    lines.append("## Notes")
+    lines.append("## Tasks")
     lines.append("")
 
-    for note in session.notes.sorted(by: { $0.createdAt < $1.createdAt }) {
-        lines.append("### \(formatDate(note.createdAt)) • \(note.priority.title)")
-        let categoryLine = note.categories.isEmpty
+    for task in session.tasks.sorted(by: { $0.createdAt < $1.createdAt }) {
+        lines.append("### \(formatDate(task.createdAt)) • \(task.priority.title)")
+        if let completedAt = task.completedAt {
+            lines.append("Status: Completed at \(formatDate(completedAt))")
+        } else {
+            lines.append("Status: Open")
+        }
+        if task.carriedFromTaskID != nil {
+            let carriedFromSessionName = task.carriedFromSessionName ?? "Previous session"
+            lines.append("Carried From Session: \(carriedFromSessionName)")
+        }
+        let categoryLine = task.categories.isEmpty
             ? "None"
-            : note.categories.map(\.name).joined(separator: ", ")
+            : task.categories.map(\.name).joined(separator: ", ")
         lines.append("Categories: \(categoryLine)")
-        lines.append(note.text)
+        lines.append(task.markdown)
         lines.append("")
     }
 

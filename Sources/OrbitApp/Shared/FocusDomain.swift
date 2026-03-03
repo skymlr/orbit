@@ -16,6 +16,23 @@ enum NotePriority: String, CaseIterable, Codable, Equatable, Sendable {
     }
 }
 
+enum SessionPeriod: String, Codable, CaseIterable, Equatable, Sendable {
+    case morning
+    case afternoon
+    case evening
+
+    var title: String {
+        switch self {
+        case .morning:
+            return "Morning"
+        case .afternoon:
+            return "Afternoon"
+        case .evening:
+            return "Evening"
+        }
+    }
+}
+
 enum SessionEndReason: String, Codable, Equatable, Sendable {
     case manual
     case inactivity
@@ -52,12 +69,15 @@ struct NoteCategoryRecord: Equatable, Identifiable, Sendable {
     var colorHex: String
 }
 
-struct FocusNoteRecord: Equatable, Identifiable, Sendable {
+struct FocusTaskRecord: Equatable, Identifiable, Sendable {
     var id: UUID
     var sessionID: UUID
     var categories: [NoteCategoryRecord]
-    var text: String
+    var markdown: String
     var priority: NotePriority
+    var completedAt: Date?
+    var carriedFromTaskID: UUID?
+    var carriedFromSessionName: String?
     var createdAt: Date
     var updatedAt: Date
 }
@@ -68,7 +88,7 @@ struct FocusSessionRecord: Equatable, Identifiable, Sendable {
     var startedAt: Date
     var endedAt: Date?
     var endedReason: SessionEndReason?
-    var notes: [FocusNoteRecord]
+    var tasks: [FocusTaskRecord]
 
     var isActive: Bool {
         endedAt == nil
@@ -90,22 +110,20 @@ enum FocusDefaults {
         "#8D99AE",
     ]
 
-    static func defaultSessionName(startedAt: Date) -> String {
-        let hour = Calendar.current.component(.hour, from: startedAt)
-        let period: String
-
+    static func sessionPeriod(for date: Date) -> SessionPeriod {
+        let hour = Calendar.current.component(.hour, from: date)
         switch hour {
         case 5..<12:
-            period = "Morning"
+            return .morning
         case 12..<17:
-            period = "Afternoon"
-        case 17..<21:
-            period = "Evening"
+            return .afternoon
         default:
-            period = "Night"
+            return .evening
         }
+    }
 
-        return "\(period) Session"
+    static func defaultSessionName(startedAt: Date) -> String {
+        "\(sessionPeriod(for: startedAt).title) Session"
     }
 
     static func normalizedCategoryName(_ value: String) -> String {

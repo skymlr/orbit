@@ -22,8 +22,9 @@ struct SessionPageView: View {
                         }
                     )
 
-                    noteCategoryFilterBar
-                    notesContent
+                    taskCategoryFilterBar
+
+                    tasksContent
                     endSessionControl
                 }
                 .frame(maxWidth: Layout.contentMaxWidth, alignment: .leading)
@@ -38,12 +39,12 @@ struct SessionPageView: View {
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
-                    store.send(.sessionAddNoteTapped)
+                    store.send(.sessionAddTaskTapped)
                 } label: {
                     Image(systemName: "plus")
                 }
                 .keyboardShortcut("n", modifiers: [.command])
-                .help("Capture Note \(HotkeyHintFormatter.hint(from: store.hotkeys.captureShortcut))")
+                .help("Capture Task \(HotkeyHintFormatter.hint(from: store.hotkeys.captureShortcut))")
             }
         }
         .toolbarBackground(.hidden, for: .windowToolbar)
@@ -55,7 +56,7 @@ struct SessionPageView: View {
             OrbitSpaceBackground()
         }
         .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
-        .animation(.easeInOut(duration: 0.16), value: store.noteDrafts.count)
+        .animation(.easeInOut(duration: 0.16), value: store.taskDrafts.count)
         .animation(.easeInOut(duration: 0.16), value: isEndSessionConfirmationPending)
     }
 
@@ -64,12 +65,12 @@ struct SessionPageView: View {
             Text(emptyStateTitle)
                 .font(.title3.weight(.semibold))
             HStack(spacing: 6) {
-                if store.noteDrafts.isEmpty {
+                if store.taskDrafts.isEmpty {
                     Text("Use + or")
                     HotkeyHintLabel(shortcut: store.hotkeys.captureShortcut)
-                    Text("to capture your first note for this session.")
+                    Text("to capture your first task for this session.")
                 } else {
-                    Text("Switch filters to view notes from other categories.")
+                    Text(emptyStateSubtitle)
                 }
             }
             .font(.caption)
@@ -153,15 +154,15 @@ struct SessionPageView: View {
     }
 
     @ViewBuilder
-    private var notesContent: some View {
-        if store.filteredNoteDrafts.isEmpty {
+    private var tasksContent: some View {
+        if sortedFilteredTasks.isEmpty {
             emptyState
                 .transition(.orbitMicro)
         } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(store.filteredNoteDrafts) { draft in
-                        noteRow(for: draft)
+                    ForEach(sortedFilteredTasks) { draft in
+                        taskRow(for: draft)
                     }
                 }
             }
@@ -170,25 +171,25 @@ struct SessionPageView: View {
         }
     }
 
-    private var noteCategoryFilterBar: some View {
+    private var taskCategoryFilterBar: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 8) {
                 filterChip(
                     title: "All",
-                    count: store.noteDrafts.count,
+                    count: store.taskDrafts.count,
                     isSelected: isAllFilterSelected
                 ) {
-                    store.send(.sessionNoteCategoryFilterChangedTapped(.all))
+                    store.send(.sessionTaskCategoryFilterChangedTapped(.all))
                 }
 
-                ForEach(categoriesWithNotes) { category in
+                ForEach(categoriesWithTasks) { category in
                     filterChip(
                         title: category.name,
                         count: countForCategory(category.id),
                         isSelected: isCategorySelected(category.id),
                         tint: Color(categoryHex: category.colorHex)
                     ) {
-                        store.send(.sessionNoteCategoryFilterChangedTapped(.category(category.id)))
+                        store.send(.sessionTaskCategoryFilterChangedTapped(.category(category.id)))
                     }
                 }
             }
@@ -217,23 +218,23 @@ struct SessionPageView: View {
         .padding(.top, 2)
     }
 
-    private func noteRow(for draft: AppFeature.State.NoteDraft) -> some View {
-        NoteRow(
+    private func taskRow(for draft: AppFeature.State.TaskDraft) -> some View {
+        TaskRow(
             draft: draft,
             onEdit: {
-                store.send(.sessionNoteEditTapped(draft.id))
+                store.send(.sessionTaskEditTapped(draft.id))
             },
-            onToggleTask: { lineIndex in
-                store.send(.sessionNoteTaskToggleTapped(draft.id, lineIndex))
+            onToggleCompletion: {
+                store.send(.sessionTaskCompletionToggled(draft.id, !draft.isCompleted))
             },
             onDelete: {
-                store.send(.sessionNoteDeleteTapped(draft.id))
+                store.send(.sessionTaskDeleteTapped(draft.id))
             }
         )
     }
 
     private var isAllFilterSelected: Bool {
-        switch store.selectedNoteCategoryFilter {
+        switch store.selectedTaskCategoryFilter {
         case .all:
             return true
         case .category:
@@ -242,14 +243,18 @@ struct SessionPageView: View {
     }
 
     private var emptyStateTitle: String {
-        if store.noteDrafts.isEmpty {
-            return "No notes yet"
+        if store.taskDrafts.isEmpty {
+            return "No tasks yet"
         }
-        return "No notes in this category"
+        return "No tasks in this category"
+    }
+
+    private var emptyStateSubtitle: String {
+        "Switch filters to view tasks from other categories."
     }
 
     private func isCategorySelected(_ categoryID: UUID) -> Bool {
-        switch store.selectedNoteCategoryFilter {
+        switch store.selectedTaskCategoryFilter {
         case .all:
             return false
         case let .category(selectedID):
@@ -258,14 +263,45 @@ struct SessionPageView: View {
     }
 
     private func countForCategory(_ categoryID: UUID) -> Int {
-        store.noteDrafts.filter { draft in
+        store.taskDrafts.filter { draft in
             draft.categories.contains(where: { $0.id == categoryID })
         }
         .count
     }
 
-    private var categoriesWithNotes: [SessionCategoryRecord] {
+    private var categoriesWithTasks: [SessionCategoryRecord] {
         store.categories.filter { countForCategory($0.id) > 0 }
+    }
+
+    private var sortedFilteredTasks: [AppFeature.State.TaskDraft] {
+        sortedTasks(store.filteredTaskDrafts)
+    }
+
+    private func sortedTasks(_ tasks: [AppFeature.State.TaskDraft]) -> [AppFeature.State.TaskDraft] {
+        tasks.sorted { lhs, rhs in
+            if lhs.isCompleted != rhs.isCompleted {
+                return !lhs.isCompleted
+            }
+            let lhsPriorityRank = priorityRank(lhs.priority)
+            let rhsPriorityRank = priorityRank(rhs.priority)
+            if lhsPriorityRank != rhsPriorityRank {
+                return lhsPriorityRank < rhsPriorityRank
+            }
+            return lhs.createdAt > rhs.createdAt
+        }
+    }
+
+    private func priorityRank(_ priority: NotePriority) -> Int {
+        switch priority {
+        case .high:
+            return 0
+        case .medium:
+            return 1
+        case .low:
+            return 2
+        case .none:
+            return 3
+        }
     }
 
     private func filterChip(
@@ -325,6 +361,12 @@ struct SessionPageView: View {
     }
 }
 
+private extension AppFeature.State.TaskDraft {
+    var isCompleted: Bool {
+        completedAt != nil
+    }
+}
+
 private struct SessionHeader: View {
     let session: FocusSessionRecord
     let onRename: (String) -> Void
@@ -373,10 +415,10 @@ private struct SessionHeader: View {
                 Text("Started \(session.startedAt, style: .time)")
                 Text("•")
                 Text("Elapsed \(session.startedAt, style: .timer)")
-                
+
                 Spacer()
-                
-                Text("\(session.notes.count) note\(session.notes.count == 1 ? "" : "s")")
+
+                Text("\(session.tasks.count) task\(session.tasks.count == 1 ? "" : "s")")
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
@@ -413,372 +455,6 @@ private struct SessionHeader: View {
         name = session.name
         isRenaming = false
     }
-}
-
-private struct NoteRow: View {
-    let draft: AppFeature.State.NoteDraft
-    let onEdit: () -> Void
-    let onToggleTask: (Int) -> Void
-    let onDelete: () -> Void
-
-    @State private var isDeleteConfirmationPending = false
-    @State private var deleteConfirmationToken = 0
-
-    init(
-        draft: AppFeature.State.NoteDraft,
-        onEdit: @escaping () -> Void,
-        onToggleTask: @escaping (Int) -> Void,
-        onDelete: @escaping () -> Void
-    ) {
-        self.draft = draft
-        self.onEdit = onEdit
-        self.onToggleTask = onToggleTask
-        self.onDelete = onDelete
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            VStack(alignment: .leading, spacing: 12) {
-                MarkdownRenderedNoteView(
-                    markdown: draft.text,
-                    onToggleTask: onToggleTask
-                )
-                .font(.body)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                categoriesSection
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            noteTools
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(noteBackgroundColor(for: draft.priority))
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(noteBorderColor(for: draft.priority), lineWidth: 1.2)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .task(id: draft.id) {
-            resetDeleteConfirmation()
-        }
-    }
-
-    @ViewBuilder
-    private var categoriesSection: some View {
-        if !draft.categories.isEmpty {
-            ScrollView(.horizontal) {
-                HStack(spacing: 6) {
-                    ForEach(draft.categories) { category in
-                        OrbitCategoryChip(
-                            title: category.name,
-                            tint: Color(categoryHex: category.colorHex),
-                            isSelected: true
-                        )
-                    }
-                }
-                .padding(.vertical, 2)
-            }
-            .scrollIndicators(.hidden)
-        }
-    }
-
-    private var noteTools: some View {
-        VStack(alignment: .trailing, spacing: 8) {
-            HStack(spacing: 10) {
-                editAction
-                deleteAction
-            }
-
-            Text(draft.createdAt.formatted(date: .omitted, time: .shortened))
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
-        }
-        .padding(.leading, 10)
-        .fixedSize(horizontal: true, vertical: false)
-    }
-
-    private var editAction: some View {
-        Button {
-            onEdit()
-        } label: {
-            Image(systemName: "pencil")
-                .font(.subheadline.weight(.semibold))
-        }
-        .buttonStyle(.plain)
-        .orbitInteractiveControl(
-            scale: 1.06,
-            lift: -1.0,
-            shadowColor: Color.white.opacity(0.14),
-            shadowRadius: 5
-        )
-        .foregroundStyle(.secondary)
-        .accessibilityLabel("Edit note")
-        .help("Edit note")
-    }
-
-    @ViewBuilder
-    private var deleteAction: some View {
-        if isDeleteConfirmationPending {
-            Button("Confirm Deletion", role: .destructive) {
-                onDelete()
-            }
-            .buttonStyle(.orbitDestructive)
-        } else {
-            Button {
-                isDeleteConfirmationPending = true
-                scheduleDeleteConfirmationReset()
-            } label: {
-                Image(systemName: "trash")
-                    .font(.subheadline.weight(.semibold))
-            }
-            .buttonStyle(.plain)
-            .orbitInteractiveControl(
-                scale: 1.06,
-                lift: -1.0,
-                shadowColor: Color.white.opacity(0.14),
-                shadowRadius: 5
-            )
-            .foregroundStyle(.secondary)
-            .accessibilityLabel("Delete note")
-        }
-    }
-
-    private func noteBackgroundColor(for priority: NotePriority) -> Color {
-        switch priority {
-        case .none:
-            return Color.gray.opacity(0.05)
-        case .low:
-            return Color.blue.opacity(0.08)
-        case .medium:
-            return Color.orange.opacity(0.09)
-        case .high:
-            return Color.red.opacity(0.10)
-        }
-    }
-
-    private func noteBorderColor(for priority: NotePriority) -> Color {
-        switch priority {
-        case .none:
-            return Color.gray.opacity(0.32)
-        case .low:
-            return Color.blue.opacity(0.55)
-        case .medium:
-            return Color.orange.opacity(0.60)
-        case .high:
-            return Color.red.opacity(0.62)
-        }
-    }
-
-    private func resetDeleteConfirmation() {
-        isDeleteConfirmationPending = false
-        deleteConfirmationToken += 1
-    }
-
-    private func scheduleDeleteConfirmationReset() {
-        deleteConfirmationToken += 1
-        let token = deleteConfirmationToken
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            guard token == deleteConfirmationToken, isDeleteConfirmationPending else { return }
-            isDeleteConfirmationPending = false
-        }
-    }
-}
-
-struct MarkdownRenderedNoteView: View {
-    let markdown: String
-    let onToggleTask: ((Int) -> Void)?
-
-    var body: some View {
-        let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-        let taskLines = MarkdownEditingCore.taskLines(in: markdown)
-        let tasksByLine = Dictionary(uniqueKeysWithValues: taskLines.map { ($0.lineIndex, $0) })
-
-        VStack(alignment: .leading, spacing: 4) {
-            ForEach(Array(lines.enumerated()), id: \.offset) { offset, line in
-                lineView(line: line, lineIndex: offset, task: tasksByLine[offset])
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private func lineView(line: String, lineIndex: Int, task: MarkdownTaskLine?) -> some View {
-        if let task {
-            taskLineRow(task)
-        } else if let heading = parseHeadingLine(line) {
-            headingLineRow(heading)
-        } else if let unordered = parseUnorderedListLine(line) {
-            listLineRow(
-                marker: "•",
-                text: unordered.text,
-                indentation: unordered.indentation
-            )
-        } else if let ordered = parseOrderedListLine(line) {
-            listLineRow(
-                marker: "\(ordered.number).",
-                text: ordered.text,
-                indentation: ordered.indentation
-            )
-        } else if line.isEmpty {
-            Text(" ")
-                .frame(maxWidth: .infinity, alignment: .leading)
-        } else {
-            Text(MarkdownAttributedRenderer.renderAttributed(markdown: line))
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    @ViewBuilder
-    private func headingLineRow(_ heading: HeadingLine) -> some View {
-        Text(MarkdownAttributedRenderer.renderAttributed(markdown: heading.text.isEmpty ? " " : heading.text))
-            .font(font(for: heading.level))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, indentationWidth(for: heading.indentation))
-    }
-
-    @ViewBuilder
-    private func listLineRow(marker: String, text: String, indentation: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(marker)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Text(MarkdownAttributedRenderer.renderAttributed(markdown: text.isEmpty ? " " : text))
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.leading, indentationWidth(for: indentation))
-    }
-
-    @ViewBuilder
-    private func taskLineRow(_ task: MarkdownTaskLine) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            if let onToggleTask {
-                Button {
-                    onToggleTask(task.lineIndex)
-                } label: {
-                    Image(systemName: task.isChecked ? "checkmark.square.fill" : "square")
-                }
-                .buttonStyle(.plain)
-                .orbitInteractiveControl(
-                    scale: 1.05,
-                    lift: -0.8,
-                    shadowColor: Color.white.opacity(0.12),
-                    shadowRadius: 4
-                )
-                .foregroundStyle(task.isChecked ? .green : .secondary)
-            } else {
-                Image(systemName: task.isChecked ? "checkmark.square.fill" : "square")
-                    .foregroundStyle(task.isChecked ? .green : .secondary)
-            }
-
-            Text(MarkdownAttributedRenderer.renderAttributed(markdown: task.lineText.isEmpty ? " " : task.lineText))
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.leading, indentationWidth(for: task.indentation))
-    }
-
-    private func indentationWidth(for indentation: String) -> CGFloat {
-        let columns = indentation.reduce(0) { partialResult, character in
-            partialResult + (character == "\t" ? 4 : 1)
-        }
-        return CGFloat(columns) * 6
-    }
-
-    private func font(for headingLevel: Int) -> Font {
-        switch headingLevel {
-        case 1:
-            return .title3.weight(.bold)
-        case 2:
-            return .headline.weight(.semibold)
-        default:
-            return .subheadline.weight(.semibold)
-        }
-    }
-
-    private func parseHeadingLine(_ line: String) -> HeadingLine? {
-        let range = NSRange(location: 0, length: (line as NSString).length)
-        guard let match = Self.headingRegex.firstMatch(in: line, options: [], range: range),
-              let indentation = substring(line, match.range(at: 1)),
-              let marker = substring(line, match.range(at: 2)),
-              let text = substring(line, match.range(at: 3))
-        else {
-            return nil
-        }
-
-        return HeadingLine(
-            level: min(max(marker.count, 1), 6),
-            indentation: indentation,
-            text: text
-        )
-    }
-
-    private func parseUnorderedListLine(_ line: String) -> ListLine? {
-        let range = NSRange(location: 0, length: (line as NSString).length)
-        guard let match = Self.unorderedListRegex.firstMatch(in: line, options: [], range: range),
-              let indentation = substring(line, match.range(at: 1)),
-              let text = substring(line, match.range(at: 3))
-        else {
-            return nil
-        }
-
-        return ListLine(indentation: indentation, text: text)
-    }
-
-    private func parseOrderedListLine(_ line: String) -> OrderedListLine? {
-        let range = NSRange(location: 0, length: (line as NSString).length)
-        guard let match = Self.orderedListRegex.firstMatch(in: line, options: [], range: range),
-              let indentation = substring(line, match.range(at: 1)),
-              let number = substring(line, match.range(at: 2)),
-              let text = substring(line, match.range(at: 4))
-        else {
-            return nil
-        }
-
-        return OrderedListLine(indentation: indentation, number: number, text: text)
-    }
-
-    private func substring(_ line: String, _ range: NSRange) -> String? {
-        guard range.location != NSNotFound else { return nil }
-        guard let swiftRange = Range(range, in: line) else { return nil }
-        return String(line[swiftRange])
-    }
-
-    private struct HeadingLine {
-        let level: Int
-        let indentation: String
-        let text: String
-    }
-
-    private struct ListLine {
-        let indentation: String
-        let text: String
-    }
-
-    private struct OrderedListLine {
-        let indentation: String
-        let number: String
-        let text: String
-    }
-
-    private static let headingRegex = try! NSRegularExpression(
-        pattern: #"^([ \t]*)(#{1,6})\s+(.*)$"#
-    )
-
-    private static let unorderedListRegex = try! NSRegularExpression(
-        pattern: #"^([ \t]*)([-*+])\s+(.*)$"#
-    )
-
-    private static let orderedListRegex = try! NSRegularExpression(
-        pattern: #"^([ \t]*)(\d+)([.)])\s+(.*)$"#
-    )
 }
 
 private extension Color {

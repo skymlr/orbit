@@ -12,6 +12,7 @@
 		1648677C96E755210B40B545 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40539519CA0DC39A10932103 /* Cocoa.framework */; };
 		18071E49E8F5275C196D0F48 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A0366521FB1CC140F62320 /* HotkeyManager.swift */; };
 		1EAC93A0DCC35E3ACFEFD029 /* MarkdownFormattingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D965877A754D1CD6916D76 /* MarkdownFormattingBar.swift */; };
+		E1A4D2F03A84C55B97F0AA11 /* TaskRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A4D2F13A84C55B97F0AA11 /* TaskRowView.swift */; };
 		3040F4F279F0358D23F1BA92 /* HotkeySettingsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF187644B7FBFA30F89A5C8 /* HotkeySettingsClient.swift */; };
 		3FE62E41E35956AD6FA0CC99 /* QuickCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119D9CC13DB5BBE6A54B8DF5 /* QuickCaptureView.swift */; };
 		510A3D49BF048B5454665B17 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 44492BB61285D2CADF1D3884 /* ComposableArchitecture */; };
@@ -58,6 +59,7 @@
 		C23484D86A339BABFCE21B79 /* HotkeyHint.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeyHint.swift; sourceTree = "<group>"; };
 		CC36E74A03098D2843A1524B /* MarkdownExportClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownExportClient.swift; sourceTree = "<group>"; };
 		D233237DD037E5C4ACE0DDC9 /* EndSessionPromptView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EndSessionPromptView.swift; sourceTree = "<group>"; };
+		E1A4D2F13A84C55B97F0AA11 /* TaskRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TaskRowView.swift; sourceTree = "<group>"; };
 		DC70B03F528B2C69AA9ED812 /* Orbit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Orbit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4F88D4E1F70F7B6FB8EFDDC /* WorkspaceView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
 		F60A9C526798D1F4E7B8615C /* MarkdownEditingCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownEditingCore.swift; sourceTree = "<group>"; };
@@ -179,6 +181,7 @@
 			isa = PBXGroup;
 			children = (
 				2740EBBEC4BEB38C2A7E3164 /* SessionPageView.swift */,
+				E1A4D2F13A84C55B97F0AA11 /* TaskRowView.swift */,
 				F4F88D4E1F70F7B6FB8EFDDC /* WorkspaceView.swift */,
 			);
 			path = WorkspaceFeature;
@@ -319,6 +322,7 @@
 				1286FD6FED5E76D6BDD64FD2 /* OrbitSpaceBackground.swift in Sources */,
 				014513AE2CD58CE20D97A2F3 /* QuickCapturePanelController.swift in Sources */,
 				B4FC2B004887F046D550D8F4 /* SessionPageView.swift in Sources */,
+				E1A4D2F03A84C55B97F0AA11 /* TaskRowView.swift in Sources */,
 				A91044BC5CD8B609A747ECEE /* WorkspaceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

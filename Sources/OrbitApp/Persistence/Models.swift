@@ -17,17 +17,19 @@ import StructuredQueries
     var endedReason: String?
 }
 
-@Table struct SessionNote: Identifiable, Sendable {
+@Table struct SessionTask: Identifiable, Sendable {
     let id: UUID
     var sessionID: FocusSession.ID
-    var text = ""
+    var markdown = ""
     var priority = ""
+    var completedAt: Date?
+    var carriedFromTaskID: UUID?
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
 }
 
-@Table struct SessionNoteCategory: Identifiable, Sendable {
+@Table struct SessionTaskCategory: Identifiable, Sendable {
     let id: UUID
-    var noteID: SessionNote.ID
+    var taskID: SessionTask.ID
     var categoryID: SessionCategory.ID
 }

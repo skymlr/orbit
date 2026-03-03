@@ -5,10 +5,11 @@ Orbit is a macOS focus companion built with SwiftUI, TCA, and SQLite.
 ## Highlights
 - Full macOS app with Dock icon and menu bar extra (`circle` / `circle.fill` status icon).
 - Start/open active session from menu or global hotkey.
-- Floating Quick Capture panel for fast note entry.
-- Notes support markdown source editing and attributed markdown rendering.
-- Note metadata includes priority (`none`, `low`, `medium`, `high`).
-- Notes support multiple user-defined categories.
+- Floating Quick Capture panel for fast task entry.
+- Tasks support markdown source editing and attributed markdown rendering.
+- Task metadata includes priority (`none`, `low`, `medium`, `high`).
+- Tasks support multiple user-defined categories.
+- Task-level completion with carry-over from the most recently ended session.
 - Session management in Settings (rename, delete, export markdown).
 - Auto-end behavior:
   - 8 hours of inactivity.
@@ -52,4 +53,4 @@ swift test
 Orbit stores data in a local SQLite database at:
 - `~/Library/Application Support/Orbit/focus.sqlite`
 
-This includes sessions, categories, notes, note-category links, and note priorities.
+This includes sessions, categories, tasks, task-category links, priorities, and completion metadata.

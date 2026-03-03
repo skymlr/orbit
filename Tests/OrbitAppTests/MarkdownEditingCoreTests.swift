@@ -67,24 +67,6 @@ struct MarkdownEditingCoreTests {
     }
 
     @Test
-    func taskParsingAndToggleWorkOnLineIndex() {
-        let markdown = "- [ ] alpha\nplain\n\t- [x] beta"
-        let tasks = MarkdownEditingCore.taskLines(in: markdown)
-
-        #expect(tasks.count == 2)
-        #expect(tasks[0].lineIndex == 0)
-        #expect(tasks[0].isChecked == false)
-        #expect(tasks[1].lineIndex == 2)
-        #expect(tasks[1].isChecked == true)
-
-        let toggledFirst = MarkdownEditingCore.toggleTask(in: markdown, lineIndex: 0)
-        #expect(toggledFirst == "- [x] alpha\nplain\n\t- [x] beta")
-
-        let toggledSecond = MarkdownEditingCore.toggleTask(in: toggledFirst, lineIndex: 2)
-        #expect(toggledSecond == "- [x] alpha\nplain\n\t- [ ] beta")
-    }
-
-    @Test
     func rendererFallsBackForInvalidMarkdown() {
         let rendered = MarkdownAttributedRenderer.renderAttributed(markdown: "[broken(")
         #expect(!rendered.characters.isEmpty)

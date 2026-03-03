@@ -24,8 +24,8 @@ struct QuickCaptureView: View {
                         .lineLimit(1)
                 }
 
-                if store.captureDraft.editingNoteID != nil {
-                    Text("Editing note")
+                if store.captureDraft.editingTaskID != nil {
+                    Text("Editing task")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 6)
@@ -64,9 +64,9 @@ struct QuickCaptureView: View {
 
             Group {
                 if editorState.isPreviewVisible {
-                    notesPreviewView
+                    taskPreviewView
                 } else {
-                    notesEditorView
+                    taskEditorView
                 }
             }
             .transition(.orbitMicro)
@@ -140,11 +140,11 @@ struct QuickCaptureView: View {
         .padding(14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .task {
-            editorState.text = store.captureDraft.text
-            editorState.selectionRange = NSRange(location: (store.captureDraft.text as NSString).length, length: 0)
+            editorState.text = store.captureDraft.markdown
+            editorState.selectionRange = NSRange(location: (store.captureDraft.markdown as NSString).length, length: 0)
             requestEditorFocus()
         }
-        .onChange(of: store.captureDraft.editingNoteID) { _, _ in
+        .onChange(of: store.captureDraft.editingTaskID) { _, _ in
             requestEditorFocus()
         }
         .onChange(of: editorState.isPreviewVisible) { _, newValue in
@@ -155,9 +155,9 @@ struct QuickCaptureView: View {
             }
         }
         .onChange(of: editorState.text) { _, newValue in
-            store.captureDraft.text = newValue
+            store.captureDraft.markdown = newValue
         }
-        .onChange(of: store.captureDraft.text) { _, newValue in
+        .onChange(of: store.captureDraft.markdown) { _, newValue in
             if newValue != editorState.text {
                 editorState.text = newValue
                 editorState.selectionRange = NSRange(location: (newValue as NSString).length, length: 0)
@@ -176,7 +176,7 @@ struct QuickCaptureView: View {
             dismissCapture()
         }
         .animation(.easeInOut(duration: 0.16), value: editorState.isPreviewVisible)
-        .animation(.easeInOut(duration: 0.16), value: store.captureDraft.editingNoteID != nil)
+        .animation(.easeInOut(duration: 0.16), value: store.captureDraft.editingTaskID != nil)
         .background {
             keyboardShortcutBindings
         }
@@ -202,7 +202,7 @@ struct QuickCaptureView: View {
         .opacity(0.001)
     }
 
-    private var notesEditorView: some View {
+    private var taskEditorView: some View {
         ZStack(alignment: .topLeading) {
             MarkdownSourceTextView(
                 text: $editorState.text,
@@ -224,7 +224,7 @@ struct QuickCaptureView: View {
             .frame(minHeight: 96, maxHeight: 220)
 
             if editorState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text("Capture your focus note...")
+                Text("Capture your focus task...")
                     .foregroundStyle(.secondary)
                     .padding(.leading, 12)
                     .padding(.top, 10)
@@ -233,7 +233,7 @@ struct QuickCaptureView: View {
         }
     }
 
-    private var notesPreviewView: some View {
+    private var taskPreviewView: some View {
         ScrollView {
             if editorState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text("Nothing to preview yet.")
@@ -243,10 +243,7 @@ struct QuickCaptureView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
             } else {
-                MarkdownRenderedNoteView(
-                    markdown: editorState.text,
-                    onToggleTask: nil
-                )
+                MarkdownRenderedTaskView(markdown: editorState.text)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
             }
@@ -259,7 +256,7 @@ struct QuickCaptureView: View {
     }
 
     private var saveButtonTitle: String {
-        store.captureDraft.editingNoteID == nil ? "Save" : "Save Changes"
+        store.captureDraft.editingTaskID == nil ? "Save Task" : "Save Task Changes"
     }
 
     @ViewBuilder
@@ -282,7 +279,7 @@ struct QuickCaptureView: View {
 
     private func saveButtonTapped() {
         guard canSave else { return }
-        store.captureDraft.text = editorState.text
+        store.captureDraft.markdown = editorState.text
         store.send(.captureSubmitTapped)
     }
 

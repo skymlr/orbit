@@ -19,9 +19,9 @@ struct FocusDefaultsTests {
     }
 
     @Test
-    func defaultSessionNameUsesNight() {
-        #expect(FocusDefaults.defaultSessionName(startedAt: dateAtLocalHour(23)) == "Night Session")
-        #expect(FocusDefaults.defaultSessionName(startedAt: dateAtLocalHour(3)) == "Night Session")
+    func defaultSessionNameUsesEveningForNightHours() {
+        #expect(FocusDefaults.defaultSessionName(startedAt: dateAtLocalHour(23)) == "Evening Session")
+        #expect(FocusDefaults.defaultSessionName(startedAt: dateAtLocalHour(3)) == "Evening Session")
     }
 
     private func dateAtLocalHour(_ hour: Int) -> Date {

@@ -6,19 +6,22 @@ import Testing
 @MainActor
 struct AppFeatureTests {
     @Test
-    func sessionNoteEditTappedPrefillsCaptureAndOpensWindow() async {
-        let active = makeActiveSession(noteCategoryIDs: [projectACategoryID, projectBCategoryID])
-        let note = active.notes[0]
+    func sessionTaskEditTappedPrefillsCaptureAndOpensWindow() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID, projectBCategoryID])
+        let task = active.tasks[0]
 
         var initial = AppFeature.State()
         initial.activeSession = active
-        initial.noteDrafts = [
-            AppFeature.State.NoteDraft(
-                id: note.id,
-                categories: note.categories,
-                text: note.text,
-                priority: note.priority,
-                createdAt: note.createdAt
+        initial.taskDrafts = [
+            AppFeature.State.TaskDraft(
+                id: task.id,
+                categories: task.categories,
+                markdown: task.markdown,
+                priority: task.priority,
+                completedAt: task.completedAt,
+                carriedFromTaskID: task.carriedFromTaskID,
+                carriedFromSessionName: task.carriedFromSessionName,
+                createdAt: task.createdAt
             )
         ]
         initial.categories = sampleCategories
@@ -27,29 +30,29 @@ struct AppFeatureTests {
             AppFeature()
         }
 
-        await store.send(.sessionNoteEditTapped(note.id)) {
-            $0.captureDraft.text = note.text
-            $0.captureDraft.priority = note.priority
+        await store.send(.sessionTaskEditTapped(task.id)) {
+            $0.captureDraft.markdown = task.markdown
+            $0.captureDraft.priority = task.priority
             $0.captureDraft.selectedCategoryIDs = [projectACategoryID, projectBCategoryID]
-            $0.captureDraft.editingNoteID = note.id
+            $0.captureDraft.editingTaskID = task.id
             $0.windowDestinations.insert(.captureWindow)
         }
     }
 
     @Test
-    func sessionAddNoteTappedResetsEditContext() async {
+    func sessionAddTaskTappedResetsEditContext() async {
         var initial = AppFeature.State()
         initial.categories = sampleCategories
-        initial.captureDraft.text = "Existing text"
+        initial.captureDraft.markdown = "Existing markdown"
         initial.captureDraft.priority = .high
         initial.captureDraft.selectedCategoryIDs = [projectBCategoryID]
-        initial.captureDraft.editingNoteID = UUID(uuidString: "44D1A620-53B0-49D7-9B60-2A1BA056EA28")!
+        initial.captureDraft.editingTaskID = UUID(uuidString: "44D1A620-53B0-49D7-9B60-2A1BA056EA28")!
 
         let store = TestStore(initialState: initial) {
             AppFeature()
         }
 
-        await store.send(.sessionAddNoteTapped) {
+        await store.send(.sessionAddTaskTapped) {
             $0.captureDraft = AppFeature.State.CaptureDraft(
                 selectedCategoryIDs: [projectBCategoryID]
             )
@@ -58,26 +61,26 @@ struct AppFeatureTests {
     }
 
     @Test
-    func captureSubmitTappedInEditModeUpdatesExistingNote() async {
-        let active = makeActiveSession(noteCategoryIDs: [projectACategoryID])
-        let note = active.notes[0]
-        let tracker = NoteMutationTracker()
+    func captureSubmitTappedInEditModeUpdatesExistingTask() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+        let task = active.tasks[0]
+        let tracker = TaskMutationTracker()
 
         var initial = AppFeature.State()
         initial.activeSession = active
         initial.categories = sampleCategories
-        initial.captureDraft.text = "Updated body"
+        initial.captureDraft.markdown = "Updated body"
         initial.captureDraft.priority = .medium
         initial.captureDraft.selectedCategoryIDs = [projectBCategoryID, projectACategoryID]
-        initial.captureDraft.editingNoteID = note.id
+        initial.captureDraft.editingTaskID = task.id
         initial.windowDestinations.insert(.captureWindow)
 
         var repository = FocusRepository.testValue
-        repository.updateNote = { noteID, _, _, categoryIDs, _ in
-            await tracker.recordUpdate(noteID: noteID, categoryIDs: categoryIDs)
+        repository.updateTask = { taskID, _, _, categoryIDs, _ in
+            await tracker.recordUpdate(taskID: taskID, categoryIDs: categoryIDs)
             return nil
         }
-        repository.createNote = { sessionID, _, _, categoryIDs, _ in
+        repository.createTask = { sessionID, _, _, categoryIDs, _ in
             await tracker.recordCreate(sessionID: sessionID, categoryIDs: categoryIDs)
             return nil
         }
@@ -100,13 +103,13 @@ struct AppFeatureTests {
         }
         await store.receive(\.loadActiveSessionResponse) {
             $0.activeSession = nil
-            $0.noteDrafts = []
+            $0.taskDrafts = []
             $0.endSessionDraft = nil
             $0.windowDestinations = []
             $0.captureDraft = AppFeature.State.CaptureDraft(
                 selectedCategoryIDs: []
             )
-            $0.selectedNoteCategoryFilter = .all
+            $0.selectedTaskCategoryFilter = .all
         }
         await store.receive(\.settingsRefreshTapped)
         await store.receive(\.settingsDataResponse) {
@@ -115,30 +118,30 @@ struct AppFeatureTests {
         }
 
         let counts = await tracker.counts()
-        #expect(counts.updated == [note.id])
+        #expect(counts.updated == [task.id])
         #expect(counts.updatedCategories == [[projectBCategoryID, projectACategoryID]])
         #expect(counts.created.isEmpty)
     }
 
     @Test
-    func captureSubmitTappedWithoutEditModeCreatesNewNote() async {
-        let active = makeActiveSession(noteCategoryIDs: [projectACategoryID])
-        let tracker = NoteMutationTracker()
+    func captureSubmitTappedWithoutEditModeCreatesNewTask() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+        let tracker = TaskMutationTracker()
 
         var initial = AppFeature.State()
         initial.activeSession = active
         initial.categories = sampleCategories
-        initial.captureDraft.text = "New note body"
+        initial.captureDraft.markdown = "New task body"
         initial.captureDraft.priority = .low
         initial.captureDraft.selectedCategoryIDs = [projectACategoryID, projectBCategoryID]
         initial.windowDestinations.insert(.captureWindow)
 
         var repository = FocusRepository.testValue
-        repository.updateNote = { noteID, _, _, categoryIDs, _ in
-            await tracker.recordUpdate(noteID: noteID, categoryIDs: categoryIDs)
+        repository.updateTask = { taskID, _, _, categoryIDs, _ in
+            await tracker.recordUpdate(taskID: taskID, categoryIDs: categoryIDs)
             return nil
         }
-        repository.createNote = { sessionID, _, _, categoryIDs, _ in
+        repository.createTask = { sessionID, _, _, categoryIDs, _ in
             await tracker.recordCreate(sessionID: sessionID, categoryIDs: categoryIDs)
             return nil
         }
@@ -161,13 +164,13 @@ struct AppFeatureTests {
         }
         await store.receive(\.loadActiveSessionResponse) {
             $0.activeSession = nil
-            $0.noteDrafts = []
+            $0.taskDrafts = []
             $0.endSessionDraft = nil
             $0.windowDestinations = []
             $0.captureDraft = AppFeature.State.CaptureDraft(
                 selectedCategoryIDs: []
             )
-            $0.selectedNoteCategoryFilter = .all
+            $0.selectedTaskCategoryFilter = .all
         }
         await store.receive(\.settingsRefreshTapped)
         await store.receive(\.settingsDataResponse) {
@@ -182,52 +185,112 @@ struct AppFeatureTests {
     }
 
     @Test
-    func captureWindowClosedResetsDraftAndWindow() async {
+    func sessionTaskCompletionToggledPersistsState() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+        let task = active.tasks[0]
+        let tracker = TaskMutationTracker()
+
         var initial = AppFeature.State()
-        initial.captureDraft.text = "Investigate perf regression"
-        initial.captureDraft.priority = .high
-        initial.captureDraft.selectedCategoryIDs = [projectBCategoryID]
-        initial.windowDestinations.insert(.captureWindow)
+        initial.activeSession = active
+        initial.categories = sampleCategories
+        initial.taskDrafts = [
+            AppFeature.State.TaskDraft(
+                id: task.id,
+                categories: task.categories,
+                markdown: task.markdown,
+                priority: task.priority,
+                completedAt: nil,
+                carriedFromTaskID: nil,
+                carriedFromSessionName: nil,
+                createdAt: task.createdAt
+            )
+        ]
+
+        var repository = FocusRepository.testValue
+        repository.setTaskCompletion = { taskID, isCompleted, _ in
+            await tracker.recordCompletion(taskID: taskID, isCompleted: isCompleted)
+            return nil
+        }
+        repository.loadActiveSession = { nil }
+        repository.listSessions = { [] }
+        repository.listCategories = { sampleCategories }
 
         let store = TestStore(initialState: initial) {
             AppFeature()
+        } withDependencies: {
+            $0.focusRepository = repository
+            $0.date.now = Date(timeIntervalSince1970: 1_700_000_200)
         }
 
-        await store.send(.captureWindowClosed) {
-            $0.captureDraft = AppFeature.State.CaptureDraft(
-                selectedCategoryIDs: []
-            )
-            $0.windowDestinations.remove(.captureWindow)
+        await store.send(.sessionTaskCompletionToggled(task.id, true)) {
+            $0.taskDrafts[id: task.id]?.completedAt = Date(timeIntervalSince1970: 1_700_000_200)
+        }
+        await store.receive(\.loadActiveSessionResponse) {
+            $0.activeSession = nil
+            $0.taskDrafts = []
+            $0.endSessionDraft = nil
+            $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
+            $0.selectedTaskCategoryFilter = .all
+        }
+        await store.receive(\.settingsRefreshTapped)
+        await store.receive(\.settingsDataResponse) {
+            $0.settings.categories = sampleCategories
+            $0.categories = sampleCategories
+        }
+
+        let counts = await tracker.counts()
+        #expect(counts.completedTaskIDs == [task.id])
+        #expect(counts.completedFlags == [true])
+    }
+
+    @Test
+    func sessionTaskCategoryFilterChangedUpdatesState() async {
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        }
+
+        await store.send(.sessionTaskCategoryFilterChangedTapped(.category(projectACategoryID))) {
+            $0.selectedTaskCategoryFilter = .category(projectACategoryID)
+        }
+
+        await store.send(.sessionTaskCategoryFilterChangedTapped(.all)) {
+            $0.selectedTaskCategoryFilter = .all
         }
     }
 
     @Test
-    func loadActiveSessionDefaultsCaptureCategoryToMostRecentNoteCategories() async {
-        let olderNote = FocusNoteRecord(
+    func loadActiveSessionDefaultsCaptureCategoryToMostRecentTaskCategories() async {
+        let olderTask = FocusTaskRecord(
             id: UUID(uuidString: "D10501A3-EB95-4B5D-9F97-C8E35E5BCA61")!,
             sessionID: UUID(uuidString: "9D8A53C2-1EE7-4E04-AC93-8E09B6F03D40")!,
             categories: noteCategories([projectACategoryID]),
-            text: "Older",
+            markdown: "Older",
             priority: .none,
+            completedAt: nil,
+            carriedFromTaskID: nil,
+            carriedFromSessionName: nil,
             createdAt: Date(timeIntervalSince1970: 1_700_000_000),
             updatedAt: Date(timeIntervalSince1970: 1_700_000_000)
         )
-        let newerNote = FocusNoteRecord(
+        let newerTask = FocusTaskRecord(
             id: UUID(uuidString: "DFBA97DE-5139-49DB-9D03-6F62A2A6A955")!,
-            sessionID: olderNote.sessionID,
+            sessionID: olderTask.sessionID,
             categories: noteCategories([projectBCategoryID, projectACategoryID]),
-            text: "Newer",
+            markdown: "Newer",
             priority: .none,
+            completedAt: nil,
+            carriedFromTaskID: nil,
+            carriedFromSessionName: nil,
             createdAt: Date(timeIntervalSince1970: 1_700_000_100),
             updatedAt: Date(timeIntervalSince1970: 1_700_000_100)
         )
         let session = FocusSessionRecord(
-            id: olderNote.sessionID,
-            name: "Two notes",
+            id: olderTask.sessionID,
+            name: "Two tasks",
             startedAt: Date(timeIntervalSince1970: 1_700_000_000),
             endedAt: nil,
             endedReason: nil,
-            notes: [olderNote, newerNote]
+            tasks: [olderTask, newerTask]
         )
 
         var initial = AppFeature.State()
@@ -239,20 +302,26 @@ struct AppFeatureTests {
 
         await store.send(.loadActiveSessionResponse(session)) {
             $0.activeSession = session
-            $0.noteDrafts = [
-                AppFeature.State.NoteDraft(
-                    id: newerNote.id,
-                    categories: newerNote.categories,
-                    text: newerNote.text,
-                    priority: newerNote.priority,
-                    createdAt: newerNote.createdAt
+            $0.taskDrafts = [
+                AppFeature.State.TaskDraft(
+                    id: newerTask.id,
+                    categories: newerTask.categories,
+                    markdown: newerTask.markdown,
+                    priority: newerTask.priority,
+                    completedAt: newerTask.completedAt,
+                    carriedFromTaskID: newerTask.carriedFromTaskID,
+                    carriedFromSessionName: newerTask.carriedFromSessionName,
+                    createdAt: newerTask.createdAt
                 ),
-                AppFeature.State.NoteDraft(
-                    id: olderNote.id,
-                    categories: olderNote.categories,
-                    text: olderNote.text,
-                    priority: olderNote.priority,
-                    createdAt: olderNote.createdAt
+                AppFeature.State.TaskDraft(
+                    id: olderTask.id,
+                    categories: olderTask.categories,
+                    markdown: olderTask.markdown,
+                    priority: olderTask.priority,
+                    completedAt: olderTask.completedAt,
+                    carriedFromTaskID: olderTask.carriedFromTaskID,
+                    carriedFromSessionName: olderTask.carriedFromSessionName,
+                    createdAt: olderTask.createdAt
                 )
             ]
             $0.captureDraft.selectedCategoryIDs = [projectBCategoryID, projectACategoryID]
@@ -260,128 +329,46 @@ struct AppFeatureTests {
 
         await store.send(.loadActiveSessionResponse(nil)) {
             $0.activeSession = nil
-            $0.noteDrafts = []
+            $0.taskDrafts = []
             $0.endSessionDraft = nil
-            $0.captureDraft = AppFeature.State.CaptureDraft(
-                selectedCategoryIDs: []
-            )
-            $0.selectedNoteCategoryFilter = .all
-        }
-    }
-
-    @Test
-    func loadActiveSessionWithNoNotesLeavesCaptureCategoriesEmpty() async {
-        let session = FocusSessionRecord(
-            id: UUID(uuidString: "9D8A53C2-1EE7-4E04-AC93-8E09B6F03D40")!,
-            name: "No notes",
-            startedAt: Date(timeIntervalSince1970: 1_700_000_000),
-            endedAt: nil,
-            endedReason: nil,
-            notes: []
-        )
-
-        var initial = AppFeature.State()
-        initial.categories = sampleCategories
-        initial.captureDraft.selectedCategoryIDs = [projectACategoryID]
-
-        let store = TestStore(initialState: initial) {
-            AppFeature()
-        }
-
-        await store.send(.loadActiveSessionResponse(session)) {
-            $0.activeSession = session
-            $0.noteDrafts = []
-            $0.captureDraft.selectedCategoryIDs = []
-        }
-
-        await store.send(.loadActiveSessionResponse(nil)) {
-            $0.activeSession = nil
-            $0.noteDrafts = []
-            $0.endSessionDraft = nil
-            $0.captureDraft = AppFeature.State.CaptureDraft(
-                selectedCategoryIDs: []
-            )
-            $0.selectedNoteCategoryFilter = .all
-        }
-    }
-
-    @Test
-    func sessionNoteCategoryFilterChangedUpdatesState() async {
-        let store = TestStore(initialState: AppFeature.State()) {
-            AppFeature()
-        }
-
-        await store.send(.sessionNoteCategoryFilterChangedTapped(.category(projectACategoryID))) {
-            $0.selectedNoteCategoryFilter = .category(projectACategoryID)
-        }
-
-        await store.send(.sessionNoteCategoryFilterChangedTapped(.all)) {
-            $0.selectedNoteCategoryFilter = .all
-        }
-    }
-
-    @Test
-    func loadActiveSessionResetsCategoryFilterWhenNoNotesRemainInSelectedCategory() async {
-        let active = makeActiveSession(noteCategoryIDs: [projectACategoryID])
-
-        var initial = AppFeature.State()
-        initial.categories = sampleCategories
-        initial.selectedNoteCategoryFilter = .category(projectBCategoryID)
-
-        let store = TestStore(initialState: initial) {
-            AppFeature()
-        }
-
-        await store.send(.loadActiveSessionResponse(active)) {
-            $0.activeSession = active
-            $0.noteDrafts = [
-                AppFeature.State.NoteDraft(
-                    id: active.notes[0].id,
-                    categories: active.notes[0].categories,
-                    text: active.notes[0].text,
-                    priority: active.notes[0].priority,
-                    createdAt: active.notes[0].createdAt
-                )
-            ]
-            $0.captureDraft.selectedCategoryIDs = [projectACategoryID]
-            $0.selectedNoteCategoryFilter = .all
-        }
-
-        await store.send(.loadActiveSessionResponse(nil)) {
-            $0.activeSession = nil
-            $0.noteDrafts = []
-            $0.endSessionDraft = nil
-            $0.captureDraft = AppFeature.State.CaptureDraft(
-                selectedCategoryIDs: []
-            )
-            $0.selectedNoteCategoryFilter = .all
+            $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
+            $0.selectedTaskCategoryFilter = .all
         }
     }
 }
 
-actor NoteMutationTracker {
+actor TaskMutationTracker {
     private(set) var created: [UUID] = []
     private(set) var createdCategories: [[UUID]] = []
     private(set) var updated: [UUID] = []
     private(set) var updatedCategories: [[UUID]] = []
+    private(set) var completedTaskIDs: [UUID] = []
+    private(set) var completedFlags: [Bool] = []
 
     func recordCreate(sessionID: UUID, categoryIDs: [UUID]) {
         created.append(sessionID)
         createdCategories.append(categoryIDs)
     }
 
-    func recordUpdate(noteID: UUID, categoryIDs: [UUID]) {
-        updated.append(noteID)
+    func recordUpdate(taskID: UUID, categoryIDs: [UUID]) {
+        updated.append(taskID)
         updatedCategories.append(categoryIDs)
+    }
+
+    func recordCompletion(taskID: UUID, isCompleted: Bool) {
+        completedTaskIDs.append(taskID)
+        completedFlags.append(isCompleted)
     }
 
     func counts() -> (
         created: [UUID],
         createdCategories: [[UUID]],
         updated: [UUID],
-        updatedCategories: [[UUID]]
+        updatedCategories: [[UUID]],
+        completedTaskIDs: [UUID],
+        completedFlags: [Bool]
     ) {
-        (created, createdCategories, updated, updatedCategories)
+        (created, createdCategories, updated, updatedCategories, completedTaskIDs, completedFlags)
     }
 }
 
@@ -414,24 +401,27 @@ private func noteCategories(_ ids: [UUID]) -> [NoteCategoryRecord] {
 }
 
 private func makeActiveSession(
-    noteCategoryIDs: [UUID] = []
+    taskCategoryIDs: [UUID] = []
 ) -> FocusSessionRecord {
-    let note = FocusNoteRecord(
+    let task = FocusTaskRecord(
         id: UUID(uuidString: "A6E2C2D2-53AF-4D10-ACE2-761B700A1DB1")!,
         sessionID: UUID(uuidString: "9D8A53C2-1EE7-4E04-AC93-8E09B6F03D40")!,
-        categories: noteCategories(noteCategoryIDs),
-        text: "Ship Orbit session window",
+        categories: noteCategories(taskCategoryIDs),
+        markdown: "Ship Orbit session window",
         priority: .high,
+        completedAt: nil,
+        carriedFromTaskID: nil,
+        carriedFromSessionName: nil,
         createdAt: Date(timeIntervalSince1970: 1_700_000_000),
         updatedAt: Date(timeIntervalSince1970: 1_700_000_000)
     )
 
     return FocusSessionRecord(
-        id: note.sessionID,
+        id: task.sessionID,
         name: "2026-02-26 10:30",
         startedAt: Date(timeIntervalSince1970: 1_700_000_000),
         endedAt: nil,
         endedReason: nil,
-        notes: [note]
+        tasks: [task]
     )
 }

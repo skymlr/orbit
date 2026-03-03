@@ -297,6 +297,18 @@ extension DependencyValues {
             try removeUncategorizedAndLegacyCategoryColumns(db: db)
         }
 
+        migrator.registerMigration("Repair orphan legacy notes before task migration") { db in
+            try repairOrphanLegacyNotes(db: db)
+        }
+
+        migrator.registerMigration("Prune sessions before 2026-03-02 local") { db in
+            try pruneSessionsBeforeTaskRefactorCutoff(db: db)
+        }
+
+        migrator.registerMigration("Convert notes to tasks") { db in
+            try convertNotesToTasks(db: db)
+        }
+
         try migrator.migrate(database)
         defaultDatabase = database
     }
@@ -504,6 +516,192 @@ func removeUncategorizedAndLegacyCategoryColumns(db: Database) throws {
     .execute(db)
 }
 
+func pruneSessionsBeforeTaskRefactorCutoff(db: Database) throws {
+    try #sql(
+        """
+        DELETE FROM "sessionNoteCategories"
+        WHERE "noteID" IN (
+          SELECT "id"
+          FROM "sessionNotes"
+          WHERE "sessionID" IN (
+            SELECT "id"
+            FROM "focusSessions"
+            WHERE "startedAt" < \(bind: taskRefactorCutoffDate)
+          )
+        )
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DELETE FROM "sessionNotes"
+        WHERE "sessionID" IN (
+          SELECT "id"
+          FROM "focusSessions"
+          WHERE "startedAt" < \(bind: taskRefactorCutoffDate)
+        )
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DELETE FROM "focusSessions"
+        WHERE "startedAt" < \(bind: taskRefactorCutoffDate)
+        """
+    )
+    .execute(db)
+}
+
+func repairOrphanLegacyNotes(db: Database) throws {
+    try #sql(
+        """
+        DELETE FROM "sessionNoteCategories"
+        WHERE "noteID" NOT IN (SELECT "id" FROM "sessionNotes")
+           OR "categoryID" NOT IN (SELECT "id" FROM "sessionCategories")
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DELETE FROM "sessionNotes"
+        WHERE "sessionID" NOT IN (SELECT "id" FROM "focusSessions")
+        """
+    )
+    .execute(db)
+}
+
+func convertNotesToTasks(db: Database) throws {
+    try #sql(
+        """
+        CREATE TABLE "sessionTasks" (
+          "id" TEXT PRIMARY KEY NOT NULL,
+          "sessionID" TEXT NOT NULL REFERENCES "focusSessions"("id") ON DELETE CASCADE,
+          "markdown" TEXT NOT NULL,
+          "priority" TEXT NOT NULL,
+          "completedAt" TEXT,
+          "carriedFromTaskID" TEXT REFERENCES "sessionTasks"("id") ON DELETE SET NULL,
+          "createdAt" TEXT NOT NULL,
+          "updatedAt" TEXT NOT NULL
+        ) STRICT
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        INSERT INTO "sessionTasks" (
+          "id",
+          "sessionID",
+          "markdown",
+          "priority",
+          "completedAt",
+          "carriedFromTaskID",
+          "createdAt",
+          "updatedAt"
+        )
+        SELECT
+          "sessionNotes"."id",
+          "sessionNotes"."sessionID",
+          "sessionNotes"."text",
+          "sessionNotes"."priority",
+          NULL,
+          NULL,
+          "sessionNotes"."createdAt",
+          "sessionNotes"."updatedAt"
+        FROM "sessionNotes"
+        INNER JOIN "focusSessions" ON "focusSessions"."id" = "sessionNotes"."sessionID"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE TABLE "sessionTaskCategories" (
+          "id" TEXT PRIMARY KEY NOT NULL,
+          "taskID" TEXT NOT NULL REFERENCES "sessionTasks"("id") ON DELETE CASCADE,
+          "categoryID" TEXT NOT NULL REFERENCES "sessionCategories"("id") ON DELETE RESTRICT
+        ) STRICT
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        INSERT INTO "sessionTaskCategories" ("id", "taskID", "categoryID")
+        SELECT
+          lower(
+            hex(randomblob(4)) || '-' ||
+            hex(randomblob(2)) || '-' ||
+            hex(randomblob(2)) || '-' ||
+            hex(randomblob(2)) || '-' ||
+            hex(randomblob(6))
+          ),
+          "sessionNoteCategories"."noteID",
+          "sessionNoteCategories"."categoryID"
+        FROM "sessionNoteCategories"
+        INNER JOIN "sessionTasks" ON "sessionTasks"."id" = "sessionNoteCategories"."noteID"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE INDEX "index_sessionTasks_on_sessionID_createdAt"
+        ON "sessionTasks"("sessionID", "createdAt" DESC)
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE INDEX "index_sessionTasks_on_sessionID_completedAt_createdAt"
+        ON "sessionTasks"("sessionID", "completedAt", "createdAt" DESC)
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE INDEX "index_sessionTasks_on_carriedFromTaskID"
+        ON "sessionTasks"("carriedFromTaskID")
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE UNIQUE INDEX "index_sessionTaskCategories_on_taskID_categoryID"
+        ON "sessionTaskCategories"("taskID", "categoryID")
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE INDEX "index_sessionTaskCategories_on_categoryID_taskID"
+        ON "sessionTaskCategories"("categoryID", "taskID")
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DROP TABLE "sessionNoteCategories"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DROP TABLE "sessionNotes"
+        """
+    )
+    .execute(db)
+}
+
 private func orbitDatabasePath() throws -> String {
     let fileManager = FileManager.default
     guard let appSupportDirectory = fileManager.urls(
@@ -521,3 +719,8 @@ private func orbitDatabasePath() throws -> String {
         .appendingPathComponent("focus.sqlite", isDirectory: false)
         .path
 }
+
+private let taskRefactorCutoffDate: Date = {
+    let formatter = ISO8601DateFormatter()
+    return formatter.date(from: "2026-03-02T06:00:00Z")!
+}()
