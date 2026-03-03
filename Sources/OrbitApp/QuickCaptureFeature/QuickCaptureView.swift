@@ -338,15 +338,9 @@ struct QuickCaptureView: View {
     private func toggleCategorySelection(_ categoryID: UUID) {
         var selected = store.captureDraft.selectedCategoryIDs
         if let index = selected.firstIndex(of: categoryID) {
-            if selected.count > 1 {
-                selected.remove(at: index)
-            }
+            selected.remove(at: index)
         } else {
             selected.append(categoryID)
-        }
-
-        if selected.isEmpty {
-            selected = [FocusDefaults.uncategorizedCategoryID]
         }
 
         store.captureDraft.selectedCategoryIDs = selected

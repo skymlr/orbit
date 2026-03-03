@@ -1,9 +1,9 @@
 # Orbit: A Focus Manager
 
-Orbit is a menu bar-first macOS focus companion built with SwiftUI, TCA, and SQLite.
+Orbit is a macOS focus companion built with SwiftUI, TCA, and SQLite.
 
 ## Highlights
-- Menu bar app (`LSUIElement`) with `circle` / `circle.fill` status icon.
+- Full macOS app with Dock icon and menu bar extra (`circle` / `circle.fill` status icon).
 - Start/open active session from menu or global hotkey.
 - Floating Quick Capture panel for fast note entry.
 - Notes support markdown source editing and attributed markdown rendering.

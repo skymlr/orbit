@@ -35,12 +35,10 @@ extension FocusRepository: DependencyKey {
                 let name = FocusDefaults.defaultSessionName(startedAt: now)
 
                 return try await database.write { db in
-                    try ensureUncategorizedCategory(db: db)
-
                     try FocusSession.insert {
-                        ($0.id, $0.name, $0.categoryID, $0.startedAt, $0.endedAt, $0.endedReason)
+                        ($0.id, $0.name, $0.startedAt, $0.endedAt, $0.endedReason)
                     } values: {
-                        (sessionID, name, FocusDefaults.uncategorizedCategoryID, now, nil, nil)
+                        (sessionID, name, now, nil, nil)
                     }
                     .execute(db)
 
@@ -133,8 +131,6 @@ extension FocusRepository: DependencyKey {
                 @Dependency(\.defaultDatabase) var database
 
                 return try await database.write { db in
-                    try ensureUncategorizedCategory(db: db)
-
                     let rows = try SessionCategory
                         .order(by: \.name)
                         .fetchAll(db)
@@ -187,14 +183,6 @@ extension FocusRepository: DependencyKey {
                 let normalizedColor = FocusDefaults.normalizedCategoryColorHex(colorHex)
 
                 try await database.write { db in
-                    if id == FocusDefaults.uncategorizedCategoryID {
-                        try SessionCategory.find(id).update {
-                            $0.colorHex = normalizedColor
-                        }
-                        .execute(db)
-                        return
-                    }
-
                     guard !normalized.isEmpty else { return }
 
                     let conflict = try SessionCategory
@@ -215,30 +203,7 @@ extension FocusRepository: DependencyKey {
             deleteCategory: { id in
                 @Dependency(\.defaultDatabase) var database
 
-                if id == FocusDefaults.uncategorizedCategoryID {
-                    return
-                }
-
                 try await database.write { db in
-                    try FocusSession.where { $0.categoryID.eq(id) }.update {
-                        $0.categoryID = FocusDefaults.uncategorizedCategoryID
-                    }
-                    .execute(db)
-
-                    try SessionNote.where { $0.categoryID.eq(id) }.update {
-                        $0.categoryID = FocusDefaults.uncategorizedCategoryID
-                    }
-                    .execute(db)
-
-                    try #sql(
-                        """
-                        UPDATE OR IGNORE "sessionNoteCategories"
-                        SET "categoryID" = 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
-                        WHERE "categoryID" = \(bind: id.uuidString.lowercased())
-                        """
-                    )
-                    .execute(db)
-
                     try SessionNoteCategory.where { $0.categoryID.eq(id) }
                         .delete()
                         .execute(db)
@@ -255,19 +220,16 @@ extension FocusRepository: DependencyKey {
                 let noteID = uuid()
 
                 return try await database.write { db in
-                    try ensureUncategorizedCategory(db: db)
-
                     if try FocusSession.find(sessionID).fetchOne(db) == nil {
                         return nil
                     }
 
                     let resolvedCategoryIDs = try resolvedNoteCategoryIDs(db: db, requested: categoryIDs)
-                    let primaryCategoryID = resolvedCategoryIDs[0]
 
                     try SessionNote.insert {
-                        ($0.id, $0.sessionID, $0.categoryID, $0.text, $0.priority, $0.createdAt, $0.updatedAt)
+                        ($0.id, $0.sessionID, $0.text, $0.priority, $0.createdAt, $0.updatedAt)
                     } values: {
-                        (noteID, sessionID, primaryCategoryID, trimmed, priority.rawValue, now, now)
+                        (noteID, sessionID, trimmed, priority.rawValue, now, now)
                     }
                     .execute(db)
 
@@ -282,19 +244,15 @@ extension FocusRepository: DependencyKey {
                 guard !trimmed.isEmpty else { return nil }
 
                 return try await database.write { db in
-                    try ensureUncategorizedCategory(db: db)
-
                     if try SessionNote.find(noteID).fetchOne(db) == nil {
                         return nil
                     }
 
                     let resolvedCategoryIDs = try resolvedNoteCategoryIDs(db: db, requested: categoryIDs)
-                    let primaryCategoryID = resolvedCategoryIDs[0]
 
                     try SessionNote.find(noteID).update {
                         $0.text = trimmed
                         $0.priority = priority.rawValue
-                        $0.categoryID = primaryCategoryID
                         $0.updatedAt = now
                     }
                     .execute(db)
@@ -352,16 +310,7 @@ extension FocusRepository: DependencyKey {
             listSessions: { [] },
             renameSession: { _, _ in },
             deleteSession: { _ in },
-            listCategories: {
-                [
-                    SessionCategoryRecord(
-                        id: FocusDefaults.uncategorizedCategoryID,
-                        name: FocusDefaults.uncategorizedCategoryName,
-                        normalizedName: FocusDefaults.uncategorizedCategoryName,
-                        colorHex: FocusDefaults.uncategorizedCategoryColorHex
-                    )
-                ]
-            },
+            listCategories: { [] },
             addCategory: { _, _ in nil },
             renameCategory: { _, _, _ in },
             deleteCategory: { _ in },
@@ -415,11 +364,7 @@ private func buildNoteRecord(db: Database, noteID: UUID) throws -> FocusNoteReco
     guard let note = try SessionNote.find(noteID).fetchOne(db) else {
         return nil
     }
-    let categories = try loadNoteCategories(
-        db: db,
-        noteID: noteID,
-        primaryCategoryID: note.categoryID
-    )
+    let categories = try loadNoteCategories(db: db, noteID: noteID)
 
     return FocusNoteRecord(
         id: note.id,
@@ -451,10 +396,6 @@ private func resolvedNoteCategoryIDs(db: Database, requested: [UUID]) throws -> 
         values.append(id)
     }
 
-    if values.isEmpty {
-        values = [FocusDefaults.uncategorizedCategoryID]
-    }
-
     return values
 }
 
@@ -473,8 +414,7 @@ private func replaceNoteCategories(db: Database, noteID: UUID, categoryIDs: [UUI
 
 private func loadNoteCategories(
     db: Database,
-    noteID: UUID,
-    primaryCategoryID: UUID
+    noteID: UUID
 ) throws -> [NoteCategoryRecord] {
     let linkedCategoryIDs = try SessionNoteCategory
         .where { $0.noteID.eq(noteID) }
@@ -482,25 +422,8 @@ private func loadNoteCategories(
         .fetchAll(db)
         .map(\.categoryID)
 
-    var orderedCategoryIDs: [UUID] = []
-    var seen = Set<UUID>()
-
-    func appendCategoryID(_ id: UUID) {
-        guard !seen.contains(id) else { return }
-        seen.insert(id)
-        orderedCategoryIDs.append(id)
-    }
-
-    appendCategoryID(primaryCategoryID)
-    for categoryID in linkedCategoryIDs {
-        appendCategoryID(categoryID)
-    }
-    if orderedCategoryIDs.isEmpty {
-        appendCategoryID(FocusDefaults.uncategorizedCategoryID)
-    }
-
     var categories: [NoteCategoryRecord] = []
-    for categoryID in orderedCategoryIDs {
+    for categoryID in linkedCategoryIDs {
         if let category = try SessionCategory.find(categoryID).fetchOne(db) {
             categories.append(
                 NoteCategoryRecord(
@@ -512,83 +435,7 @@ private func loadNoteCategories(
         }
     }
 
-    if categories.isEmpty {
-        categories = [
-            NoteCategoryRecord(
-                id: FocusDefaults.uncategorizedCategoryID,
-                name: FocusDefaults.uncategorizedCategoryName,
-                colorHex: FocusDefaults.uncategorizedCategoryColorHex
-            )
-        ]
-    }
-
     return categories
-}
-
-private func ensureUncategorizedCategory(db: Database) throws {
-    try #sql(
-        """
-        UPDATE "focusSessions"
-        SET "categoryID" = 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
-        WHERE "categoryID" IN (
-          SELECT "id"
-          FROM "sessionCategories"
-          WHERE "normalizedName" = 'uncategorized'
-            AND "id" <> 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
-        )
-        """
-    )
-    .execute(db)
-
-    try #sql(
-        """
-        UPDATE "sessionNotes"
-        SET "categoryID" = 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
-        WHERE "categoryID" IN (
-          SELECT "id"
-          FROM "sessionCategories"
-          WHERE "normalizedName" = 'uncategorized'
-            AND "id" <> 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
-        )
-        """
-    )
-    .execute(db)
-
-    try #sql(
-        """
-        UPDATE "sessionNoteCategories"
-        SET "categoryID" = 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
-        WHERE "categoryID" IN (
-          SELECT "id"
-          FROM "sessionCategories"
-          WHERE "normalizedName" = 'uncategorized'
-            AND "id" <> 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
-        )
-        """
-    )
-    .execute(db)
-
-    try #sql(
-        """
-        DELETE FROM "sessionCategories"
-        WHERE "normalizedName" = 'uncategorized'
-          AND "id" <> 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
-        """
-    )
-    .execute(db)
-
-    try #sql(
-        """
-        INSERT INTO "sessionCategories" ("id", "name", "normalizedName", "colorHex")
-        VALUES ('c8b3b4cc-2928-4a84-9c3b-eb253e9d0001', 'uncategorized', 'uncategorized', '#00B5FF')
-        ON CONFLICT("id") DO UPDATE
-        SET
-          "name" = 'uncategorized',
-          "normalizedName" = 'uncategorized',
-          "colorHex" = '#00B5FF'
-        """
-    )
-    .execute(db)
 }
 
 private func renderMarkdown(for session: FocusSessionRecord) -> String {
@@ -607,7 +454,10 @@ private func renderMarkdown(for session: FocusSessionRecord) -> String {
 
     for note in session.notes.sorted(by: { $0.createdAt < $1.createdAt }) {
         lines.append("### \(formatDate(note.createdAt)) • \(note.priority.title)")
-        lines.append("Categories: \(note.categories.map(\.name).joined(separator: ", "))")
+        let categoryLine = note.categories.isEmpty
+            ? "None"
+            : note.categories.map(\.name).joined(separator: ", ")
+        lines.append("Categories: \(categoryLine)")
         lines.append(note.text)
         lines.append("")
     }

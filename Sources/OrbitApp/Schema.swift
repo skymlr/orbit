@@ -261,22 +261,27 @@ extension DependencyValues {
             )
             .execute(db)
 
-            let notes = try SessionNote.fetchAll(db)
-            for note in notes {
-                let resolvedCategoryID: UUID
-                if try SessionCategory.find(note.categoryID).fetchOne(db) != nil {
-                    resolvedCategoryID = note.categoryID
-                } else {
-                    resolvedCategoryID = FocusDefaults.uncategorizedCategoryID
-                }
-
-                try SessionNoteCategory.insert {
-                    ($0.id, $0.noteID, $0.categoryID)
-                } values: {
-                    (UUID(), note.id, resolvedCategoryID)
-                }
-                .execute(db)
-            }
+            try #sql(
+                """
+                INSERT INTO "sessionNoteCategories" ("id", "noteID", "categoryID")
+                SELECT
+                  lower(
+                    hex(randomblob(4)) || '-' ||
+                    hex(randomblob(2)) || '-' ||
+                    hex(randomblob(2)) || '-' ||
+                    hex(randomblob(2)) || '-' ||
+                    hex(randomblob(6))
+                  ),
+                  "sessionNotes"."id",
+                  CASE
+                    WHEN "sessionNotes"."categoryID" IN (SELECT "id" FROM "sessionCategories")
+                      THEN "sessionNotes"."categoryID"
+                    ELSE 'c8b3b4cc-2928-4a84-9c3b-eb253e9d0001'
+                  END
+                FROM "sessionNotes"
+                """
+            )
+            .execute(db)
         }
 
         migrator.registerMigration("Remove note tags table") { db in
@@ -288,9 +293,215 @@ extension DependencyValues {
             .execute(db)
         }
 
+        migrator.registerMigration("Remove uncategorized and legacy category columns") { db in
+            try removeUncategorizedAndLegacyCategoryColumns(db: db)
+        }
+
         try migrator.migrate(database)
         defaultDatabase = database
     }
+}
+
+func removeUncategorizedAndLegacyCategoryColumns(db: Database) throws {
+    try #sql(
+        """
+        DROP INDEX IF EXISTS "index_focusSessions_on_startedAt"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DROP INDEX IF EXISTS "index_sessionNotes_on_sessionID_createdAt"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DROP INDEX IF EXISTS "index_sessionNotes_on_sessionID_categoryID_createdAt"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DROP INDEX IF EXISTS "index_sessionNoteCategories_on_noteID_categoryID"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DROP INDEX IF EXISTS "index_sessionNoteCategories_on_categoryID_noteID"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        ALTER TABLE "focusSessions" RENAME TO "focusSessions_legacy"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        ALTER TABLE "sessionNotes" RENAME TO "sessionNotes_legacy"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        ALTER TABLE "sessionNoteCategories" RENAME TO "sessionNoteCategories_legacy"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE TABLE "focusSessions" (
+          "id" TEXT PRIMARY KEY NOT NULL,
+          "name" TEXT NOT NULL,
+          "startedAt" TEXT NOT NULL,
+          "endedAt" TEXT,
+          "endedReason" TEXT
+        ) STRICT
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        INSERT INTO "focusSessions" ("id", "name", "startedAt", "endedAt", "endedReason")
+        SELECT "id", "name", "startedAt", "endedAt", "endedReason"
+        FROM "focusSessions_legacy"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE TABLE "sessionNotes" (
+          "id" TEXT PRIMARY KEY NOT NULL,
+          "sessionID" TEXT NOT NULL REFERENCES "focusSessions"("id") ON DELETE CASCADE,
+          "text" TEXT NOT NULL,
+          "priority" TEXT NOT NULL,
+          "createdAt" TEXT NOT NULL,
+          "updatedAt" TEXT NOT NULL
+        ) STRICT
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        INSERT INTO "sessionNotes" ("id", "sessionID", "text", "priority", "createdAt", "updatedAt")
+        SELECT "id", "sessionID", "text", "priority", "createdAt", "updatedAt"
+        FROM "sessionNotes_legacy"
+        WHERE "sessionID" IN (SELECT "id" FROM "focusSessions")
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE TABLE "sessionNoteCategories" (
+          "id" TEXT PRIMARY KEY NOT NULL,
+          "noteID" TEXT NOT NULL REFERENCES "sessionNotes"("id") ON DELETE CASCADE,
+          "categoryID" TEXT NOT NULL REFERENCES "sessionCategories"("id") ON DELETE RESTRICT
+        ) STRICT
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        INSERT INTO "sessionNoteCategories" ("id", "noteID", "categoryID")
+        SELECT
+          lower(
+            hex(randomblob(4)) || '-' ||
+            hex(randomblob(2)) || '-' ||
+            hex(randomblob(2)) || '-' ||
+            hex(randomblob(2)) || '-' ||
+            hex(randomblob(6))
+          ),
+          "dedup"."noteID",
+          "dedup"."categoryID"
+        FROM (
+          SELECT DISTINCT
+            "existing"."noteID" AS "noteID",
+            "existing"."categoryID" AS "categoryID"
+          FROM "sessionNoteCategories_legacy" AS "existing"
+          INNER JOIN "sessionNotes" AS "note" ON "note"."id" = "existing"."noteID"
+          INNER JOIN "sessionCategories" AS "category" ON "category"."id" = "existing"."categoryID"
+          WHERE "category"."normalizedName" <> 'uncategorized'
+        ) AS "dedup"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DROP TABLE "sessionNoteCategories_legacy"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DROP TABLE "sessionNotes_legacy"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DROP TABLE "focusSessions_legacy"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE INDEX "index_focusSessions_on_startedAt"
+        ON "focusSessions"("startedAt" DESC)
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE INDEX "index_sessionNotes_on_sessionID_createdAt"
+        ON "sessionNotes"("sessionID", "createdAt" DESC)
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE UNIQUE INDEX "index_sessionNoteCategories_on_noteID_categoryID"
+        ON "sessionNoteCategories"("noteID", "categoryID")
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        CREATE INDEX "index_sessionNoteCategories_on_categoryID_noteID"
+        ON "sessionNoteCategories"("categoryID", "noteID")
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DELETE FROM "sessionCategories"
+        WHERE "normalizedName" = 'uncategorized'
+        """
+    )
+    .execute(db)
 }
 
 private func orbitDatabasePath() throws -> String {

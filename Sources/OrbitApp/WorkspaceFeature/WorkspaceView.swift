@@ -430,7 +430,6 @@ private struct CategoryRow: View {
             HStack(spacing: 8) {
                 TextField("Category", text: $name)
                     .textFieldStyle(.roundedBorder)
-                    .disabled(category.id == FocusDefaults.uncategorizedCategoryID)
 
                 Button("Save") {
                     onRename(name, selectedColorHex)
@@ -441,7 +440,6 @@ private struct CategoryRow: View {
                     onDelete()
                 }
                 .buttonStyle(.orbitDestructive)
-                .disabled(category.id == FocusDefaults.uncategorizedCategoryID)
             }
 
             CategoryColorPalettePicker(selectedHex: $selectedColorHex)

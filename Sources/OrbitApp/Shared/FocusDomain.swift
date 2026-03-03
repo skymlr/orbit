@@ -76,9 +76,6 @@ struct FocusSessionRecord: Equatable, Identifiable, Sendable {
 }
 
 enum FocusDefaults {
-    static let uncategorizedCategoryID = UUID(uuidString: "C8B3B4CC-2928-4A84-9C3B-EB253E9D0001")!
-    static let uncategorizedCategoryName = "uncategorized"
-    static let uncategorizedCategoryColorHex = "#00B5FF"
     static let defaultCategoryColorHex = "#58B5FF"
     static let categoryColorOptions: [String] = [
         "#00B5FF",
@@ -94,11 +91,21 @@ enum FocusDefaults {
     ]
 
     static func defaultSessionName(startedAt: Date) -> String {
-        let day = Calendar.current.component(.day, from: startedAt)
-        let year = Calendar.current.component(.year, from: startedAt)
-        let month = sessionNameMonthFormatter.string(from: startedAt)
-        let time = sessionNameTimeFormatter.string(from: startedAt)
-        return "\(month) \(day)\(ordinalSuffix(for: day)), \(year) @ \(time)"
+        let hour = Calendar.current.component(.hour, from: startedAt)
+        let period: String
+
+        switch hour {
+        case 5..<12:
+            period = "Morning"
+        case 12..<17:
+            period = "Afternoon"
+        case 17..<21:
+            period = "Evening"
+        default:
+            period = "Night"
+        }
+
+        return "\(period) Session"
     }
 
     static func normalizedCategoryName(_ value: String) -> String {
@@ -119,36 +126,6 @@ enum FocusDefaults {
     static func markdownFileName(for session: FocusSessionRecord) -> String {
         "\(exportFileFormatter.string(from: session.startedAt))-\(session.id.uuidString.lowercased()).md"
     }
-
-    private static func ordinalSuffix(for day: Int) -> String {
-        let twoDigits = day % 100
-        if (11...13).contains(twoDigits) {
-            return "th"
-        }
-
-        switch day % 10 {
-        case 1: return "st"
-        case 2: return "nd"
-        case 3: return "rd"
-        default: return "th"
-        }
-    }
-
-    private static let sessionNameMonthFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "MMMM"
-        return formatter
-    }()
-
-    private static let sessionNameTimeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "h:mma"
-        return formatter
-    }()
 
     private static let exportFileFormatter: DateFormatter = {
         let formatter = DateFormatter()

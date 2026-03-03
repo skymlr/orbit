@@ -104,7 +104,7 @@ struct AppFeatureTests {
             $0.endSessionDraft = nil
             $0.windowDestinations = []
             $0.captureDraft = AppFeature.State.CaptureDraft(
-                selectedCategoryIDs: [FocusDefaults.uncategorizedCategoryID]
+                selectedCategoryIDs: []
             )
             $0.selectedNoteCategoryFilter = .all
         }
@@ -165,7 +165,7 @@ struct AppFeatureTests {
             $0.endSessionDraft = nil
             $0.windowDestinations = []
             $0.captureDraft = AppFeature.State.CaptureDraft(
-                selectedCategoryIDs: [FocusDefaults.uncategorizedCategoryID]
+                selectedCategoryIDs: []
             )
             $0.selectedNoteCategoryFilter = .all
         }
@@ -195,7 +195,7 @@ struct AppFeatureTests {
 
         await store.send(.captureWindowClosed) {
             $0.captureDraft = AppFeature.State.CaptureDraft(
-                selectedCategoryIDs: [FocusDefaults.uncategorizedCategoryID]
+                selectedCategoryIDs: []
             )
             $0.windowDestinations.remove(.captureWindow)
         }
@@ -263,7 +263,43 @@ struct AppFeatureTests {
             $0.noteDrafts = []
             $0.endSessionDraft = nil
             $0.captureDraft = AppFeature.State.CaptureDraft(
-                selectedCategoryIDs: [FocusDefaults.uncategorizedCategoryID]
+                selectedCategoryIDs: []
+            )
+            $0.selectedNoteCategoryFilter = .all
+        }
+    }
+
+    @Test
+    func loadActiveSessionWithNoNotesLeavesCaptureCategoriesEmpty() async {
+        let session = FocusSessionRecord(
+            id: UUID(uuidString: "9D8A53C2-1EE7-4E04-AC93-8E09B6F03D40")!,
+            name: "No notes",
+            startedAt: Date(timeIntervalSince1970: 1_700_000_000),
+            endedAt: nil,
+            endedReason: nil,
+            notes: []
+        )
+
+        var initial = AppFeature.State()
+        initial.categories = sampleCategories
+        initial.captureDraft.selectedCategoryIDs = [projectACategoryID]
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        }
+
+        await store.send(.loadActiveSessionResponse(session)) {
+            $0.activeSession = session
+            $0.noteDrafts = []
+            $0.captureDraft.selectedCategoryIDs = []
+        }
+
+        await store.send(.loadActiveSessionResponse(nil)) {
+            $0.activeSession = nil
+            $0.noteDrafts = []
+            $0.endSessionDraft = nil
+            $0.captureDraft = AppFeature.State.CaptureDraft(
+                selectedCategoryIDs: []
             )
             $0.selectedNoteCategoryFilter = .all
         }
@@ -316,7 +352,7 @@ struct AppFeatureTests {
             $0.noteDrafts = []
             $0.endSessionDraft = nil
             $0.captureDraft = AppFeature.State.CaptureDraft(
-                selectedCategoryIDs: [FocusDefaults.uncategorizedCategoryID]
+                selectedCategoryIDs: []
             )
             $0.selectedNoteCategoryFilter = .all
         }
@@ -365,13 +401,7 @@ private var sampleCategories: [SessionCategoryRecord] {
             name: "project-b",
             normalizedName: "project-b",
             colorHex: "#7ED957"
-        ),
-        SessionCategoryRecord(
-            id: FocusDefaults.uncategorizedCategoryID,
-            name: FocusDefaults.uncategorizedCategoryName,
-            normalizedName: FocusDefaults.uncategorizedCategoryName,
-            colorHex: FocusDefaults.uncategorizedCategoryColorHex
-        ),
+        )
     ]
 }
 
@@ -384,7 +414,7 @@ private func noteCategories(_ ids: [UUID]) -> [NoteCategoryRecord] {
 }
 
 private func makeActiveSession(
-    noteCategoryIDs: [UUID] = [FocusDefaults.uncategorizedCategoryID]
+    noteCategoryIDs: [UUID] = []
 ) -> FocusSessionRecord {
     let note = FocusNoteRecord(
         id: UUID(uuidString: "A6E2C2D2-53AF-4D10-ACE2-761B700A1DB1")!,

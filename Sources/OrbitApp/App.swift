@@ -20,7 +20,7 @@ private final class OrbitApplicationDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
-struct OrbitMenuBarApp: App {
+struct OrbitApp: App {
     @NSApplicationDelegateAdaptor(OrbitApplicationDelegate.self) private var appDelegate
     let store: StoreOf<AppFeature>
 
@@ -33,7 +33,7 @@ struct OrbitMenuBarApp: App {
             AppFeature()
         }
 
-        NSApplication.shared.setActivationPolicy(.accessory)
+        NSApplication.shared.setActivationPolicy(.regular)
     }
 
     var body: some Scene {

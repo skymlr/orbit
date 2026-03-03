@@ -12,7 +12,7 @@ struct FocusRepositoryTests {
         let repository = FocusRepository.liveValue
         let sessionID = UUID(uuidString: "B4CA36AD-BB5A-4A88-9874-3FA6F26D7E3F")!
 
-        try seedSession(database: database, sessionID: sessionID, sessionCategoryID: FocusDefaults.uncategorizedCategoryID)
+        try seedSession(database: database, sessionID: sessionID)
 
         let created = try await withDependencies {
             $0.defaultDatabase = database
@@ -47,12 +47,76 @@ struct FocusRepositoryTests {
     }
 
     @Test
-    func deleteCategoryRemapsSessionAndNoteCategoriesToUncategorized() async throws {
+    func createNoteAllowsNoCategories() async throws {
+        let database = try makeTestDatabase()
+        let repository = FocusRepository.liveValue
+        let sessionID = UUID(uuidString: "67CF4B5F-9A7C-4887-9193-189AE367503E")!
+
+        try seedSession(database: database, sessionID: sessionID)
+
+        let created = try await withDependencies {
+            $0.defaultDatabase = database
+            $0.uuid = .incrementing
+        } operation: {
+            try await repository.createNote(
+                sessionID,
+                "No category note",
+                .none,
+                [],
+                Date(timeIntervalSince1970: 1_700_000_000)
+            )
+        }
+
+        #expect(created != nil)
+        #expect(created?.categories.isEmpty == true)
+    }
+
+    @Test
+    func updateNoteCanClearCategories() async throws {
+        let database = try makeTestDatabase()
+        let repository = FocusRepository.liveValue
+        let sessionID = UUID(uuidString: "B3E5B726-BDBD-4B65-B344-42198B16DF67")!
+
+        try seedSession(database: database, sessionID: sessionID)
+
+        let created = try await withDependencies {
+            $0.defaultDatabase = database
+            $0.uuid = .incrementing
+        } operation: {
+            try await repository.createNote(
+                sessionID,
+                "Clear me",
+                .medium,
+                [projectACategoryID],
+                Date(timeIntervalSince1970: 1_700_000_000)
+            )
+        }
+        #expect(created != nil)
+
+        let updated = try await withDependencies {
+            $0.defaultDatabase = database
+            $0.uuid = .incrementing
+        } operation: {
+            try await repository.updateNote(
+                created!.id,
+                "Clear me",
+                .medium,
+                [],
+                Date(timeIntervalSince1970: 1_700_000_050)
+            )
+        }
+
+        #expect(updated != nil)
+        #expect(updated?.categories.isEmpty == true)
+    }
+
+    @Test
+    func deleteCategoryUnassignsNoteCategories() async throws {
         let database = try makeTestDatabase()
         let repository = FocusRepository.liveValue
         let sessionID = UUID(uuidString: "3F8F66F7-8D29-4D2F-B779-E14945B2AAB2")!
 
-        try seedSession(database: database, sessionID: sessionID, sessionCategoryID: projectACategoryID)
+        try seedSession(database: database, sessionID: sessionID)
 
         _ = try await withDependencies {
             $0.defaultDatabase = database
@@ -83,17 +147,16 @@ struct FocusRepositoryTests {
 
         #expect(active != nil)
         #expect(active?.notes.count == 1)
-        #expect(active?.notes.first?.categories.map(\.id) == [FocusDefaults.uncategorizedCategoryID])
-        #expect(active?.notes.first?.categories.first?.name == FocusDefaults.uncategorizedCategoryName)
+        #expect(active?.notes.first?.categories.isEmpty == true)
     }
 
     @Test
-    func exportMarkdownIncludesNoteCategories() async throws {
+    func exportMarkdownShowsNoneForUnassignedNote() async throws {
         let database = try makeTestDatabase()
         let repository = FocusRepository.liveValue
         let sessionID = UUID(uuidString: "62ACF5D4-C97B-4D12-B9A8-E1C4FEE39D5D")!
 
-        try seedSession(database: database, sessionID: sessionID, sessionCategoryID: FocusDefaults.uncategorizedCategoryID)
+        try seedSession(database: database, sessionID: sessionID)
 
         _ = try await withDependencies {
             $0.defaultDatabase = database
@@ -103,7 +166,7 @@ struct FocusRepositoryTests {
                 sessionID,
                 "Draft release notes",
                 .none,
-                [projectACategoryID, projectBCategoryID],
+                [],
                 Date(timeIntervalSince1970: 1_700_000_000)
             )
         }
@@ -121,9 +184,7 @@ struct FocusRepositoryTests {
         #expect(urls.count == 1)
         let markdown = try String(contentsOf: urls[0], encoding: .utf8)
 
-        #expect(markdown.contains("Categories:"))
-        #expect(markdown.contains("project-a"))
-        #expect(markdown.contains("project-b"))
+        #expect(markdown.contains("Categories: None"))
         #expect(!markdown.contains("Tags:"))
     }
 }
@@ -160,7 +221,6 @@ private func makeTestDatabase() throws -> any DatabaseWriter {
             CREATE TABLE "focusSessions" (
               "id" TEXT PRIMARY KEY NOT NULL,
               "name" TEXT NOT NULL,
-              "categoryID" TEXT NOT NULL REFERENCES "sessionCategories"("id") ON DELETE RESTRICT,
               "startedAt" TEXT NOT NULL,
               "endedAt" TEXT,
               "endedReason" TEXT
@@ -174,7 +234,6 @@ private func makeTestDatabase() throws -> any DatabaseWriter {
             CREATE TABLE "sessionNotes" (
               "id" TEXT PRIMARY KEY NOT NULL,
               "sessionID" TEXT NOT NULL REFERENCES "focusSessions"("id") ON DELETE CASCADE,
-              "categoryID" TEXT NOT NULL REFERENCES "sessionCategories"("id") ON DELETE RESTRICT,
               "text" TEXT NOT NULL,
               "priority" TEXT NOT NULL,
               "createdAt" TEXT NOT NULL,
@@ -206,7 +265,6 @@ private func makeTestDatabase() throws -> any DatabaseWriter {
         try SessionCategory.insert {
             ($0.id, $0.name, $0.normalizedName, $0.colorHex)
         } values: {
-            (FocusDefaults.uncategorizedCategoryID, FocusDefaults.uncategorizedCategoryName, FocusDefaults.uncategorizedCategoryName, FocusDefaults.uncategorizedCategoryColorHex)
             (projectACategoryID, "project-a", "project-a", "#58B5FF")
             (projectBCategoryID, "project-b", "project-b", "#7ED957")
         }
@@ -218,17 +276,15 @@ private func makeTestDatabase() throws -> any DatabaseWriter {
 
 private func seedSession(
     database: any DatabaseWriter,
-    sessionID: UUID,
-    sessionCategoryID: UUID
+    sessionID: UUID
 ) throws {
     try database.write { db in
         try FocusSession.insert {
-            ($0.id, $0.name, $0.categoryID, $0.startedAt, $0.endedAt, $0.endedReason)
+            ($0.id, $0.name, $0.startedAt, $0.endedAt, $0.endedReason)
         } values: {
             (
                 sessionID,
                 "Repository Test Session",
-                sessionCategoryID,
                 Date(timeIntervalSince1970: 1_700_000_000),
                 nil,
                 nil

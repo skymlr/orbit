@@ -33,7 +33,7 @@ struct AppFeature {
         struct CaptureDraft: Equatable {
             var text = ""
             var priority: NotePriority = .none
-            var selectedCategoryIDs: [UUID] = [FocusDefaults.uncategorizedCategoryID]
+            var selectedCategoryIDs: [UUID] = []
             var editingNoteID: UUID?
         }
 
@@ -633,7 +633,7 @@ struct AppFeature {
                 state.windowDestinations.remove(.endSessionWindow)
                 state.windowDestinations.remove(.captureWindow)
                 state.captureDraft = State.CaptureDraft(
-                    selectedCategoryIDs: [FocusDefaults.uncategorizedCategoryID]
+                    selectedCategoryIDs: []
                 )
                 state.selectedNoteCategoryFilter = .all
 
@@ -705,7 +705,7 @@ private func defaultCaptureCategoryIDs(
             .categories
             .map(\.id)
     else {
-        return [FocusDefaults.uncategorizedCategoryID]
+        return []
     }
 
     return normalizedCategoryIDs(latestCategoryIDs, categories: categories)
@@ -720,10 +720,6 @@ private func normalizedCategoryIDs(_ categoryIDs: [UUID], categories: [SessionCa
         guard categories.contains(where: { $0.id == categoryID }) else { continue }
         seen.insert(categoryID)
         normalized.append(categoryID)
-    }
-
-    if normalized.isEmpty {
-        return [FocusDefaults.uncategorizedCategoryID]
     }
 
     return normalized
