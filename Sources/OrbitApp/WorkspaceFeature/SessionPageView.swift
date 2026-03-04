@@ -487,6 +487,8 @@ private struct SessionHeader: View {
                 Text("Started \(session.startedAt, style: .time)")
                 Text("•")
                 Text("Elapsed \(session.startedAt, style: .timer)")
+                Text("•")
+                Text("Ends at \(FocusDefaults.nextSessionBoundary(after: session.startedAt), style: .time)")
 
                 Spacer()
 

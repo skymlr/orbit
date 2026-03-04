@@ -182,6 +182,42 @@ struct FocusRepositoryTests {
     }
 
     @Test
+    func endSessionRoundTripsTimeWindowReason() async throws {
+        let database = try makeTestDatabase()
+        let repository = FocusRepository.liveValue
+        let sessionID = UUID(uuidString: "3F749C97-30AB-4A45-97B2-FEA23C6AE03D")!
+        let endedAt = Date(timeIntervalSince1970: 1_700_000_600)
+
+        try seedSession(
+            database: database,
+            sessionID: sessionID,
+            startedAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+
+        let ended = try await withDependencies {
+            $0.defaultDatabase = database
+            $0.uuid = .incrementing
+        } operation: {
+            try await repository.endSession(
+                sessionID,
+                nil,
+                .timeWindow,
+                endedAt
+            )
+        }
+
+        #expect(ended?.endedReason == .timeWindow)
+
+        let sessions = try await withDependencies {
+            $0.defaultDatabase = database
+            $0.uuid = .incrementing
+        } operation: {
+            try await repository.listSessions()
+        }
+        #expect(sessions.first?.endedReason == .timeWindow)
+    }
+
+    @Test
     func deleteCategoryUnassignsTaskCategories() async throws {
         let database = try makeTestDatabase()
         let repository = FocusRepository.liveValue

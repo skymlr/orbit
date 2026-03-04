@@ -37,6 +37,7 @@ enum SessionEndReason: String, Codable, Equatable, Sendable {
     case manual
     case inactivity
     case appClosed
+    case timeWindow
 }
 
 enum HotkeyKind: String, Equatable, Sendable {
@@ -124,6 +125,24 @@ enum FocusDefaults {
 
     static func defaultSessionName(startedAt: Date) -> String {
         "\(sessionPeriod(for: startedAt).title) Session"
+    }
+
+    static func nextSessionBoundary(after date: Date) -> Date {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let boundaryHours = [5, 12, 17]
+
+        for hour in boundaryHours {
+            guard let boundary = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: startOfDay) else {
+                continue
+            }
+            if boundary > date {
+                return boundary
+            }
+        }
+
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? startOfDay.addingTimeInterval(86_400)
+        return calendar.date(bySettingHour: 5, minute: 0, second: 0, of: tomorrow) ?? tomorrow
     }
 
     static func normalizedCategoryName(_ value: String) -> String {

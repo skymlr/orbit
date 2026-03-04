@@ -6,6 +6,7 @@ import Foundation
 struct AppFeature {
     private enum CancelID {
         case inactivityMonitor
+        case sessionWindowMonitor
         case hotkeyRegistration
         case toastAutoDismiss
     }
@@ -67,6 +68,11 @@ struct AppFeature {
             var captureNextPriorityShortcut = HotkeySettings.default.captureNextPriorityShortcut
         }
 
+        enum SessionWindowTransitionState: Equatable {
+            case inProgress(from: SessionPeriod, to: SessionPeriod)
+            case failed(from: SessionPeriod, to: SessionPeriod, message: String)
+        }
+
         var activeSession: FocusSessionRecord?
         var taskDrafts: IdentifiedArrayOf<TaskDraft> = []
 
@@ -81,6 +87,7 @@ struct AppFeature {
 
         var settings = SettingsState()
         var toast: Toast?
+        var sessionWindowTransitionState: SessionWindowTransitionState?
 
         var windowDestinations: Set<WindowDestination> = []
         var workspaceWindowFocusRequest = 0
@@ -143,6 +150,10 @@ struct AppFeature {
         case endSessionConfirmTapped(name: String)
         case endSessionCancelTapped
         case autoEndSession
+        case sessionWindowBoundaryReached
+        case sessionWindowTransitionFailed(String, SessionPeriod, SessionPeriod)
+        case sessionWindowTransitionCompleted
+        case sessionWindowTransitionRetryTapped
 
         case settingsRefreshTapped
         case settingsResetHotkeysTapped
@@ -224,8 +235,10 @@ struct AppFeature {
                 state.windowDestinations.removeAll()
                 state.endSessionDraft = nil
                 state.toast = nil
+                state.sessionWindowTransitionState = nil
                 return .merge(
                     .cancel(id: CancelID.inactivityMonitor),
+                    .cancel(id: CancelID.sessionWindowMonitor),
                     .cancel(id: CancelID.hotkeyRegistration),
                     .cancel(id: CancelID.toastAutoDismiss)
                 )
@@ -533,6 +546,7 @@ struct AppFeature {
                 guard let activeSession = state.activeSession else { return .none }
 
                 state.endSessionDraft = nil
+                state.sessionWindowTransitionState = nil
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.workspaceWindow)
 
@@ -570,6 +584,7 @@ struct AppFeature {
             case .autoEndSession:
                 guard let activeSession = state.activeSession else { return .none }
                 state.endSessionDraft = nil
+                state.sessionWindowTransitionState = nil
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.workspaceWindow)
 
@@ -583,6 +598,109 @@ struct AppFeature {
                     let active = try? await focusRepository.loadActiveSession()
                     await send(.loadActiveSessionResponse(active))
                     await send(.settingsRefreshTapped)
+                }
+
+            case .sessionWindowBoundaryReached:
+                guard let activeSession = state.activeSession else { return .none }
+
+                let fromPeriod = FocusDefaults.sessionPeriod(for: activeSession.startedAt)
+                let toPeriod = FocusDefaults.sessionPeriod(for: now)
+                guard fromPeriod != toPeriod else {
+                    if case .inProgress = state.sessionWindowTransitionState {
+                        state.sessionWindowTransitionState = nil
+                    }
+                    return .none
+                }
+
+                let workspaceOpen = state.windowDestinations.contains(.workspaceWindow)
+                state.endSessionDraft = nil
+                state.windowDestinations.remove(.captureWindow)
+                if workspaceOpen {
+                    state.sessionWindowTransitionState = .inProgress(from: fromPeriod, to: toPeriod)
+                }
+
+                return .run { send in
+                    do {
+                        let ended = try await focusRepository.endSession(
+                            activeSession.id,
+                            nil,
+                            .timeWindow,
+                            now
+                        )
+                        guard ended != nil else {
+                            throw SessionWindowTransitionError.endSessionFailed
+                        }
+
+                        if workspaceOpen {
+                            _ = try await focusRepository.startSession(now)
+                        }
+
+                        let active = try? await focusRepository.loadActiveSession()
+                        await send(.loadActiveSessionResponse(active))
+                        await send(.settingsRefreshTapped)
+                        if workspaceOpen {
+                            await send(.sessionWindowTransitionCompleted)
+                        }
+                    } catch {
+                        if workspaceOpen {
+                            await send(
+                                .sessionWindowTransitionFailed(
+                                    error.localizedDescription,
+                                    fromPeriod,
+                                    toPeriod
+                                )
+                            )
+                        }
+                        let active = try? await focusRepository.loadActiveSession()
+                        await send(.loadActiveSessionResponse(active))
+                        await send(.settingsRefreshTapped)
+                    }
+                }
+
+            case let .sessionWindowTransitionFailed(message, fromPeriod, toPeriod):
+                state.sessionWindowTransitionState = .failed(
+                    from: fromPeriod,
+                    to: toPeriod,
+                    message: message
+                )
+                return .none
+
+            case .sessionWindowTransitionCompleted:
+                state.sessionWindowTransitionState = nil
+                return .none
+
+            case .sessionWindowTransitionRetryTapped:
+                guard case let .failed(fromPeriod, toPeriod, _) = state.sessionWindowTransitionState else {
+                    return .none
+                }
+
+                state.sessionWindowTransitionState = .inProgress(from: fromPeriod, to: toPeriod)
+
+                if state.activeSession != nil {
+                    return .send(.sessionWindowBoundaryReached)
+                }
+
+                guard state.windowDestinations.contains(.workspaceWindow) else {
+                    state.sessionWindowTransitionState = nil
+                    return .none
+                }
+
+                return .run { send in
+                    do {
+                        _ = try await focusRepository.startSession(now)
+                        let active = try? await focusRepository.loadActiveSession()
+                        await send(.loadActiveSessionResponse(active))
+                        await send(.settingsRefreshTapped)
+                        await send(.sessionWindowTransitionCompleted)
+                    } catch {
+                        await send(
+                            .sessionWindowTransitionFailed(
+                                error.localizedDescription,
+                                fromPeriod,
+                                toPeriod
+                            )
+                        )
+                    }
                 }
 
             case .settingsRefreshTapped:
@@ -779,11 +897,15 @@ struct AppFeature {
                 state.activeSession = nil
                 state.taskDrafts = []
                 state.endSessionDraft = nil
+                state.sessionWindowTransitionState = nil
                 state.windowDestinations.remove(.captureWindow)
                 state.selectedTaskCategoryFilterIDs.removeAll()
                 state.selectedTaskPriorityFilters.removeAll()
 
-                return .cancel(id: CancelID.inactivityMonitor)
+                return .merge(
+                    .cancel(id: CancelID.inactivityMonitor),
+                    .cancel(id: CancelID.sessionWindowMonitor)
+                )
 
             case let .loadActiveSessionResponse(session):
                 state.activeSession = session
@@ -796,13 +918,37 @@ struct AppFeature {
                     )
                     ensureCategorySelections(&state)
 
-                    return .run { send in
-                        while !Task.isCancelled {
-                            try await Task.sleep(nanoseconds: 60_000_000_000)
-                            await send(.inactivityTick)
-                        }
+                    if case .failed = state.sessionWindowTransitionState {
+                        return .none
                     }
-                    .cancellable(id: CancelID.inactivityMonitor, cancelInFlight: true)
+
+                    return .merge(
+                        .run { send in
+                            while !Task.isCancelled {
+                                try await Task.sleep(nanoseconds: 60_000_000_000)
+                                await send(.inactivityTick)
+                            }
+                        }
+                        .cancellable(id: CancelID.inactivityMonitor, cancelInFlight: true),
+                        .run { [sessionStartedAt = session.startedAt] send in
+                            let startedPeriod = FocusDefaults.sessionPeriod(for: sessionStartedAt)
+                            let currentPeriod = FocusDefaults.sessionPeriod(for: now)
+                            if currentPeriod != startedPeriod {
+                                await send(.sessionWindowBoundaryReached)
+                                return
+                            }
+
+                            while !Task.isCancelled {
+                                let currentTime = now
+                                let nextBoundary = FocusDefaults.nextSessionBoundary(after: currentTime)
+                                let seconds = max(nextBoundary.timeIntervalSince(currentTime), 0)
+                                try await clock.sleep(for: .seconds(seconds))
+                                await send(.sessionWindowBoundaryReached)
+                                return
+                            }
+                        }
+                        .cancellable(id: CancelID.sessionWindowMonitor, cancelInFlight: true)
+                    )
                 }
 
                 state.endSessionDraft = nil
@@ -813,7 +959,10 @@ struct AppFeature {
                 state.selectedTaskCategoryFilterIDs.removeAll()
                 state.selectedTaskPriorityFilters.removeAll()
 
-                return .cancel(id: CancelID.inactivityMonitor)
+                return .merge(
+                    .cancel(id: CancelID.inactivityMonitor),
+                    .cancel(id: CancelID.sessionWindowMonitor)
+                )
 
             case let .loadCategoriesResponse(categories):
                 state.categories = categories.sorted(by: {
@@ -933,4 +1082,8 @@ private func nextPriority(after priority: NotePriority) -> NotePriority {
     }
 
     return priorities[nextIndex]
+}
+
+private enum SessionWindowTransitionError: Error {
+    case endSessionFailed
 }

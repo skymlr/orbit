@@ -75,7 +75,19 @@ struct WorkspaceView: View {
                 .transition(.orbitToastNotification)
             }
         }
+        .overlay {
+            if let transitionState = store.sessionWindowTransitionState {
+                SessionWindowTransitionOverlay(
+                    transitionState: transitionState,
+                    onRetry: {
+                        store.send(.sessionWindowTransitionRetryTapped)
+                    }
+                )
+                .transition(.opacity)
+            }
+        }
         .animation(.easeInOut(duration: 0.24), value: store.toast?.id)
+        .animation(.easeInOut(duration: 0.18), value: store.sessionWindowTransitionState)
     }
 
     @ViewBuilder
@@ -433,6 +445,60 @@ struct WorkspaceView: View {
     }
 }
 
+private struct SessionWindowTransitionOverlay: View {
+    let transitionState: AppFeature.State.SessionWindowTransitionState
+    let onRetry: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.40)
+                .ignoresSafeArea()
+
+            VStack(spacing: 12) {
+                switch transitionState {
+                case let .inProgress(from, to):
+                    ProgressView()
+                        .controlSize(.large)
+                    Text("Ending \(from.title) Session and starting \(to.title) Session...")
+                        .font(.subheadline.weight(.semibold))
+                        .multilineTextAlignment(.center)
+
+                case let .failed(from, to, message):
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.orange)
+                    Text("Could not start \(to.title) Session")
+                        .font(.headline)
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(4)
+                        .frame(maxWidth: 360)
+                    Button("Retry") {
+                        onRetry()
+                    }
+                    .buttonStyle(.orbitPrimary)
+                    .help("Retry ending \(from.title) Session and starting \(to.title) Session")
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: 460)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.regularMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+            )
+            .padding(24)
+        }
+        .allowsHitTesting(true)
+        .accessibilityElement(children: .contain)
+    }
+}
+
 private struct CategoryRow: View {
     let category: SessionCategoryRecord
     let onRename: (String, String) -> Void
@@ -553,9 +619,31 @@ private struct SessionRow: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
 
+                Text("•")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
                 Text("Started \(session.startedAt, style: .time)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                if let endedAt = session.endedAt {
+                    Text("•")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Text("Ended \(endedAt, style: .time)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Text("•")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Text("Elapsed \(elapsedText(startedAt: session.startedAt, endedAt: endedAt))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 Spacer()
 
@@ -587,6 +675,15 @@ private struct SessionRow: View {
         } else {
             isRenaming = true
         }
+    }
+
+    private func elapsedText(startedAt: Date, endedAt: Date) -> String {
+        let seconds = max(endedAt.timeIntervalSince(startedAt), 0)
+        let formatter = DateComponentsFormatter()
+        formatter.unitsStyle = .abbreviated
+        formatter.allowedUnits = seconds >= 3_600 ? [.hour, .minute] : [.minute, .second]
+        formatter.zeroFormattingBehavior = [.dropLeading]
+        return formatter.string(from: seconds) ?? "0m"
     }
 }
 
@@ -629,6 +726,14 @@ private struct ActiveSessionHero: View {
                     .foregroundStyle(.secondary)
 
                 Text("Elapsed \(session.startedAt, style: .timer)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text("•")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text("Ends at \(FocusDefaults.nextSessionBoundary(after: session.startedAt), style: .time)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
