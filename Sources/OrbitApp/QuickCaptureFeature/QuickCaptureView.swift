@@ -147,6 +147,9 @@ struct QuickCaptureView: View {
         .onChange(of: store.captureDraft.editingTaskID) { _, _ in
             requestEditorFocus()
         }
+        .onChange(of: store.captureWindowFocusRequest) { _, _ in
+            requestEditorFocus()
+        }
         .onChange(of: editorState.isPreviewVisible) { _, newValue in
             if !newValue {
                 requestEditorFocus()

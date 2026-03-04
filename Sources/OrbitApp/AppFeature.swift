@@ -77,6 +77,7 @@ struct AppFeature {
 
         var windowDestinations: Set<WindowDestination> = []
         var workspaceWindowFocusRequest = 0
+        var captureWindowFocusRequest = 0
         var sessionBootstrapState: SessionBootstrapState = .idle
         var hasLaunched = false
 
@@ -266,17 +267,15 @@ struct AppFeature {
             case .captureTapped:
                 if state.activeSession != nil {
                     state.windowDestinations.insert(.captureWindow)
+                    state.captureWindowFocusRequest &+= 1
                     return .none
                 }
-                state.windowDestinations.insert(.workspaceWindow)
-                state.windowDestinations.insert(.captureWindow)
 
                 return .run { send in
                     do {
                         _ = try await focusRepository.startSession(now)
                         let active = try await focusRepository.loadActiveSession()
                         await send(.loadActiveSessionResponse(active))
-                        await send(.openWorkspaceTapped)
                         await send(.captureTapped)
                         await send(.settingsRefreshTapped)
                         if active == nil {
@@ -356,6 +355,7 @@ struct AppFeature {
                     selectedCategoryIDs: persistedCaptureCategoryIDs(state)
                 )
                 state.windowDestinations.insert(.captureWindow)
+                state.captureWindowFocusRequest &+= 1
                 return .none
 
             case let .sessionTaskEditTapped(taskID):
@@ -369,6 +369,7 @@ struct AppFeature {
                 )
                 state.captureDraft.editingTaskID = taskID
                 state.windowDestinations.insert(.captureWindow)
+                state.captureWindowFocusRequest &+= 1
                 return .none
 
             case let .sessionRenameTapped(name):

@@ -25,7 +25,15 @@ final class QuickCapturePanelController {
         }
         position(panel: panel)
         NSApplication.shared.activate(ignoringOtherApps: true)
-        panel.makeKeyAndOrderFront(nil)
+        promotePanelToFront(panel)
+        DispatchQueue.main.async { [weak panel] in
+            guard let panel else { return }
+            self.promotePanelToFront(panel)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak panel] in
+            guard let panel else { return }
+            self.promotePanelToFront(panel)
+        }
     }
 
     func dismiss() {
@@ -46,9 +54,12 @@ final class QuickCapturePanelController {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.level = .floating
+        panel.level = .statusBar
+        panel.isFloatingPanel = true
+        panel.becomesKeyOnlyIfNeeded = false
         panel.isMovableByWindowBackground = true
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
+        panel.hidesOnDeactivate = false
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.onEscape = {
             store.send(.captureWindowClosed)
         }
@@ -73,7 +84,9 @@ final class QuickCapturePanelController {
     }
 
     private func position(panel: NSPanel) {
-        let targetScreen = NSApplication.shared.keyWindow?.screen
+        let mouseLocation = NSEvent.mouseLocation
+        let targetScreen = NSScreen.screens.first(where: { NSMouseInRect(mouseLocation, $0.frame, false) })
+            ?? NSApplication.shared.keyWindow?.screen
             ?? NSApplication.shared.mainWindow?.screen
             ?? NSScreen.main
         let frame = targetScreen?.visibleFrame ?? NSScreen.screens.first?.visibleFrame ?? .zero
@@ -81,6 +94,12 @@ final class QuickCapturePanelController {
         let x = frame.midX - (Layout.width / 2)
         let y = frame.minY + Layout.bottomInset
         panel.setFrame(NSRect(x: x, y: y, width: Layout.width, height: Layout.height), display: true)
+    }
+
+    private func promotePanelToFront(_ panel: NSPanel) {
+        panel.orderFrontRegardless()
+        panel.makeKeyAndOrderFront(nil)
+        panel.makeMain()
     }
 }
 

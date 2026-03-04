@@ -36,6 +36,7 @@ struct AppFeatureTests {
             $0.captureDraft.selectedCategoryIDs = [projectACategoryID, projectBCategoryID]
             $0.captureDraft.editingTaskID = task.id
             $0.windowDestinations.insert(.captureWindow)
+            $0.captureWindowFocusRequest = 1
         }
     }
 
@@ -57,6 +58,109 @@ struct AppFeatureTests {
                 selectedCategoryIDs: [projectBCategoryID]
             )
             $0.windowDestinations.insert(.captureWindow)
+            $0.captureWindowFocusRequest = 1
+        }
+    }
+
+    @Test
+    func captureTappedWithActiveSessionOpensCaptureWithoutWorkspaceFocus() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        }
+
+        await store.send(.captureTapped) {
+            $0.windowDestinations.insert(.captureWindow)
+            $0.captureWindowFocusRequest = 1
+        }
+
+        #expect(store.state.windowDestinations.contains(.workspaceWindow) == false)
+        #expect(store.state.workspaceWindowFocusRequest == 0)
+    }
+
+    @Test
+    func captureTappedWhileCaptureOpenRequestsRefocus() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+        initial.windowDestinations.insert(.captureWindow)
+        initial.captureWindowFocusRequest = 2
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        }
+
+        await store.send(.captureTapped) {
+            $0.captureWindowFocusRequest = 3
+        }
+
+        #expect(store.state.windowDestinations.contains(.captureWindow))
+        #expect(store.state.workspaceWindowFocusRequest == 0)
+    }
+
+    @Test
+    func captureTappedWithoutActiveSessionStartsSessionAndOpensCaptureOnly() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+        let task = active.tasks[0]
+
+        var initial = AppFeature.State()
+        initial.categories = sampleCategories
+
+        var repository = FocusRepository.testValue
+        repository.startSession = { _ in active }
+        repository.loadActiveSession = { active }
+        repository.listSessions = { [] }
+        repository.listCategories = { sampleCategories }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.focusRepository = repository
+            $0.date.now = Date(timeIntervalSince1970: 1_700_000_000)
+        }
+
+        await store.send(.captureTapped)
+        await store.receive(\.loadActiveSessionResponse) {
+            $0.activeSession = active
+            $0.taskDrafts = [
+                AppFeature.State.TaskDraft(
+                    id: task.id,
+                    categories: task.categories,
+                    markdown: task.markdown,
+                    priority: task.priority,
+                    completedAt: task.completedAt,
+                    carriedFromTaskID: task.carriedFromTaskID,
+                    carriedFromSessionName: task.carriedFromSessionName,
+                    createdAt: task.createdAt
+                )
+            ]
+            $0.captureDraft.selectedCategoryIDs = [projectACategoryID]
+        }
+        await store.receive(\.captureTapped) {
+            $0.windowDestinations.insert(.captureWindow)
+            $0.captureWindowFocusRequest = 1
+        }
+        await store.receive(\.settingsRefreshTapped)
+        await store.receive(\.settingsDataResponse) {
+            $0.settings.categories = sampleCategories
+        }
+
+        #expect(store.state.windowDestinations.contains(.captureWindow))
+        #expect(store.state.windowDestinations.contains(.workspaceWindow) == false)
+        #expect(store.state.workspaceWindowFocusRequest == 0)
+
+        await store.send(.loadActiveSessionResponse(nil)) {
+            $0.activeSession = nil
+            $0.taskDrafts = []
+            $0.endSessionDraft = nil
+            $0.windowDestinations = []
+            $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
+            $0.selectedTaskCategoryFilter = .all
         }
     }
 

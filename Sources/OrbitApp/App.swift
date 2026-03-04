@@ -121,6 +121,12 @@ private struct WindowStateCoordinator: View {
                 openWindow(id: OrbitWindowID.workspace)
                 bringWorkspaceWindowToFront()
             }
+            .onChange(of: store.captureWindowFocusRequest) { _, _ in
+                guard store.windowDestinations.contains(.captureWindow) else {
+                    return
+                }
+                QuickCapturePanelController.shared.present(store: store)
+            }
     }
 
     private func syncWindows(from oldValue: Set<AppFeature.WindowDestination>, to newValue: Set<AppFeature.WindowDestination>) {
