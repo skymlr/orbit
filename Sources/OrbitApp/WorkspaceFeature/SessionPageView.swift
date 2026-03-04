@@ -7,9 +7,15 @@ struct SessionPageView: View {
         static let contentMaxWidth: CGFloat = 700
     }
 
+    private enum TaskNavigationDirection {
+        case previous
+        case next
+    }
+
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
     @State private var isEndSessionConfirmationPending = false
     @State private var endSessionConfirmationToken = 0
+    @State private var focusedTaskID: UUID?
 
     var body: some View {
         Group {
@@ -51,6 +57,13 @@ struct SessionPageView: View {
         .task(id: store.activeSession?.id) {
             isEndSessionConfirmationPending = false
             endSessionConfirmationToken += 1
+            focusedTaskID = nil
+        }
+        .onChange(of: sortedFilteredTaskIDs) { _, newTaskIDs in
+            syncFocusedTask(with: newTaskIDs)
+        }
+        .background {
+            keyboardShortcutBindings
         }
         .background {
             OrbitSpaceBackground()
@@ -159,15 +172,21 @@ struct SessionPageView: View {
             emptyState
                 .transition(.orbitMicro)
         } else {
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    ForEach(sortedFilteredTasks) { draft in
-                        taskRow(for: draft)
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(sortedFilteredTasks) { draft in
+                            taskRow(for: draft)
+                                .id(draft.id)
+                        }
                     }
+                    .padding(8)
                 }
-                .padding(.trailing, 8)
+                .scrollIndicators(.visible)
+                .onChange(of: focusedTaskID) { _, _ in
+                    scrollFocusedTaskIfNeeded(using: scrollProxy)
+                }
             }
-            .scrollIndicators(.visible)
             .transition(.orbitMicro)
         }
     }
@@ -193,24 +212,42 @@ struct SessionPageView: View {
     }
 
     private func taskRow(for draft: AppFeature.State.TaskDraft) -> some View {
-        TaskRow(
-            draft: draft,
-            onEdit: {
-                store.send(.sessionTaskEditTapped(draft.id))
-            },
-            onPrioritySet: { priority in
-                store.send(.sessionTaskPrioritySetTapped(draft.id, priority))
-            },
-            onToggleCompletion: {
-                store.send(.sessionTaskCompletionToggled(draft.id, !draft.isCompleted))
-            },
-            onToggleChecklistLine: { lineIndex in
-                store.send(.sessionTaskChecklistLineToggled(draft.id, lineIndex))
-            },
-            onDelete: {
-                store.send(.sessionTaskDeleteTapped(draft.id))
-            }
-        )
+        ZStack(alignment: .topTrailing) {
+            TaskRow(
+                draft: draft,
+                isKeyboardHighlighted: draft.id == focusedTaskID,
+                onKeyboardPopoverDismissed: {
+                    DispatchQueue.main.async {
+                        if focusedTaskID == draft.id {
+                            focusedTaskID = nil
+                        }
+                    }
+                },
+                onPrioritySet: { priority in
+                    store.send(.sessionTaskPrioritySetTapped(draft.id, priority))
+                },
+                onToggleCompletion: {
+                    store.send(.sessionTaskCompletionToggled(draft.id, !draft.isCompleted))
+                },
+                onToggleChecklistLine: { lineIndex in
+                    store.send(.sessionTaskChecklistLineToggled(draft.id, lineIndex))
+                }
+            )
+            .accessibilityAddTraits(draft.id == focusedTaskID ? .isSelected : [])
+            .accessibilityHint("Press Up or Down Arrow to move between tasks. Press Return to edit. Press Space to toggle completion. Press Escape to clear task focus.")
+
+            TaskRowFloatingTools(
+                draft: draft,
+                onEdit: {
+                    store.send(.sessionTaskEditTapped(draft.id))
+                },
+                onDelete: {
+                    store.send(.sessionTaskDeleteTapped(draft.id))
+                }
+            )
+            .padding(.top, 10)
+            .padding(.trailing, 8)
+        }
     }
 
     private var emptyStateTitle: String {
@@ -240,6 +277,66 @@ struct SessionPageView: View {
         sortedTasks(store.filteredTaskDrafts)
     }
 
+    private var sortedFilteredTaskIDs: [UUID] {
+        sortedFilteredTasks.map(\.id)
+    }
+
+    private var keyboardShortcutBindings: some View {
+        HStack(spacing: 0) {
+            Button(action: clearFocusedTaskTriggered) {
+                EmptyView()
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.escape, modifiers: [])
+            .disabled(focusedTaskID == nil)
+
+            Button(action: focusNextTaskTriggered) {
+                EmptyView()
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.tab, modifiers: [])
+            .disabled(sortedFilteredTaskIDs.isEmpty)
+
+            Button(action: focusPreviousTaskTriggered) {
+                EmptyView()
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.tab, modifiers: [.shift])
+            .disabled(sortedFilteredTaskIDs.isEmpty)
+
+            Button(action: focusPreviousTaskTriggered) {
+                EmptyView()
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.upArrow, modifiers: [])
+            .disabled(focusedTaskID == nil)
+
+            Button(action: focusNextTaskTriggered) {
+                EmptyView()
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.downArrow, modifiers: [])
+            .disabled(focusedTaskID == nil)
+
+            Button(action: focusedTaskEditTriggered) {
+                EmptyView()
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.return, modifiers: [])
+            .disabled(focusedTaskID == nil)
+
+            Button(action: focusedTaskCompletionToggleTriggered) {
+                EmptyView()
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.space, modifiers: [])
+            .disabled(focusedTaskID == nil)
+        }
+        .frame(width: 0, height: 0)
+        .clipped()
+        .opacity(0.001)
+    }
+
     private func sortedTasks(_ tasks: [AppFeature.State.TaskDraft]) -> [AppFeature.State.TaskDraft] {
         tasks.sorted { lhs, rhs in
             if lhs.isCompleted != rhs.isCompleted {
@@ -264,6 +361,75 @@ struct SessionPageView: View {
             return 2
         case .none:
             return 3
+        }
+    }
+
+    private func focusedTaskEditTriggered() {
+        guard let focusedTaskID else { return }
+        store.send(.sessionTaskEditTapped(focusedTaskID))
+    }
+
+    private func clearFocusedTaskTriggered() {
+        focusedTaskID = nil
+    }
+
+    private func focusPreviousTaskTriggered() {
+        moveTaskFocus(.previous)
+    }
+
+    private func focusNextTaskTriggered() {
+        moveTaskFocus(.next)
+    }
+
+    private func focusedTaskCompletionToggleTriggered() {
+        guard let focusedTask = focusedTaskDraft else { return }
+        store.send(.sessionTaskCompletionToggled(focusedTask.id, !focusedTask.isCompleted))
+    }
+
+    private func moveTaskFocus(_ direction: TaskNavigationDirection) {
+        let taskIDs = sortedFilteredTaskIDs
+        guard !taskIDs.isEmpty else {
+            focusedTaskID = nil
+            return
+        }
+
+        guard let focusedTaskID,
+              let currentIndex = taskIDs.firstIndex(of: focusedTaskID)
+        else {
+            self.focusedTaskID = direction == .next ? taskIDs.first : taskIDs.last
+            return
+        }
+
+        let nextIndex: Int
+        switch direction {
+        case .previous:
+            nextIndex = (currentIndex - 1 + taskIDs.count) % taskIDs.count
+        case .next:
+            nextIndex = (currentIndex + 1) % taskIDs.count
+        }
+        self.focusedTaskID = taskIDs[nextIndex]
+    }
+
+    private func syncFocusedTask(with taskIDs: [UUID]) {
+        guard !taskIDs.isEmpty else {
+            focusedTaskID = nil
+            return
+        }
+        guard let focusedTaskID else { return }
+        if !taskIDs.contains(focusedTaskID) {
+            self.focusedTaskID = nil
+        }
+    }
+
+    private var focusedTaskDraft: AppFeature.State.TaskDraft? {
+        guard let focusedTaskID else { return nil }
+        return sortedFilteredTasks.first(where: { $0.id == focusedTaskID })
+    }
+
+    private func scrollFocusedTaskIfNeeded(using scrollProxy: ScrollViewProxy) {
+        guard let focusedTaskID else { return }
+        withAnimation(.easeInOut(duration: 0.16)) {
+            scrollProxy.scrollTo(focusedTaskID, anchor: .center)
         }
     }
 

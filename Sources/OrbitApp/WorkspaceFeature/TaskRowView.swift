@@ -3,34 +3,32 @@ import SwiftUI
 
 struct TaskRow: View {
     let draft: AppFeature.State.TaskDraft
-    let onEdit: () -> Void
+    let isKeyboardHighlighted: Bool
+    let onKeyboardPopoverDismissed: (() -> Void)?
     let onPrioritySet: (NotePriority) -> Void
     let onToggleCompletion: () -> Void
     let onToggleChecklistLine: (Int) -> Void
-    let onDelete: () -> Void
 
-    @State private var isDeleteConfirmationPending = false
-    @State private var deleteConfirmationToken = 0
-    @State private var isTaskInfoPopoverPresented = false
     @State private var isPriorityPopoverPresented = false
+    @State private var isKeyboardShortcutMenuPresented = false
     @State private var completionAnimationToken = 0
     @State private var completionBurstProgress: CGFloat = 0
     @State private var isCompletionBurstVisible = false
 
     init(
         draft: AppFeature.State.TaskDraft,
-        onEdit: @escaping () -> Void,
+        isKeyboardHighlighted: Bool = false,
+        onKeyboardPopoverDismissed: (() -> Void)? = nil,
         onPrioritySet: @escaping (NotePriority) -> Void,
         onToggleCompletion: @escaping () -> Void,
-        onToggleChecklistLine: @escaping (Int) -> Void,
-        onDelete: @escaping () -> Void
+        onToggleChecklistLine: @escaping (Int) -> Void
     ) {
         self.draft = draft
-        self.onEdit = onEdit
+        self.isKeyboardHighlighted = isKeyboardHighlighted
+        self.onKeyboardPopoverDismissed = onKeyboardPopoverDismissed
         self.onPrioritySet = onPrioritySet
         self.onToggleCompletion = onToggleCompletion
         self.onToggleChecklistLine = onToggleChecklistLine
-        self.onDelete = onDelete
     }
 
     private var isCompleted: Bool {
@@ -53,9 +51,8 @@ struct TaskRow: View {
 
                 taskMetadataSection
             }
+            .padding(.trailing, 46)
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            taskTools
         }
         .padding(12)
         .background(
@@ -79,11 +76,41 @@ struct TaskRow: View {
                 .accessibilityHidden(true)
         }
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .scaleEffect(isKeyboardHighlighted ? 1.015 : 1)
+        .shadow(
+            color: TaskRowPalette.heroCyan.opacity(isKeyboardHighlighted ? 0.17 : 0),
+            radius: isKeyboardHighlighted ? 10 : 0,
+            x: 0,
+            y: 0
+        )
+        .shadow(
+            color: TaskRowPalette.starlight.opacity(isKeyboardHighlighted ? 0.08 : 0),
+            radius: isKeyboardHighlighted ? 16 : 0,
+            x: 0,
+            y: 0
+        )
+        .animation(.easeInOut(duration: 0.16), value: isKeyboardHighlighted)
         .onChange(of: isCompleted) { oldValue, newValue in
             handleCompletionStateChange(from: oldValue, to: newValue)
         }
+        .onChange(of: isKeyboardHighlighted) { _, newValue in
+            isKeyboardShortcutMenuPresented = newValue
+        }
+        .onChange(of: isKeyboardShortcutMenuPresented) { _, newValue in
+            if !newValue && isKeyboardHighlighted {
+                onKeyboardPopoverDismissed?()
+            }
+        }
         .task(id: draft.id) {
             resetTransientUIState()
+            isKeyboardShortcutMenuPresented = isKeyboardHighlighted
+        }
+        .popover(
+            isPresented: $isKeyboardShortcutMenuPresented,
+            attachmentAnchor: .rect(.bounds),
+            arrowEdge: .trailing
+        ) {
+            TaskRowKeyboardShortcutMenu()
         }
     }
 
@@ -294,95 +321,6 @@ struct TaskRow: View {
         }
     }
 
-    private var taskTools: some View {
-        VStack(alignment: .trailing, spacing: 8) {
-            HStack(spacing: 10) {
-                infoAction
-                editAction
-                deleteAction
-            }
-
-            if isCompleted {
-                Text("Done")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(TaskRowPalette.completionGreen)
-            }
-        }
-        .padding(.leading, 10)
-        .fixedSize(horizontal: true, vertical: false)
-    }
-
-    private var infoAction: some View {
-        Button {
-            isTaskInfoPopoverPresented.toggle()
-        } label: {
-            Image(systemName: "info.circle")
-                .font(.subheadline.weight(.semibold))
-        }
-        .buttonStyle(.plain)
-        .popover(
-            isPresented: $isTaskInfoPopoverPresented,
-            attachmentAnchor: .rect(.bounds),
-            arrowEdge: .top
-        ) {
-            taskInfoPopover
-        }
-        .orbitInteractiveControl(
-            scale: 1.06,
-            lift: -1.0,
-            shadowColor: TaskRowPalette.heroCyan.opacity(0.24),
-            shadowRadius: 6
-        )
-        .foregroundStyle(.secondary)
-        .accessibilityLabel("Task information")
-    }
-
-    private var editAction: some View {
-        Button {
-            onEdit()
-        } label: {
-            Image(systemName: "pencil")
-                .font(.subheadline.weight(.semibold))
-        }
-        .buttonStyle(.plain)
-        .orbitInteractiveControl(
-            scale: 1.06,
-            lift: -1.0,
-            shadowColor: TaskRowPalette.heroCyan.opacity(0.18),
-            shadowRadius: 6
-        )
-        .foregroundStyle(.secondary)
-        .accessibilityLabel("Edit task")
-        .help("Edit task")
-    }
-
-    @ViewBuilder
-    private var deleteAction: some View {
-        if isDeleteConfirmationPending {
-            Button("Confirm Deletion", role: .destructive) {
-                onDelete()
-            }
-            .buttonStyle(.orbitDestructive)
-        } else {
-            Button {
-                isDeleteConfirmationPending = true
-                scheduleDeleteConfirmationReset()
-            } label: {
-                Image(systemName: "trash")
-                    .font(.subheadline.weight(.semibold))
-            }
-            .buttonStyle(.plain)
-            .orbitInteractiveControl(
-                scale: 1.06,
-                lift: -1.0,
-                shadowColor: Color.red.opacity(0.20),
-                shadowRadius: 6
-            )
-            .foregroundStyle(.secondary)
-            .accessibilityLabel("Delete task")
-        }
-    }
-
     private func taskBackgroundColor(isCompleted: Bool) -> Color {
         if isCompleted {
             return TaskRowPalette.heroNavy.opacity(0.40)
@@ -449,58 +387,10 @@ struct TaskRow: View {
         }
     }
 
-    private var taskInfoPopover: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Task Information")
-                .font(.subheadline.weight(.semibold))
-
-            Text("Created: \(draft.createdAt.formatted(date: .abbreviated, time: .shortened))")
-                .font(.caption)
-
-            if draft.carriedFromTaskID != nil {
-                Text("Carried from: \(draft.carriedFromSessionName ?? "Previous session")")
-                    .font(.caption)
-            }
-        }
-        .foregroundStyle(.white.opacity(0.92))
-        .frame(minWidth: 220, alignment: .leading)
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            TaskRowPalette.heroNavy.opacity(0.95),
-                            TaskRowPalette.heroCyan.opacity(0.95),
-                            TaskRowPalette.heroAmber.opacity(0.82),
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(TaskRowPalette.heroCyan.opacity(0.48), lineWidth: 1)
-        )
-    }
-
     private func resetTransientUIState() {
-        isDeleteConfirmationPending = false
-        isTaskInfoPopoverPresented = false
         isPriorityPopoverPresented = false
         isCompletionBurstVisible = false
         completionBurstProgress = 0
-        deleteConfirmationToken += 1
-    }
-
-    private func scheduleDeleteConfirmationReset() {
-        deleteConfirmationToken += 1
-        let token = deleteConfirmationToken
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            guard token == deleteConfirmationToken, isDeleteConfirmationPending else { return }
-            isDeleteConfirmationPending = false
-        }
     }
 
     private func handleCompletionStateChange(from oldValue: Bool, to newValue: Bool) {
@@ -583,6 +473,167 @@ private enum TaskRowPalette {
         heroCyan,
         heroAmber,
     ]
+}
+
+struct TaskRowFloatingTools: View {
+    let draft: AppFeature.State.TaskDraft
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    @State private var isDeleteConfirmationPending = false
+    @State private var deleteConfirmationToken = 0
+    @State private var isTaskInfoPopoverPresented = false
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 8) {
+            infoAction
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private var infoAction: some View {
+        Button {
+            if !isTaskInfoPopoverPresented {
+                isDeleteConfirmationPending = false
+            }
+            isTaskInfoPopoverPresented.toggle()
+        } label: {
+            Image(systemName: "info.circle")
+                .font(.body.weight(.semibold))
+        }
+        .buttonStyle(.plain)
+        .popover(
+            isPresented: $isTaskInfoPopoverPresented,
+            attachmentAnchor: .rect(.bounds),
+            arrowEdge: .top
+        ) {
+            taskInfoPopover
+        }
+        .orbitInteractiveControl(
+            scale: 1.06,
+            lift: -1.0,
+            shadowColor: TaskRowPalette.heroCyan.opacity(0.24),
+            shadowRadius: 6
+        )
+        .foregroundStyle(.secondary)
+        .accessibilityLabel("Task information")
+    }
+
+    private var taskInfoPopover: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Task Information")
+                .font(.subheadline.weight(.semibold))
+
+            Text("Created: \(draft.createdAt.formatted(date: .abbreviated, time: .shortened))")
+                .font(.caption)
+
+            if draft.carriedFromTaskID != nil {
+                Text("Carried from: \(draft.carriedFromSessionName ?? "Previous session")")
+                    .font(.caption)
+            }
+
+            Divider()
+                .overlay(Color.white.opacity(0.25))
+
+            VStack(alignment: .leading, spacing: 8) {
+                Button {
+                    isTaskInfoPopoverPresented = false
+                    onEdit()
+                } label: {
+                    Label("Edit Task", systemImage: "pencil")
+                        .labelStyle(.titleAndIcon)
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+
+                if isDeleteConfirmationPending {
+                    Button("Confirm Deletion", role: .destructive) {
+                        isTaskInfoPopoverPresented = false
+                        onDelete()
+                    }
+                    .buttonStyle(.orbitDestructive)
+                } else {
+                    Button(role: .destructive) {
+                        isDeleteConfirmationPending = true
+                        scheduleDeleteConfirmationReset()
+                    } label: {
+                        Label("Delete Task", systemImage: "trash")
+                            .labelStyle(.titleAndIcon)
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .foregroundStyle(.white.opacity(0.92))
+        .frame(minWidth: 220, alignment: .leading)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            TaskRowPalette.heroNavy.opacity(0.95),
+                            TaskRowPalette.heroCyan.opacity(0.95),
+                            TaskRowPalette.heroAmber.opacity(0.82),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(TaskRowPalette.heroCyan.opacity(0.48), lineWidth: 1)
+        )
+    }
+
+    private func scheduleDeleteConfirmationReset() {
+        deleteConfirmationToken += 1
+        let token = deleteConfirmationToken
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            guard token == deleteConfirmationToken, isDeleteConfirmationPending else { return }
+            isDeleteConfirmationPending = false
+        }
+    }
+}
+
+private struct TaskRowKeyboardShortcutMenu: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Keyboard")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+
+            keyboardShortcutRow(key: "Return", action: "Edit task")
+            keyboardShortcutRow(key: "Space", action: "Mark complete")
+        }
+        .padding(.vertical, 7)
+        .padding(.horizontal, 9)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private func keyboardShortcutRow(key: String, action: String) -> some View {
+        HStack(spacing: 8) {
+            Text(key)
+                .font(.caption2.monospaced().weight(.semibold))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(Color.white.opacity(0.08))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .stroke(Color.white.opacity(0.20), lineWidth: 1)
+                )
+                .foregroundStyle(.secondary)
+
+            Text(action)
+                .font(.caption2.weight(.semibold))
+        }
+    }
 }
 
 struct MarkdownRenderedTaskView: View {
