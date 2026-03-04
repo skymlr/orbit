@@ -259,6 +259,7 @@ struct TaskRow: View {
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .fill(
@@ -276,6 +277,7 @@ struct TaskRow: View {
                                 lineWidth: draft.priority == priority ? 1 : 0.6
                             )
                     )
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Set priority to \(priority.title)")

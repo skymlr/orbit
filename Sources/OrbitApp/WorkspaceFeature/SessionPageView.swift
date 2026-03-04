@@ -363,7 +363,9 @@ private struct SessionHeader: View {
 
                 Spacer()
 
-                Text("\(session.tasks.count) task\(session.tasks.count == 1 ? "" : "s")")
+                Text("\(openTaskCount) open")
+                Text("•")
+                Text("\(completedTaskCount) completed")
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
@@ -381,6 +383,18 @@ private struct SessionHeader: View {
 
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var completedTaskCount: Int {
+        session.tasks.reduce(into: 0) { count, task in
+            if task.completedAt != nil {
+                count += 1
+            }
+        }
+    }
+
+    private var openTaskCount: Int {
+        max(0, session.tasks.count - completedTaskCount)
     }
 
     private func beginRenaming() {

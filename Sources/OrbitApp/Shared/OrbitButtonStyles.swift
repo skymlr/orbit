@@ -194,19 +194,21 @@ struct OrbitPrimaryButtonStyle: ButtonStyle {
 }
 
 struct OrbitSecondaryButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.callout.weight(.semibold))
-            .foregroundStyle(.primary)
+            .foregroundStyle(secondaryTextColor)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                    .fill(secondaryBackgroundColor)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.cyan.opacity(0.38), lineWidth: 1)
+                    .stroke(secondaryStrokeColor, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.9 : 1)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
@@ -214,27 +216,85 @@ struct OrbitSecondaryButtonStyle: ButtonStyle {
             .orbitInteractiveControl(
                 scale: 1.012,
                 lift: -1.2,
-                shadowColor: Color.cyan.opacity(0.16),
+                shadowColor: secondaryHoverShadowColor,
                 shadowRadius: 8
             )
+    }
+
+    private var secondaryTextColor: Color {
+        colorScheme == .dark
+            ? .primary
+            : Color(red: 0.05, green: 0.20, blue: 0.32)
+    }
+
+    private var secondaryBackgroundColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.08)
+            : Color(red: 0.90, green: 0.95, blue: 0.99)
+    }
+
+    private var secondaryStrokeColor: Color {
+        colorScheme == .dark
+            ? Color.cyan.opacity(0.38)
+            : Color(red: 0.08, green: 0.43, blue: 0.62).opacity(0.52)
+    }
+
+    private var secondaryHoverShadowColor: Color {
+        colorScheme == .dark
+            ? Color.cyan.opacity(0.16)
+            : Color.cyan.opacity(0.22)
     }
 }
 
 struct OrbitQuietButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
+            .foregroundStyle(quietTextColor)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                Capsule()
+                    .fill(quietBackgroundColor)
+            )
+            .overlay(
+                Capsule()
+                    .stroke(quietStrokeColor, lineWidth: 1)
+            )
             .opacity(configuration.isPressed ? 0.7 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
             .orbitInteractiveControl(
                 scale: 1.01,
                 lift: -1.0,
-                shadowColor: Color.white.opacity(0.14),
+                shadowColor: quietHoverShadowColor,
                 shadowRadius: 6
             )
+    }
+
+    private var quietTextColor: Color {
+        colorScheme == .dark
+            ? .secondary
+            : Color(red: 0.10, green: 0.30, blue: 0.43)
+    }
+
+    private var quietBackgroundColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.05)
+            : Color(red: 0.92, green: 0.96, blue: 1.00)
+    }
+
+    private var quietStrokeColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.18)
+            : Color(red: 0.11, green: 0.46, blue: 0.65).opacity(0.40)
+    }
+
+    private var quietHoverShadowColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.14)
+            : Color.cyan.opacity(0.16)
     }
 }
 
@@ -318,3 +378,60 @@ extension ButtonStyle where Self == OrbitQuietButtonStyle {
 extension ButtonStyle where Self == OrbitDestructiveButtonStyle {
     static var orbitDestructive: OrbitDestructiveButtonStyle { OrbitDestructiveButtonStyle() }
 }
+
+#if DEBUG
+private struct OrbitButtonStylesPreviewGallery: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Button {
+            } label: {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Begin Focus Session")
+                        .font(.headline.weight(.semibold))
+                    Text("Track tasks, priorities, and progress")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .buttonStyle(.orbitHero)
+
+            HStack(spacing: 10) {
+                Button("Add Task") {
+                }
+                .buttonStyle(.orbitPrimary)
+
+                Button("Rename Session") {
+                }
+                .buttonStyle(.orbitSecondary)
+            }
+
+            HStack(spacing: 12) {
+                Button("Skip") {
+                }
+                .buttonStyle(.orbitQuiet)
+
+                Button("Delete Session") {
+                }
+                .buttonStyle(.orbitDestructive)
+            }
+        }
+        .padding(20)
+        .frame(width: 430, alignment: .leading)
+        .background {
+            OrbitSpaceBackground()
+        }
+    }
+}
+
+struct OrbitButtonStyles_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            OrbitButtonStylesPreviewGallery()
+                .preferredColorScheme(.dark)
+
+            OrbitButtonStylesPreviewGallery()
+                .preferredColorScheme(.light)
+        }
+    }
+}
+#endif

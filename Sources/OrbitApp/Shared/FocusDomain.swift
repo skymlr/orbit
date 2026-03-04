@@ -39,6 +39,23 @@ enum SessionEndReason: String, Codable, Equatable, Sendable {
     case appClosed
 }
 
+enum OrbitThemeMode: String, CaseIterable, Codable, Equatable, Hashable, Sendable {
+    case auto
+    case light
+    case dark
+
+    var title: String {
+        switch self {
+        case .auto:
+            return "Auto"
+        case .light:
+            return "Light"
+        case .dark:
+            return "Dark"
+        }
+    }
+}
+
 enum HotkeyKind: String, Equatable, Sendable {
     case startSession
     case capture
@@ -48,11 +65,13 @@ struct HotkeySettings: Equatable, Sendable {
     var startShortcut: String
     var captureShortcut: String
     var captureNextPriorityShortcut: String
+    var themeMode: OrbitThemeMode = .auto
 
     static let `default` = HotkeySettings(
         startShortcut: "ctrl+option+cmd+k",
         captureShortcut: "ctrl+option+cmd+j",
-        captureNextPriorityShortcut: "cmd+."
+        captureNextPriorityShortcut: "cmd+.",
+        themeMode: .auto
     )
 }
 

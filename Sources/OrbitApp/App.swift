@@ -96,6 +96,9 @@ private struct MenuBarLabelView: View {
             .background {
                 AppLaunchCoordinator(store: store)
             }
+            .background {
+                ThemeCoordinator(store: store)
+            }
     }
 }
 
@@ -204,5 +207,31 @@ private struct AppLaunchCoordinator: View {
                 store.send(.onLaunch)
                 store.send(.openWorkspaceTapped)
             }
+    }
+}
+
+private struct ThemeCoordinator: View {
+    let store: StoreOf<AppFeature>
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .task {
+                applyTheme(store.settings.themeMode)
+            }
+            .onChange(of: store.settings.themeMode) { _, mode in
+                applyTheme(mode)
+            }
+    }
+
+    private func applyTheme(_ mode: OrbitThemeMode) {
+        switch mode {
+        case .auto:
+            NSApplication.shared.appearance = nil
+        case .light:
+            NSApplication.shared.appearance = NSAppearance(named: .aqua)
+        case .dark:
+            NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
+        }
     }
 }

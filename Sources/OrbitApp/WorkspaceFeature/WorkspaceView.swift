@@ -10,8 +10,9 @@ struct WorkspaceView: View {
     private enum WorkspaceSection: String, CaseIterable, Identifiable {
         case session = "Session"
         case history = "History"
-        case categories = "Task Categories"
+        case categories = "Categories"
         case hotkeys = "Hotkeys"
+        case themes = "Themes"
         case about = "About"
 
         var id: String { rawValue }
@@ -26,6 +27,8 @@ struct WorkspaceView: View {
                 return "folder"
             case .hotkeys:
                 return "keyboard"
+            case .themes:
+                return "circle.lefthalf.filled"
             case .about:
                 return "info.circle"
             }
@@ -77,6 +80,8 @@ struct WorkspaceView: View {
             categoriesSection
         case .hotkeys:
             hotkeysSection
+        case .themes:
+            themesSection
         case .about:
             aboutSection
         }
@@ -169,6 +174,32 @@ struct WorkspaceView: View {
             }
         }
         .frame(maxWidth: sectionMaxWidth(for: .hotkeys))
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private var themesSection: some View {
+        sectionCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Appearance")
+                    .font(.headline.weight(.semibold))
+
+                Picker("", selection: $store.settings.themeMode) {
+                    ForEach(OrbitThemeMode.allCases, id: \.self) { mode in
+                        Text(mode.title)
+                            .tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Text("Auto follows your macOS appearance setting.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .onChange(of: store.settings.themeMode) { _, mode in
+                store.send(.settingsThemeModeChanged(mode))
+            }
+        }
+        .frame(maxWidth: sectionMaxWidth(for: .themes))
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
