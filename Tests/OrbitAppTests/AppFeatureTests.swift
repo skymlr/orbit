@@ -244,6 +244,71 @@ struct AppFeatureTests {
     }
 
     @Test
+    func sessionTaskChecklistLineToggledPersistsMarkdown() async {
+        var active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+        active.tasks[0].markdown = "- [ ] Launch\n- [x] Review"
+        let task = active.tasks[0]
+        let tracker = TaskMutationTracker()
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+        initial.categories = sampleCategories
+        initial.taskDrafts = [
+            AppFeature.State.TaskDraft(
+                id: task.id,
+                categories: task.categories,
+                markdown: task.markdown,
+                priority: task.priority,
+                completedAt: task.completedAt,
+                carriedFromTaskID: task.carriedFromTaskID,
+                carriedFromSessionName: task.carriedFromSessionName,
+                createdAt: task.createdAt
+            )
+        ]
+
+        var repository = FocusRepository.testValue
+        repository.updateTask = { taskID, markdown, _, categoryIDs, _ in
+            await tracker.recordUpdate(
+                taskID: taskID,
+                categoryIDs: categoryIDs,
+                markdown: markdown
+            )
+            return nil
+        }
+        repository.loadActiveSession = { nil }
+        repository.listSessions = { [] }
+        repository.listCategories = { sampleCategories }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.focusRepository = repository
+            $0.date.now = Date(timeIntervalSince1970: 1_700_000_200)
+        }
+
+        await store.send(.sessionTaskChecklistLineToggled(task.id, 0)) {
+            $0.taskDrafts[id: task.id]?.markdown = "- [x] Launch\n- [x] Review"
+        }
+        await store.receive(\.loadActiveSessionResponse) {
+            $0.activeSession = nil
+            $0.taskDrafts = []
+            $0.endSessionDraft = nil
+            $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
+            $0.selectedTaskCategoryFilter = .all
+        }
+        await store.receive(\.settingsRefreshTapped)
+        await store.receive(\.settingsDataResponse) {
+            $0.settings.categories = sampleCategories
+            $0.categories = sampleCategories
+        }
+
+        let counts = await tracker.counts()
+        #expect(counts.updated == [task.id])
+        #expect(counts.updatedCategories == [[projectACategoryID]])
+        #expect(counts.updatedMarkdowns == ["- [x] Launch\n- [x] Review"])
+    }
+
+    @Test
     func sessionTaskCategoryFilterChangedUpdatesState() async {
         let store = TestStore(initialState: AppFeature.State()) {
             AppFeature()
@@ -342,6 +407,7 @@ actor TaskMutationTracker {
     private(set) var createdCategories: [[UUID]] = []
     private(set) var updated: [UUID] = []
     private(set) var updatedCategories: [[UUID]] = []
+    private(set) var updatedMarkdowns: [String] = []
     private(set) var completedTaskIDs: [UUID] = []
     private(set) var completedFlags: [Bool] = []
 
@@ -350,9 +416,12 @@ actor TaskMutationTracker {
         createdCategories.append(categoryIDs)
     }
 
-    func recordUpdate(taskID: UUID, categoryIDs: [UUID]) {
+    func recordUpdate(taskID: UUID, categoryIDs: [UUID], markdown: String? = nil) {
         updated.append(taskID)
         updatedCategories.append(categoryIDs)
+        if let markdown {
+            updatedMarkdowns.append(markdown)
+        }
     }
 
     func recordCompletion(taskID: UUID, isCompleted: Bool) {
@@ -365,10 +434,19 @@ actor TaskMutationTracker {
         createdCategories: [[UUID]],
         updated: [UUID],
         updatedCategories: [[UUID]],
+        updatedMarkdowns: [String],
         completedTaskIDs: [UUID],
         completedFlags: [Bool]
     ) {
-        (created, createdCategories, updated, updatedCategories, completedTaskIDs, completedFlags)
+        (
+            created,
+            createdCategories,
+            updated,
+            updatedCategories,
+            updatedMarkdowns,
+            completedTaskIDs,
+            completedFlags
+        )
     }
 }
 

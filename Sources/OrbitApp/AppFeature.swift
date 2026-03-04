@@ -117,6 +117,7 @@ struct AppFeature {
         case sessionTaskDeleteTapped(UUID)
         case sessionTaskEditTapped(UUID)
         case sessionTaskCompletionToggled(UUID, Bool)
+        case sessionTaskChecklistLineToggled(UUID, Int)
 
         case endSessionConfirmTapped(name: String)
         case endSessionCancelTapped
@@ -392,6 +393,31 @@ struct AppFeature {
 
                 return .run { send in
                     _ = try? await focusRepository.setTaskCompletion(taskID, isCompleted, now)
+                    let active = try? await focusRepository.loadActiveSession()
+                    await send(.loadActiveSessionResponse(active))
+                    await send(.settingsRefreshTapped)
+                }
+
+            case let .sessionTaskChecklistLineToggled(taskID, lineIndex):
+                guard state.activeSession != nil else { return .none }
+                guard let draft = state.taskDrafts[id: taskID] else { return .none }
+
+                let updatedMarkdown = MarkdownEditingCore.toggleTask(
+                    in: draft.markdown,
+                    lineIndex: lineIndex
+                )
+                guard updatedMarkdown != draft.markdown else { return .none }
+
+                state.taskDrafts[id: taskID]?.markdown = updatedMarkdown
+
+                return .run { send in
+                    _ = try? await focusRepository.updateTask(
+                        taskID,
+                        updatedMarkdown,
+                        draft.priority,
+                        draft.categories.map(\.id),
+                        now
+                    )
                     let active = try? await focusRepository.loadActiveSession()
                     await send(.loadActiveSessionResponse(active))
                     await send(.settingsRefreshTapped)

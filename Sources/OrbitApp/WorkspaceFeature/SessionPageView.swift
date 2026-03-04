@@ -227,6 +227,9 @@ struct SessionPageView: View {
             onToggleCompletion: {
                 store.send(.sessionTaskCompletionToggled(draft.id, !draft.isCompleted))
             },
+            onToggleChecklistLine: { lineIndex in
+                store.send(.sessionTaskChecklistLineToggled(draft.id, lineIndex))
+            },
             onDelete: {
                 store.send(.sessionTaskDeleteTapped(draft.id))
             }

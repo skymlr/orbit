@@ -5,6 +5,7 @@ struct TaskRow: View {
     let draft: AppFeature.State.TaskDraft
     let onEdit: () -> Void
     let onToggleCompletion: () -> Void
+    let onToggleChecklistLine: (Int) -> Void
     let onDelete: () -> Void
 
     @State private var isDeleteConfirmationPending = false
@@ -18,11 +19,13 @@ struct TaskRow: View {
         draft: AppFeature.State.TaskDraft,
         onEdit: @escaping () -> Void,
         onToggleCompletion: @escaping () -> Void,
+        onToggleChecklistLine: @escaping (Int) -> Void,
         onDelete: @escaping () -> Void
     ) {
         self.draft = draft
         self.onEdit = onEdit
         self.onToggleCompletion = onToggleCompletion
+        self.onToggleChecklistLine = onToggleChecklistLine
         self.onDelete = onDelete
     }
 
@@ -35,7 +38,10 @@ struct TaskRow: View {
             completionToggle
 
             VStack(alignment: .leading, spacing: 12) {
-                MarkdownRenderedTaskView(markdown: draft.markdown)
+                MarkdownRenderedTaskView(
+                    markdown: draft.markdown,
+                    onTaskLineToggle: onToggleChecklistLine
+                )
                     .font(.body)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .strikethrough(isCompleted, color: .secondary)
@@ -411,21 +417,24 @@ private enum TaskRowPalette {
 
 struct MarkdownRenderedTaskView: View {
     let markdown: String
+    var onTaskLineToggle: ((Int) -> Void)? = nil
 
     var body: some View {
         let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
 
         VStack(alignment: .leading, spacing: 4) {
-            ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-                lineView(line: line)
+            ForEach(Array(lines.enumerated()), id: \.offset) { lineIndex, line in
+                lineView(line: line, lineIndex: lineIndex)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
-    private func lineView(line: String) -> some View {
-        if let heading = parseHeadingLine(line) {
+    private func lineView(line: String, lineIndex: Int) -> some View {
+        if let checklist = parseChecklistLine(line) {
+            checklistLineRow(checklist, lineIndex: lineIndex)
+        } else if let heading = parseHeadingLine(line) {
             headingLineRow(heading)
         } else if let unordered = parseUnorderedListLine(line) {
             listLineRow(
@@ -469,6 +478,35 @@ struct MarkdownRenderedTaskView: View {
         .padding(.leading, indentationWidth(for: indentation))
     }
 
+    @ViewBuilder
+    private func checklistLineRow(_ checklist: ChecklistLine, lineIndex: Int) -> some View {
+        if let onTaskLineToggle {
+            Button {
+                onTaskLineToggle(lineIndex)
+            } label: {
+                checklistLineContent(checklist)
+            }
+            .buttonStyle(.plain)
+            .help(checklist.isChecked ? "Uncheck checklist item" : "Check checklist item")
+        } else {
+            checklistLineContent(checklist)
+        }
+    }
+
+    private func checklistLineContent(_ checklist: ChecklistLine) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: checklist.isChecked ? "checkmark.square.fill" : "square")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(checklist.isChecked ? TaskRowPalette.completionGreen : .secondary)
+
+            Text(MarkdownAttributedRenderer.renderAttributed(markdown: checklist.text.isEmpty ? " " : checklist.text))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .strikethrough(checklist.isChecked, color: .secondary)
+                .opacity(checklist.isChecked ? 0.72 : 1)
+        }
+        .padding(.leading, indentationWidth(for: checklist.indentation))
+    }
+
     private func indentationWidth(for indentation: String) -> CGFloat {
         let columns = indentation.reduce(0) { partialResult, character in
             partialResult + (character == "\t" ? 4 : 1)
@@ -500,6 +538,23 @@ struct MarkdownRenderedTaskView: View {
         return HeadingLine(
             level: min(max(marker.count, 1), 6),
             indentation: indentation,
+            text: text
+        )
+    }
+
+    private func parseChecklistLine(_ line: String) -> ChecklistLine? {
+        let range = NSRange(location: 0, length: (line as NSString).length)
+        guard let match = Self.checklistRegex.firstMatch(in: line, options: [], range: range),
+              let indentation = substring(line, match.range(at: 1)),
+              let marker = substring(line, match.range(at: 3)),
+              let text = substring(line, match.range(at: 4))
+        else {
+            return nil
+        }
+
+        return ChecklistLine(
+            indentation: indentation,
+            isChecked: marker.lowercased() == "x",
             text: text
         )
     }
@@ -546,6 +601,12 @@ struct MarkdownRenderedTaskView: View {
         let text: String
     }
 
+    private struct ChecklistLine {
+        let indentation: String
+        let isChecked: Bool
+        let text: String
+    }
+
     private struct OrderedListLine {
         let indentation: String
         let number: String
@@ -558,6 +619,10 @@ struct MarkdownRenderedTaskView: View {
 
     private static let unorderedListRegex = try! NSRegularExpression(
         pattern: #"^([ \t]*)([-*+])\s+(.*)$"#
+    )
+
+    private static let checklistRegex = try! NSRegularExpression(
+        pattern: #"^([ \t]*)([-*+])\s+\[( |x|X)\]\s+(.*)$"#
     )
 
     private static let orderedListRegex = try! NSRegularExpression(
