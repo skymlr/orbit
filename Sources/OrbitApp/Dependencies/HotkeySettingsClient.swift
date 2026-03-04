@@ -15,13 +15,10 @@ extension HotkeySettingsClient: DependencyKey {
                 let capture = defaults.string(forKey: Keys.captureShortcut) ?? HotkeySettings.default.captureShortcut
                 let nextPriority = defaults.string(forKey: Keys.captureNextPriorityShortcut)
                     ?? HotkeySettings.default.captureNextPriorityShortcut
-                let themeModeRaw = defaults.string(forKey: Keys.themeMode)
-                let themeMode = themeModeRaw.flatMap(OrbitThemeMode.init(rawValue:)) ?? .auto
                 return HotkeySettings(
                     startShortcut: start,
                     captureShortcut: capture,
-                    captureNextPriorityShortcut: nextPriority,
-                    themeMode: themeMode
+                    captureNextPriorityShortcut: nextPriority
                 )
             },
             save: { settings in
@@ -29,7 +26,6 @@ extension HotkeySettingsClient: DependencyKey {
                 defaults.set(settings.startShortcut, forKey: Keys.startShortcut)
                 defaults.set(settings.captureShortcut, forKey: Keys.captureShortcut)
                 defaults.set(settings.captureNextPriorityShortcut, forKey: Keys.captureNextPriorityShortcut)
-                defaults.set(settings.themeMode.rawValue, forKey: Keys.themeMode)
             }
         )
     }
@@ -53,5 +49,4 @@ private enum Keys {
     static let startShortcut = "orbit.hotkey.start"
     static let captureShortcut = "orbit.hotkey.capture"
     static let captureNextPriorityShortcut = "orbit.hotkey.capture.nextPriority"
-    static let themeMode = "orbit.ui.themeMode"
 }

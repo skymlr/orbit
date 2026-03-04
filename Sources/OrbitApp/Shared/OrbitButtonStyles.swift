@@ -142,15 +142,15 @@ struct OrbitHeroButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundStyle(.white)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 13)
             .frame(maxWidth: .infinity, minHeight: 90, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(OrbitButtonPalette.heroBackground)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .stroke(OrbitButtonPalette.heroStroke, lineWidth: 1.3)
             )
             .shadow(color: Color.cyan.opacity(0.25), radius: 10, y: 4)
@@ -171,14 +171,14 @@ struct OrbitPrimaryButtonStyle: ButtonStyle {
         configuration.label
             .font(.callout.weight(.semibold))
             .foregroundStyle(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(OrbitButtonPalette.primaryBackground)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(Color.cyan.opacity(0.55), lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.9 : 1)
@@ -200,14 +200,14 @@ struct OrbitSecondaryButtonStyle: ButtonStyle {
         configuration.label
             .font(.callout.weight(.semibold))
             .foregroundStyle(secondaryTextColor)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(secondaryBackgroundColor)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(secondaryStrokeColor, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.9 : 1)
@@ -253,8 +253,8 @@ struct OrbitQuietButtonStyle: ButtonStyle {
         configuration.label
             .font(.caption.weight(.semibold))
             .foregroundStyle(quietTextColor)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
             .background(
                 Capsule()
                     .fill(quietBackgroundColor)
@@ -299,13 +299,22 @@ struct OrbitQuietButtonStyle: ButtonStyle {
 }
 
 struct OrbitDestructiveButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
             .foregroundStyle(Color(.systemRed))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(destructiveBackgroundColor)
+            )
+            .overlay(
+                Capsule()
+                    .stroke(destructiveStrokeColor, lineWidth: 1)
+            )
             .opacity(configuration.isPressed ? 0.7 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
             .orbitInteractiveControl(
@@ -314,6 +323,18 @@ struct OrbitDestructiveButtonStyle: ButtonStyle {
                 shadowColor: Color.red.opacity(0.18),
                 shadowRadius: 6
             )
+    }
+
+    private var destructiveBackgroundColor: Color {
+        colorScheme == .dark
+            ? Color.red.opacity(0.14)
+            : Color.red.opacity(0.10)
+    }
+
+    private var destructiveStrokeColor: Color {
+        colorScheme == .dark
+            ? Color.red.opacity(0.44)
+            : Color.red.opacity(0.56)
     }
 }
 

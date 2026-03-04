@@ -54,7 +54,6 @@ struct AppFeature {
             var startShortcut = HotkeySettings.default.startShortcut
             var captureShortcut = HotkeySettings.default.captureShortcut
             var captureNextPriorityShortcut = HotkeySettings.default.captureNextPriorityShortcut
-            var themeMode: OrbitThemeMode = .auto
             var statusMessage: String?
         }
 
@@ -137,7 +136,6 @@ struct AppFeature {
         case autoEndSession
 
         case settingsRefreshTapped
-        case settingsThemeModeChanged(OrbitThemeMode)
         case settingsResetHotkeysTapped
         case settingsSaveHotkeysTapped
         case settingsAddCategoryTapped(String, String)
@@ -184,7 +182,6 @@ struct AppFeature {
                 state.settings.startShortcut = hotkeys.startShortcut
                 state.settings.captureShortcut = hotkeys.captureShortcut
                 state.settings.captureNextPriorityShortcut = hotkeys.captureNextPriorityShortcut
-                state.settings.themeMode = hotkeys.themeMode
 
                 return .merge(
                     .send(.registerHotkeys(hotkeys)),
@@ -542,12 +539,6 @@ struct AppFeature {
                     await send(.settingsDataResponse(sessions, categories))
                 }
 
-            case let .settingsThemeModeChanged(themeMode):
-                state.settings.themeMode = themeMode
-                state.hotkeys.themeMode = themeMode
-                hotkeySettingsClient.save(state.hotkeys)
-                return .none
-
             case .settingsSaveHotkeysTapped:
                 let previous = state.hotkeys
 
@@ -576,8 +567,7 @@ struct AppFeature {
                 let settings = HotkeySettings(
                     startShortcut: startShortcut,
                     captureShortcut: captureShortcut,
-                    captureNextPriorityShortcut: captureNextPriorityShortcut,
-                    themeMode: state.settings.themeMode
+                    captureNextPriorityShortcut: captureNextPriorityShortcut
                 )
                 state.hotkeys = settings
                 hotkeySettingsClient.save(settings)
@@ -587,8 +577,7 @@ struct AppFeature {
 
             case .settingsResetHotkeysTapped:
                 let previous = state.hotkeys
-                var defaults = HotkeySettings.default
-                defaults.themeMode = state.settings.themeMode
+                let defaults = HotkeySettings.default
 
                 hotkeyManager.unregister(previous.startShortcut)
                 hotkeyManager.unregister(previous.captureShortcut)

@@ -469,41 +469,6 @@ struct AppFeatureTests {
     }
 
     @Test
-    func settingsThemeModeChangedPersistsChoice() async {
-        let savedSettings = LockIsolated<[HotkeySettings]>([])
-
-        var initial = AppFeature.State()
-        initial.hotkeys = HotkeySettings(
-            startShortcut: "ctrl+option+cmd+k",
-            captureShortcut: "ctrl+option+cmd+j",
-            captureNextPriorityShortcut: "cmd+.",
-            themeMode: .auto
-        )
-        initial.settings.themeMode = .auto
-
-        let store = TestStore(initialState: initial) {
-            AppFeature()
-        } withDependencies: {
-            $0.hotkeySettingsClient.save = { settings in
-                savedSettings.withValue {
-                    $0.append(settings)
-                }
-            }
-        }
-
-        await store.send(.settingsThemeModeChanged(.dark)) {
-            $0.settings.themeMode = .dark
-            $0.hotkeys.themeMode = .dark
-        }
-
-        #expect(savedSettings.value.count == 1)
-        #expect(savedSettings.value.first?.themeMode == .dark)
-        #expect(savedSettings.value.first?.startShortcut == "ctrl+option+cmd+k")
-        #expect(savedSettings.value.first?.captureShortcut == "ctrl+option+cmd+j")
-        #expect(savedSettings.value.first?.captureNextPriorityShortcut == "cmd+.")
-    }
-
-    @Test
     func sessionTaskPriorityCycleTappedPersistsState() async {
         let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
         let task = active.tasks[0]
