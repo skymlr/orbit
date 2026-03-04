@@ -160,7 +160,7 @@ struct AppFeatureTests {
             $0.endSessionDraft = nil
             $0.windowDestinations = []
             $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
-            $0.selectedTaskCategoryFilter = .all
+            $0.selectedTaskCategoryFilterIDs = []
         }
     }
 
@@ -213,7 +213,7 @@ struct AppFeatureTests {
             $0.captureDraft = AppFeature.State.CaptureDraft(
                 selectedCategoryIDs: []
             )
-            $0.selectedTaskCategoryFilter = .all
+            $0.selectedTaskCategoryFilterIDs = []
         }
         await store.receive(\.settingsRefreshTapped)
         await store.receive(\.settingsDataResponse) {
@@ -274,7 +274,7 @@ struct AppFeatureTests {
             $0.captureDraft = AppFeature.State.CaptureDraft(
                 selectedCategoryIDs: []
             )
-            $0.selectedTaskCategoryFilter = .all
+            $0.selectedTaskCategoryFilterIDs = []
         }
         await store.receive(\.settingsRefreshTapped)
         await store.receive(\.settingsDataResponse) {
@@ -334,7 +334,7 @@ struct AppFeatureTests {
             $0.taskDrafts = []
             $0.endSessionDraft = nil
             $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
-            $0.selectedTaskCategoryFilter = .all
+            $0.selectedTaskCategoryFilterIDs = []
         }
         await store.receive(\.settingsRefreshTapped)
         await store.receive(\.settingsDataResponse) {
@@ -398,7 +398,7 @@ struct AppFeatureTests {
             $0.taskDrafts = []
             $0.endSessionDraft = nil
             $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
-            $0.selectedTaskCategoryFilter = .all
+            $0.selectedTaskCategoryFilterIDs = []
         }
         await store.receive(\.settingsRefreshTapped)
         await store.receive(\.settingsDataResponse) {
@@ -413,18 +413,125 @@ struct AppFeatureTests {
     }
 
     @Test
-    func sessionTaskCategoryFilterChangedUpdatesState() async {
+    func sessionTaskCategoryFilterToggleUpdatesState() async {
         let store = TestStore(initialState: AppFeature.State()) {
             AppFeature()
         }
 
-        await store.send(.sessionTaskCategoryFilterChangedTapped(.category(projectACategoryID))) {
-            $0.selectedTaskCategoryFilter = .category(projectACategoryID)
+        await store.send(.sessionTaskCategoryFilterToggled(projectACategoryID)) {
+            $0.selectedTaskCategoryFilterIDs = [projectACategoryID]
         }
 
-        await store.send(.sessionTaskCategoryFilterChangedTapped(.all)) {
-            $0.selectedTaskCategoryFilter = .all
+        await store.send(.sessionTaskCategoryFilterToggled(projectACategoryID)) {
+            $0.selectedTaskCategoryFilterIDs = []
         }
+    }
+
+    @Test
+    func sessionTaskPriorityFilterToggleUpdatesState() async {
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        }
+
+        await store.send(.sessionTaskPriorityFilterToggled(.medium)) {
+            $0.selectedTaskPriorityFilters = [.medium]
+        }
+
+        await store.send(.sessionTaskPriorityFilterToggled(.medium)) {
+            $0.selectedTaskPriorityFilters = []
+        }
+    }
+
+    @Test
+    func taskFiltersAllowMultipleSelectionsAndClearAll() async {
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        }
+
+        await store.send(.sessionTaskCategoryFilterToggled(projectACategoryID)) {
+            $0.selectedTaskCategoryFilterIDs = [projectACategoryID]
+        }
+        await store.send(.sessionTaskCategoryFilterToggled(projectBCategoryID)) {
+            $0.selectedTaskCategoryFilterIDs = [projectACategoryID, projectBCategoryID]
+        }
+
+        await store.send(.sessionTaskPriorityFilterToggled(.high)) {
+            $0.selectedTaskPriorityFilters = [.high]
+        }
+        await store.send(.sessionTaskPriorityFilterToggled(.medium)) {
+            $0.selectedTaskPriorityFilters = [.high, .medium]
+        }
+
+        await store.send(.sessionTaskFiltersCleared) {
+            $0.selectedTaskCategoryFilterIDs = []
+            $0.selectedTaskPriorityFilters = []
+        }
+    }
+
+    @Test
+    func sessionTaskPriorityCycleTappedPersistsState() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+        let task = active.tasks[0]
+        let tracker = TaskMutationTracker()
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+        initial.categories = sampleCategories
+        initial.taskDrafts = [
+            AppFeature.State.TaskDraft(
+                id: task.id,
+                categories: task.categories,
+                markdown: task.markdown,
+                priority: task.priority,
+                completedAt: task.completedAt,
+                carriedFromTaskID: task.carriedFromTaskID,
+                carriedFromSessionName: task.carriedFromSessionName,
+                createdAt: task.createdAt
+            )
+        ]
+
+        var repository = FocusRepository.testValue
+        repository.updateTask = { taskID, markdown, _, categoryIDs, _ in
+            await tracker.recordUpdate(
+                taskID: taskID,
+                categoryIDs: categoryIDs,
+                markdown: markdown
+            )
+            return nil
+        }
+        repository.loadActiveSession = { nil }
+        repository.listSessions = { [] }
+        repository.listCategories = { sampleCategories }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.focusRepository = repository
+            $0.date.now = Date(timeIntervalSince1970: 1_700_000_300)
+        }
+
+        await store.send(.sessionTaskPriorityCycleTapped(task.id))
+        await store.receive(\.sessionTaskPrioritySetTapped) {
+            $0.taskDrafts[id: task.id]?.priority = .none
+        }
+        await store.receive(\.loadActiveSessionResponse) {
+            $0.activeSession = nil
+            $0.taskDrafts = []
+            $0.endSessionDraft = nil
+            $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
+            $0.selectedTaskCategoryFilterIDs = []
+            $0.selectedTaskPriorityFilters = []
+        }
+        await store.receive(\.settingsRefreshTapped)
+        await store.receive(\.settingsDataResponse) {
+            $0.settings.categories = sampleCategories
+            $0.categories = sampleCategories
+        }
+
+        let counts = await tracker.counts()
+        #expect(counts.updated == [task.id])
+        #expect(counts.updatedCategories == [[projectACategoryID]])
+        #expect(counts.updatedMarkdowns == [task.markdown])
     }
 
     @Test
@@ -501,7 +608,7 @@ struct AppFeatureTests {
             $0.taskDrafts = []
             $0.endSessionDraft = nil
             $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
-            $0.selectedTaskCategoryFilter = .all
+            $0.selectedTaskCategoryFilterIDs = []
         }
     }
 }

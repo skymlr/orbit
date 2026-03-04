@@ -4,6 +4,7 @@ import SwiftUI
 struct TaskRow: View {
     let draft: AppFeature.State.TaskDraft
     let onEdit: () -> Void
+    let onPrioritySet: (NotePriority) -> Void
     let onToggleCompletion: () -> Void
     let onToggleChecklistLine: (Int) -> Void
     let onDelete: () -> Void
@@ -11,6 +12,7 @@ struct TaskRow: View {
     @State private var isDeleteConfirmationPending = false
     @State private var deleteConfirmationToken = 0
     @State private var isTaskInfoPopoverPresented = false
+    @State private var isPriorityPopoverPresented = false
     @State private var completionAnimationToken = 0
     @State private var completionBurstProgress: CGFloat = 0
     @State private var isCompletionBurstVisible = false
@@ -18,12 +20,14 @@ struct TaskRow: View {
     init(
         draft: AppFeature.State.TaskDraft,
         onEdit: @escaping () -> Void,
+        onPrioritySet: @escaping (NotePriority) -> Void,
         onToggleCompletion: @escaping () -> Void,
         onToggleChecklistLine: @escaping (Int) -> Void,
         onDelete: @escaping () -> Void
     ) {
         self.draft = draft
         self.onEdit = onEdit
+        self.onPrioritySet = onPrioritySet
         self.onToggleCompletion = onToggleCompletion
         self.onToggleChecklistLine = onToggleChecklistLine
         self.onDelete = onDelete
@@ -47,7 +51,7 @@ struct TaskRow: View {
                     .strikethrough(isCompleted, color: .secondary)
                     .opacity(isCompleted ? 0.65 : 1)
 
-                categoriesSection
+                taskMetadataSection
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -59,13 +63,21 @@ struct TaskRow: View {
                 .fill(.ultraThinMaterial)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(taskBackgroundColor(for: draft.priority, isCompleted: isCompleted))
+                        .fill(taskBackgroundColor(isCompleted: isCompleted))
                 )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(taskBorderColor(for: draft.priority, isCompleted: isCompleted), lineWidth: 1.2)
+                .stroke(taskBorderColor(isCompleted: isCompleted), lineWidth: 1.2)
         )
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(priorityRailColor(for: draft.priority, isCompleted: isCompleted))
+                .frame(width: 4)
+                .padding(.vertical, 5)
+                .padding(.leading, 4)
+                .accessibilityHidden(true)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onChange(of: isCompleted) { oldValue, newValue in
             handleCompletionStateChange(from: oldValue, to: newValue)
@@ -143,21 +155,140 @@ struct TaskRow: View {
     }
 
     @ViewBuilder
-    private var categoriesSection: some View {
-        if !draft.categories.isEmpty {
-            ScrollView(.horizontal) {
-                HStack(spacing: 6) {
-                    ForEach(draft.categories) { category in
-                        OrbitCategoryChip(
-                            title: category.name,
-                            tint: Color(categoryHex: category.colorHex),
-                            isSelected: true
-                        )
+    private var taskMetadataSection: some View {
+        HStack(alignment: .center, spacing: 8) {
+            priorityBadge
+
+            if !draft.categories.isEmpty {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 6) {
+                        ForEach(draft.categories) { category in
+                            OrbitCategoryChip(
+                                title: category.name,
+                                tint: Color(categoryHex: category.colorHex),
+                                isSelected: true
+                            )
+                        }
                     }
+                    .padding(.vertical, 2)
                 }
-                .padding(.vertical, 2)
+                .scrollIndicators(.hidden)
             }
-            .scrollIndicators(.hidden)
+        }
+    }
+
+    private var priorityBadge: some View {
+        Button {
+            isPriorityPopoverPresented = true
+        } label: {
+            priorityBadgeLabel
+        }
+        .buttonStyle(.plain)
+        .popover(
+            isPresented: $isPriorityPopoverPresented,
+            attachmentAnchor: .rect(.bounds),
+            arrowEdge: .bottom
+        ) {
+            priorityPickerPopover
+        }
+        .orbitInteractiveControl(
+            scale: 1.03,
+            lift: -0.5,
+            shadowColor: priorityRailColor(for: draft.priority, isCompleted: isCompleted).opacity(0.34),
+            shadowRadius: 5
+        )
+        .accessibilityLabel("Priority")
+        .accessibilityValue(draft.priority.title)
+        .accessibilityHint("Activate to choose a new priority.")
+        .help("Priority: \(draft.priority.title). Click to choose.")
+    }
+
+    private var priorityBadgeLabel: some View {
+        let fillColor = priorityBadgeFillColor(for: draft.priority, isCompleted: isCompleted)
+        let strokeColor = priorityBadgeStrokeColor(for: draft.priority, isCompleted: isCompleted)
+        let textColor = priorityBadgeTextColor(for: draft.priority, isCompleted: isCompleted)
+
+        return HStack(spacing: 6) {
+            Image(systemName: priorityIcon(for: draft.priority))
+                .font(.caption2.weight(.bold))
+
+            Text(draft.priority.title)
+                .lineLimit(1)
+        }
+        .font(.caption.weight(.semibold))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            Capsule()
+                .fill(fillColor)
+        )
+        .overlay(
+            Capsule()
+                .stroke(strokeColor, lineWidth: 1)
+        )
+        .foregroundStyle(textColor)
+    }
+
+    private var priorityPickerPopover: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Set Priority")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            ForEach(NotePriority.allCases, id: \.self) { priority in
+                Button {
+                    onPrioritySet(priority)
+                    isPriorityPopoverPresented = false
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: priorityIcon(for: priority))
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(priorityAccentColor(for: priority))
+
+                        Text(priority.title)
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+
+                        Spacer(minLength: 10)
+
+                        if draft.priority == priority {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(priorityAccentColor(for: priority))
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(
+                                draft.priority == priority
+                                    ? priorityAccentColor(for: priority).opacity(0.20)
+                                    : Color.clear
+                            )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(
+                                draft.priority == priority
+                                    ? priorityAccentColor(for: priority).opacity(0.76)
+                                    : Color.white.opacity(0.14),
+                                lineWidth: draft.priority == priority ? 1 : 0.6
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Set priority to \(priority.title)")
+            }
+        }
+        .padding(10)
+        .frame(width: 200)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.thinMaterial)
+        )
+        .onExitCommand {
+            isPriorityPopoverPresented = false
         }
     }
 
@@ -250,37 +381,69 @@ struct TaskRow: View {
         }
     }
 
-    private func taskBackgroundColor(for priority: NotePriority, isCompleted: Bool) -> Color {
+    private func taskBackgroundColor(isCompleted: Bool) -> Color {
         if isCompleted {
             return TaskRowPalette.heroNavy.opacity(0.40)
         }
-
-        switch priority {
-        case .none:
-            return TaskRowPalette.heroNavy.opacity(0.34)
-        case .low:
-            return TaskRowPalette.heroCyan.opacity(0.26)
-        case .medium:
-            return TaskRowPalette.heroAmber.opacity(0.23)
-        case .high:
-            return TaskRowPalette.supernovaRed.opacity(0.17)
-        }
+        return TaskRowPalette.heroNavy.opacity(0.32)
     }
 
-    private func taskBorderColor(for priority: NotePriority, isCompleted: Bool) -> Color {
+    private func taskBorderColor(isCompleted: Bool) -> Color {
         if isCompleted {
             return TaskRowPalette.completionGreen.opacity(0.82)
         }
+        return Color.white.opacity(0.28)
+    }
 
+    private func priorityRailColor(for priority: NotePriority, isCompleted: Bool) -> Color {
+        let baseColor = priorityAccentColor(for: priority)
+        return isCompleted ? baseColor.opacity(0.55) : baseColor
+    }
+
+    private func priorityBadgeFillColor(for priority: NotePriority, isCompleted: Bool) -> Color {
+        priorityAccentColor(for: priority).opacity(isCompleted ? 0.22 : 0.32)
+    }
+
+    private func priorityBadgeStrokeColor(for priority: NotePriority, isCompleted: Bool) -> Color {
+        priorityAccentColor(for: priority).opacity(isCompleted ? 0.70 : 0.96)
+    }
+
+    private func priorityBadgeTextColor(for priority: NotePriority, isCompleted: Bool) -> Color {
         switch priority {
         case .none:
-            return Color.white.opacity(0.28)
+            return isCompleted ? Color.white.opacity(0.84) : Color.white.opacity(0.96)
         case .low:
-            return TaskRowPalette.heroCyan.opacity(0.64)
+            return Color.white.opacity(isCompleted ? 0.84 : 0.98)
         case .medium:
-            return TaskRowPalette.heroAmber.opacity(0.68)
+            return Color.white.opacity(isCompleted ? 0.72 : 0.86)
         case .high:
-            return TaskRowPalette.supernovaRed.opacity(0.64)
+            return Color.white.opacity(isCompleted ? 0.88 : 1.0)
+        }
+    }
+
+    private func priorityAccentColor(for priority: NotePriority) -> Color {
+        switch priority {
+        case .none:
+            return TaskRowPalette.priorityNone
+        case .low:
+            return TaskRowPalette.priorityLow
+        case .medium:
+            return TaskRowPalette.priorityMedium
+        case .high:
+            return TaskRowPalette.priorityHigh
+        }
+    }
+
+    private func priorityIcon(for priority: NotePriority) -> String {
+        switch priority {
+        case .none:
+            return "minus.circle"
+        case .low:
+            return "arrow.down.circle.fill"
+        case .medium:
+            return "equal.circle.fill"
+        case .high:
+            return "exclamationmark.circle.fill"
         }
     }
 
@@ -323,6 +486,7 @@ struct TaskRow: View {
     private func resetTransientUIState() {
         isDeleteConfirmationPending = false
         isTaskInfoPopoverPresented = false
+        isPriorityPopoverPresented = false
         isCompletionBurstVisible = false
         completionBurstProgress = 0
         deleteConfirmationToken += 1
@@ -381,6 +545,10 @@ private enum TaskRowPalette {
     static let completionGreen = Color(red: 0.36, green: 0.86, blue: 0.46)
     static let starlight = Color(red: 0.72, green: 0.93, blue: 1.00)
     static let supernovaRed = Color(red: 0.93, green: 0.38, blue: 0.48)
+    static let priorityNone = Color(red: 0.62, green: 0.70, blue: 0.84)
+    static let priorityLow = Color(red: 0.08, green: 0.86, blue: 0.78)
+    static let priorityMedium = Color(red: 1.00, green: 0.74, blue: 0.18)
+    static let priorityHigh = Color(red: 1.00, green: 0.27, blue: 0.54)
 
     static let completedFill = RadialGradient(
         colors: [

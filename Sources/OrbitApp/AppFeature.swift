@@ -18,11 +18,6 @@ struct AppFeature {
 
     @ObservableState
     struct State: Equatable {
-        enum TaskCategoryFilter: Equatable {
-            case all
-            case category(UUID)
-        }
-
         enum SessionBootstrapState: Equatable {
             case idle
             case loading
@@ -71,7 +66,8 @@ struct AppFeature {
         var captureDraft = CaptureDraft()
         var endSessionDraft: EndSessionDraft?
 
-        var selectedTaskCategoryFilter: TaskCategoryFilter = .all
+        var selectedTaskCategoryFilterIDs: Set<UUID> = []
+        var selectedTaskPriorityFilters: Set<NotePriority> = []
 
         var settings = SettingsState()
 
@@ -82,11 +78,22 @@ struct AppFeature {
         var hasLaunched = false
 
         var filteredTaskDrafts: [TaskDraft] {
-            switch selectedTaskCategoryFilter {
-            case .all:
-                return Array(taskDrafts)
-            case let .category(categoryID):
-                return taskDrafts.filter { $0.categories.contains(where: { $0.id == categoryID }) }
+            taskDrafts.filter { draft in
+                let categoryMatch: Bool
+                if selectedTaskCategoryFilterIDs.isEmpty {
+                    categoryMatch = true
+                } else {
+                    categoryMatch = draft.categories.contains(where: { selectedTaskCategoryFilterIDs.contains($0.id) })
+                }
+
+                let priorityMatch: Bool
+                if selectedTaskPriorityFilters.isEmpty {
+                    priorityMatch = true
+                } else {
+                    priorityMatch = selectedTaskPriorityFilters.contains(draft.priority)
+                }
+
+                return categoryMatch && priorityMatch
             }
         }
     }
@@ -114,9 +121,13 @@ struct AppFeature {
         case captureSubmitTapped
         case sessionAddTaskTapped
         case sessionRenameTapped(String)
-        case sessionTaskCategoryFilterChangedTapped(State.TaskCategoryFilter)
+        case sessionTaskCategoryFilterToggled(UUID)
+        case sessionTaskPriorityFilterToggled(NotePriority)
+        case sessionTaskFiltersCleared
         case sessionTaskDeleteTapped(UUID)
         case sessionTaskEditTapped(UUID)
+        case sessionTaskPriorityCycleTapped(UUID)
+        case sessionTaskPrioritySetTapped(UUID, NotePriority)
         case sessionTaskCompletionToggled(UUID, Bool)
         case sessionTaskChecklistLineToggled(UUID, Int)
 
@@ -382,9 +393,52 @@ struct AppFeature {
                     await send(.settingsRefreshTapped)
                 }
 
-            case let .sessionTaskCategoryFilterChangedTapped(filter):
-                state.selectedTaskCategoryFilter = filter
+            case let .sessionTaskCategoryFilterToggled(categoryID):
+                if state.selectedTaskCategoryFilterIDs.contains(categoryID) {
+                    state.selectedTaskCategoryFilterIDs.remove(categoryID)
+                } else {
+                    state.selectedTaskCategoryFilterIDs.insert(categoryID)
+                }
                 return .none
+
+            case let .sessionTaskPriorityFilterToggled(priority):
+                if state.selectedTaskPriorityFilters.contains(priority) {
+                    state.selectedTaskPriorityFilters.remove(priority)
+                } else {
+                    state.selectedTaskPriorityFilters.insert(priority)
+                }
+                return .none
+
+            case .sessionTaskFiltersCleared:
+                state.selectedTaskCategoryFilterIDs.removeAll()
+                state.selectedTaskPriorityFilters.removeAll()
+                return .none
+
+            case let .sessionTaskPriorityCycleTapped(taskID):
+                guard let draft = state.taskDrafts[id: taskID] else { return .none }
+                return .send(.sessionTaskPrioritySetTapped(taskID, nextPriority(after: draft.priority)))
+
+            case let .sessionTaskPrioritySetTapped(taskID, priority):
+                guard state.activeSession != nil else { return .none }
+                guard let draft = state.taskDrafts[id: taskID], draft.priority != priority else { return .none }
+
+                state.taskDrafts[id: taskID]?.priority = priority
+                if state.captureDraft.editingTaskID == taskID {
+                    state.captureDraft.priority = priority
+                }
+
+                return .run { send in
+                    _ = try? await focusRepository.updateTask(
+                        taskID,
+                        draft.markdown,
+                        priority,
+                        draft.categories.map(\.id),
+                        now
+                    )
+                    let active = try? await focusRepository.loadActiveSession()
+                    await send(.loadActiveSessionResponse(active))
+                    await send(.settingsRefreshTapped)
+                }
 
             case let .sessionTaskCompletionToggled(taskID, isCompleted):
                 guard state.activeSession != nil else { return .none }
@@ -626,7 +680,8 @@ struct AppFeature {
                 state.endSessionDraft = nil
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.endSessionWindow)
-                state.selectedTaskCategoryFilter = .all
+                state.selectedTaskCategoryFilterIDs.removeAll()
+                state.selectedTaskPriorityFilters.removeAll()
 
                 return .cancel(id: CancelID.inactivityMonitor)
 
@@ -656,7 +711,8 @@ struct AppFeature {
                 state.captureDraft = State.CaptureDraft(
                     selectedCategoryIDs: []
                 )
-                state.selectedTaskCategoryFilter = .all
+                state.selectedTaskCategoryFilterIDs.removeAll()
+                state.selectedTaskPriorityFilters.removeAll()
 
                 return .cancel(id: CancelID.inactivityMonitor)
 
@@ -762,16 +818,20 @@ private func ensureCategorySelections(_ state: inout AppFeature.State) {
         categories: state.categories
     )
 
-    switch state.selectedTaskCategoryFilter {
-    case .all:
-        break
-    case let .category(categoryID):
-        if !state.categories.contains(where: { $0.id == categoryID })
-            || !state.taskDrafts.contains(where: { draft in
-                draft.categories.contains(where: { $0.id == categoryID })
-            })
-        {
-            state.selectedTaskCategoryFilter = .all
-        }
+    let validFilteredCategoryIDs = Set(state.categories.map(\.id))
+    state.selectedTaskCategoryFilterIDs = state.selectedTaskCategoryFilterIDs.intersection(validFilteredCategoryIDs)
+}
+
+private func nextPriority(after priority: NotePriority) -> NotePriority {
+    let priorities = NotePriority.allCases
+    guard let currentIndex = priorities.firstIndex(of: priority) else {
+        return .none
     }
+
+    let nextIndex = priorities.index(after: currentIndex)
+    if nextIndex == priorities.endIndex {
+        return priorities[priorities.startIndex]
+    }
+
+    return priorities[nextIndex]
 }

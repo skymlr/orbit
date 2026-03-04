@@ -171,7 +171,8 @@ struct QuickCaptureView: View {
                 OrbitSpaceBackground()
 
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                    .fill(.ultraThinMaterial.opacity(0.32))
+                    .blur(radius: 8)
             }
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         )

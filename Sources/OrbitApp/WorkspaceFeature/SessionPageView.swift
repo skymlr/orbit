@@ -22,7 +22,7 @@ struct SessionPageView: View {
                         }
                     )
 
-                    taskCategoryFilterBar
+                    SessionTaskFilterBar(store: store)
 
                     tasksContent
                     endSessionControl
@@ -171,33 +171,6 @@ struct SessionPageView: View {
         }
     }
 
-    private var taskCategoryFilterBar: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 8) {
-                filterChip(
-                    title: "All",
-                    count: store.taskDrafts.count,
-                    isSelected: isAllFilterSelected
-                ) {
-                    store.send(.sessionTaskCategoryFilterChangedTapped(.all))
-                }
-
-                ForEach(categoriesWithTasks) { category in
-                    filterChip(
-                        title: category.name,
-                        count: countForCategory(category.id),
-                        isSelected: isCategorySelected(category.id),
-                        tint: Color(categoryHex: category.colorHex)
-                    ) {
-                        store.send(.sessionTaskCategoryFilterChangedTapped(.category(category.id)))
-                    }
-                }
-            }
-            .padding(.vertical, 2)
-        }
-        .scrollIndicators(.hidden)
-    }
-
     private var endSessionControl: some View {
         HStack {
             Spacer()
@@ -224,6 +197,9 @@ struct SessionPageView: View {
             onEdit: {
                 store.send(.sessionTaskEditTapped(draft.id))
             },
+            onPrioritySet: { priority in
+                store.send(.sessionTaskPrioritySetTapped(draft.id, priority))
+            },
             onToggleCompletion: {
                 store.send(.sessionTaskCompletionToggled(draft.id, !draft.isCompleted))
             },
@@ -236,44 +212,27 @@ struct SessionPageView: View {
         )
     }
 
-    private var isAllFilterSelected: Bool {
-        switch store.selectedTaskCategoryFilter {
-        case .all:
-            return true
-        case .category:
-            return false
-        }
-    }
-
     private var emptyStateTitle: String {
         if store.taskDrafts.isEmpty {
             return "No tasks yet"
         }
-        return "No tasks in this category"
+        let hasCategoryFilters = !store.selectedTaskCategoryFilterIDs.isEmpty
+        let hasPriorityFilters = !store.selectedTaskPriorityFilters.isEmpty
+
+        switch (hasCategoryFilters, hasPriorityFilters) {
+        case (false, false):
+            return "No tasks available"
+        case (false, true):
+            return "No tasks with this priority"
+        case (true, false):
+            return "No tasks in this category"
+        case (true, true):
+            return "No tasks match this category and priority"
+        }
     }
 
     private var emptyStateSubtitle: String {
-        "Switch filters to view tasks from other categories."
-    }
-
-    private func isCategorySelected(_ categoryID: UUID) -> Bool {
-        switch store.selectedTaskCategoryFilter {
-        case .all:
-            return false
-        case let .category(selectedID):
-            return selectedID == categoryID
-        }
-    }
-
-    private func countForCategory(_ categoryID: UUID) -> Int {
-        store.taskDrafts.filter { draft in
-            draft.categories.contains(where: { $0.id == categoryID })
-        }
-        .count
-    }
-
-    private var categoriesWithTasks: [SessionCategoryRecord] {
-        store.categories.filter { countForCategory($0.id) > 0 }
+        "Adjust filters to view other tasks."
     }
 
     private var sortedFilteredTasks: [AppFeature.State.TaskDraft] {
@@ -305,24 +264,6 @@ struct SessionPageView: View {
         case .none:
             return 3
         }
-    }
-
-    private func filterChip(
-        title: String,
-        count: Int,
-        isSelected: Bool,
-        tint: Color = .secondary,
-        onTap: @escaping () -> Void
-    ) -> some View {
-        Button(action: onTap) {
-            OrbitCategoryChip(
-                title: title,
-                tint: tint,
-                isSelected: isSelected,
-                count: count
-            )
-        }
-        .buttonStyle(.plain)
     }
 
     private func endSessionButtonTapped() {
@@ -362,6 +303,7 @@ struct SessionPageView: View {
             isEndSessionConfirmationPending = false
         }
     }
+
 }
 
 private extension AppFeature.State.TaskDraft {
@@ -457,17 +399,5 @@ private struct SessionHeader: View {
     private func cancelRenaming() {
         name = session.name
         isRenaming = false
-    }
-}
-
-private extension Color {
-    init(categoryHex: String) {
-        let normalized = FocusDefaults.normalizedCategoryColorHex(categoryHex)
-        let hex = String(normalized.dropFirst())
-        let value = UInt64(hex, radix: 16) ?? 0
-        let red = Double((value >> 16) & 0xFF) / 255
-        let green = Double((value >> 8) & 0xFF) / 255
-        let blue = Double(value & 0xFF) / 255
-        self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
     }
 }
