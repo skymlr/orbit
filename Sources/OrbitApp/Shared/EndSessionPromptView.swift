@@ -8,36 +8,34 @@ struct EndSessionPromptView: View {
     @State private var name = ""
 
     var body: some View {
-        Group {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("End Focus Session")
-                    .font(.title3.weight(.semibold))
+        VStack(alignment: .leading, spacing: 14) {
+            Text("End Focus Session")
+                .font(.title3.weight(.semibold))
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Name (optional)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextField("Session name", text: $name)
-                        .textFieldStyle(.roundedBorder)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Name (optional)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                TextField("Session name", text: $name)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            HStack {
+                Button("Cancel") {
+                    onCancel()
                 }
+                .buttonStyle(.orbitSecondary)
 
-                HStack {
-                    Button("Cancel") {
-                        onCancel()
-                    }
-                    .buttonStyle(.orbitSecondary)
+                Spacer()
 
-                    Spacer()
-
-                    Button("End Session") {
-                        onConfirm(name)
-                    }
-                    .buttonStyle(.orbitDestructive)
+                Button("End Session") {
+                    onConfirm(name)
                 }
+                .buttonStyle(.orbitDestructive)
             }
         }
         .padding(18)
-        .frame(width: 380)
+        .frame(width: 360)
         .background {
             ZStack {
                 OrbitSpaceBackground()
@@ -50,8 +48,6 @@ struct EndSessionPromptView: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .navigationTitle("End Session")
-        .toolbarBackground(.hidden, for: .windowToolbar)
         .task {
             name = draft.name
         }

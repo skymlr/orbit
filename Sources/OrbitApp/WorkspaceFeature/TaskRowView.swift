@@ -244,7 +244,7 @@ struct TaskRow: View {
         }
         .font(.caption.weight(.semibold))
         .padding(.horizontal, 10)
-        .padding(.vertical, 5)
+        .padding(.vertical, 6)
         .background(
             Capsule()
                 .fill(fillColor)

@@ -165,6 +165,58 @@ struct AppFeatureTests {
     }
 
     @Test
+    func endSessionTappedPreparesDraftAndFocusesWorkspace() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+        let draftID = UUID(uuidString: "091E5E28-D32B-4CC2-AEB9-D2FE85B3C10E")!
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+        initial.windowDestinations = [.captureWindow]
+        initial.workspaceWindowFocusRequest = 2
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.uuid = .constant(draftID)
+        }
+
+        await store.send(.endSessionTapped) {
+            $0.endSessionDraft = AppFeature.State.EndSessionDraft(
+                id: draftID,
+                name: active.name
+            )
+            $0.windowDestinations.remove(.captureWindow)
+            $0.windowDestinations.insert(.workspaceWindow)
+            $0.workspaceWindowFocusRequest = 3
+        }
+    }
+
+    @Test
+    func endSessionTappedDoesNotRefocusWhenWorkspaceAlreadyOpen() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+        let draftID = UUID(uuidString: "A35E14B7-4A72-406D-BF80-68D2CDA85B7B")!
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+        initial.windowDestinations = [.workspaceWindow]
+        initial.workspaceWindowFocusRequest = 5
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.uuid = .constant(draftID)
+        }
+
+        await store.send(.endSessionTapped) {
+            $0.endSessionDraft = AppFeature.State.EndSessionDraft(
+                id: draftID,
+                name: active.name
+            )
+            $0.workspaceWindowFocusRequest = 5
+        }
+    }
+
+    @Test
     func startSessionTappedShowsSuccessToastAndAutoDismisses() async {
         let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
         let task = active.tasks[0]

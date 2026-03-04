@@ -5,7 +5,6 @@ import AppKit
 
 private enum OrbitWindowID {
     static let workspace = "workspace-window"
-    static let endSession = "end-session-window"
 }
 
 private extension Notification.Name {
@@ -56,28 +55,6 @@ struct OrbitApp: App {
             }
         }
         .defaultSize(width: 920, height: 680)
-
-        Window("End Session", id: OrbitWindowID.endSession) {
-            if store.windowDestinations.contains(.endSessionWindow), let draft = store.endSessionDraft {
-                EndSessionPromptView(
-                    draft: draft,
-                    onConfirm: { name in
-                        store.send(.endSessionConfirmTapped(name: name))
-                    },
-                    onCancel: {
-                        store.send(.endSessionCancelTapped)
-                    }
-                )
-                .onDisappear {
-                    store.send(.endSessionWindowClosed)
-                }
-            } else {
-                Color.clear
-                    .frame(width: 1, height: 1)
-            }
-        }
-        .defaultSize(width: 400, height: 260)
-
     }
 }
 
@@ -139,9 +116,6 @@ private struct WindowStateCoordinator: View {
         if removed.contains(.workspaceWindow) {
             dismissWindow(id: OrbitWindowID.workspace)
         }
-        if removed.contains(.endSessionWindow) {
-            dismissWindow(id: OrbitWindowID.endSession)
-        }
 
         if added.contains(.workspaceWindow) {
             openWindow(id: OrbitWindowID.workspace)
@@ -149,10 +123,6 @@ private struct WindowStateCoordinator: View {
         }
         if added.contains(.captureWindow) {
             QuickCapturePanelController.shared.present(store: store)
-        }
-        if added.contains(.endSessionWindow) {
-            openWindow(id: OrbitWindowID.endSession)
-            bringEndSessionWindowToFront()
         }
     }
 
@@ -167,16 +137,6 @@ private struct WindowStateCoordinator: View {
         }
     }
 
-    private func bringEndSessionWindowToFront() {
-        DispatchQueue.main.async {
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            guard let window = NSApplication.shared.windows.first(where: { $0.title == "End Session" }) else {
-                return
-            }
-            window.orderFrontRegardless()
-            window.makeKey()
-        }
-    }
 }
 
 private struct AppLifecycleCoordinator: View {

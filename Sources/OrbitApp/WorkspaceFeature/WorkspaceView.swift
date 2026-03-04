@@ -218,8 +218,18 @@ struct WorkspaceView: View {
                 if let activeSession = store.activeSession {
                     ActiveSessionHero(
                         session: activeSession,
+                        endSessionDraft: store.endSessionDraft,
                         onOpenSession: {
                             openSessionSectionButtonTapped()
+                        },
+                        onEndSessionTapped: {
+                            store.send(.endSessionTapped)
+                        },
+                        onEndSessionConfirm: { name in
+                            store.send(.endSessionConfirmTapped(name: name))
+                        },
+                        onEndSessionCancel: {
+                            store.send(.endSessionCancelTapped)
                         }
                     )
                     .transition(.orbitMicro)
@@ -582,7 +592,11 @@ private struct SessionRow: View {
 
 private struct ActiveSessionHero: View {
     let session: FocusSessionRecord
+    let endSessionDraft: AppFeature.State.EndSessionDraft?
     let onOpenSession: () -> Void
+    let onEndSessionTapped: () -> Void
+    let onEndSessionConfirm: (String) -> Void
+    let onEndSessionCancel: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -617,6 +631,33 @@ private struct ActiveSessionHero: View {
                 Text("Elapsed \(session.startedAt, style: .timer)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button("End Session", role: .destructive) {
+                    onEndSessionTapped()
+                }
+                .buttonStyle(.orbitDestructive)
+                .popover(
+                    isPresented: Binding(
+                        get: { endSessionDraft != nil },
+                        set: { isPresented in
+                            if !isPresented {
+                                onEndSessionCancel()
+                            }
+                        }
+                    ),
+                    arrowEdge: .bottom
+                ) {
+                    if let draft = endSessionDraft {
+                        EndSessionPromptView(
+                            draft: draft,
+                            onConfirm: onEndSessionConfirm,
+                            onCancel: onEndSessionCancel
+                        )
+                    }
+                }
+                .transition(.orbitMicro)
             }
         }
         .padding(12)

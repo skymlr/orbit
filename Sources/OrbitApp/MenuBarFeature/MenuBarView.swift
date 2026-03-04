@@ -58,13 +58,6 @@ struct MenuBarView: View {
                         }
                         .buttonStyle(.orbitSecondary)
                     }
-
-                    Button("End Session") {
-                        dismissMenuThen {
-                            store.send(.workspaceWindowEndSessionTapped)
-                        }
-                    }
-                    .buttonStyle(.orbitQuiet)
                 }
                 .transition(.orbitMicro)
             } else {

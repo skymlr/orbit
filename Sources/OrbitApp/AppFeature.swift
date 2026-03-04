@@ -14,7 +14,6 @@ struct AppFeature {
     enum WindowDestination: Hashable, Sendable {
         case workspaceWindow
         case captureWindow
-        case endSessionWindow
     }
 
     @ObservableState
@@ -124,11 +123,9 @@ struct AppFeature {
         case captureTapped
         case openWorkspaceTapped
         case endSessionTapped
-        case workspaceWindowEndSessionTapped
 
         case workspaceWindowClosed
         case captureWindowClosed
-        case endSessionWindowClosed
 
         case captureSubmitTapped
         case sessionAddTaskTapped
@@ -327,17 +324,11 @@ struct AppFeature {
                     id: uuid(),
                     name: active.name
                 )
-                return .none
-
-            case .workspaceWindowEndSessionTapped:
-                guard let active = state.activeSession else { return .none }
-                state.endSessionDraft = State.EndSessionDraft(
-                    id: uuid(),
-                    name: active.name
-                )
                 state.windowDestinations.remove(.captureWindow)
-                state.windowDestinations.remove(.workspaceWindow)
-                state.windowDestinations.insert(.endSessionWindow)
+                let didOpenWorkspace = state.windowDestinations.insert(.workspaceWindow).inserted
+                if didOpenWorkspace {
+                    state.workspaceWindowFocusRequest &+= 1
+                }
                 return .none
 
             case .workspaceWindowClosed:
@@ -349,11 +340,6 @@ struct AppFeature {
                 state.captureDraft = State.CaptureDraft(
                     selectedCategoryIDs: persistedCaptureCategoryIDs(state)
                 )
-                return .none
-
-            case .endSessionWindowClosed:
-                state.windowDestinations.remove(.endSessionWindow)
-                state.endSessionDraft = nil
                 return .none
 
             case .captureSubmitTapped:
@@ -547,7 +533,6 @@ struct AppFeature {
                 guard let activeSession = state.activeSession else { return .none }
 
                 state.endSessionDraft = nil
-                state.windowDestinations.remove(.endSessionWindow)
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.workspaceWindow)
 
@@ -580,13 +565,11 @@ struct AppFeature {
 
             case .endSessionCancelTapped:
                 state.endSessionDraft = nil
-                state.windowDestinations.remove(.endSessionWindow)
                 return .none
 
             case .autoEndSession:
                 guard let activeSession = state.activeSession else { return .none }
                 state.endSessionDraft = nil
-                state.windowDestinations.remove(.endSessionWindow)
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.workspaceWindow)
 
@@ -797,7 +780,6 @@ struct AppFeature {
                 state.taskDrafts = []
                 state.endSessionDraft = nil
                 state.windowDestinations.remove(.captureWindow)
-                state.windowDestinations.remove(.endSessionWindow)
                 state.selectedTaskCategoryFilterIDs.removeAll()
                 state.selectedTaskPriorityFilters.removeAll()
 
@@ -824,7 +806,6 @@ struct AppFeature {
                 }
 
                 state.endSessionDraft = nil
-                state.windowDestinations.remove(.endSessionWindow)
                 state.windowDestinations.remove(.captureWindow)
                 state.captureDraft = State.CaptureDraft(
                     selectedCategoryIDs: []

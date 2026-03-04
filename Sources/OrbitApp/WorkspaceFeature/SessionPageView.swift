@@ -13,8 +13,6 @@ struct SessionPageView: View {
     }
 
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
-    @State private var isEndSessionConfirmationPending = false
-    @State private var endSessionConfirmationToken = 0
     @State private var focusedTaskID: UUID?
 
     var body: some View {
@@ -31,7 +29,6 @@ struct SessionPageView: View {
                     SessionTaskFilterBar(store: store)
 
                     tasksContent
-                    endSessionControl
                 }
                 .frame(maxWidth: Layout.contentMaxWidth, alignment: .leading)
                 .transition(.orbitMicro)
@@ -55,8 +52,6 @@ struct SessionPageView: View {
         }
         .toolbarBackground(.hidden, for: .windowToolbar)
         .task(id: store.activeSession?.id) {
-            isEndSessionConfirmationPending = false
-            endSessionConfirmationToken += 1
             focusedTaskID = nil
         }
         .onChange(of: sortedFilteredTaskIDs) { _, newTaskIDs in
@@ -70,7 +65,6 @@ struct SessionPageView: View {
         }
         .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
         .animation(.easeInOut(duration: 0.16), value: store.taskDrafts.count)
-        .animation(.easeInOut(duration: 0.16), value: isEndSessionConfirmationPending)
     }
 
     private var emptyState: some View {
@@ -189,26 +183,6 @@ struct SessionPageView: View {
             }
             .transition(.orbitMicro)
         }
-    }
-
-    private var endSessionControl: some View {
-        HStack {
-            Spacer()
-            if isEndSessionConfirmationPending {
-                Button("Confirm End Session", role: .destructive) {
-                    store.send(.workspaceWindowEndSessionTapped)
-                }
-                .buttonStyle(.orbitDestructive)
-                .transition(.orbitMicro)
-            } else {
-                Button("End Session") {
-                    endSessionButtonTapped()
-                }
-                .buttonStyle(.orbitQuiet)
-                .transition(.orbitMicro)
-            }
-        }
-        .padding(.top, 2)
     }
 
     private func taskRow(for draft: AppFeature.State.TaskDraft) -> some View {
@@ -433,11 +407,6 @@ struct SessionPageView: View {
         }
     }
 
-    private func endSessionButtonTapped() {
-        isEndSessionConfirmationPending = true
-        scheduleEndSessionConfirmationReset()
-    }
-
     private func startSessionButtonTapped() {
         store.send(.startSessionTapped)
     }
@@ -460,15 +429,6 @@ struct SessionPageView: View {
                 .foregroundStyle(.white.opacity(0.86))
         }
         .foregroundStyle(.white)
-    }
-
-    private func scheduleEndSessionConfirmationReset() {
-        endSessionConfirmationToken += 1
-        let token = endSessionConfirmationToken
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            guard token == endSessionConfirmationToken, isEndSessionConfirmationPending else { return }
-            isEndSessionConfirmationPending = false
-        }
     }
 
 }
