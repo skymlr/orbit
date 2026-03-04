@@ -24,10 +24,11 @@
 		7CA2F5C988DE8FFFCF264367 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 3AAF415269A2878FE0A31517 /* SQLiteData */; };
 		8184011CBB40FF439A2FADC0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9589E10F327CF6C7BCA98486 /* Assets.xcassets */; };
 		8555587D3F4BEDE136D3B3D2 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = C1F90FC1C0C31122E35D4F73 /* Dependencies */; };
-		8EDFE4861A5383A70956B635 /* MarkdownSourceTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C50C0AF4229125CAF4C6A99 /* MarkdownSourceTextView.swift */; };
-		96CC123BA8B91E42BD24988B /* OrbitButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC3E60A795D51747E39D007 /* OrbitButtonStyles.swift */; };
-		A4B4B69DDCEF26B1A3F4998A /* MarkdownExportClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC36E74A03098D2843A1524B /* MarkdownExportClient.swift */; };
-		A91044BC5CD8B609A747ECEE /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F88D4E1F70F7B6FB8EFDDC /* WorkspaceView.swift */; };
+			8EDFE4861A5383A70956B635 /* MarkdownSourceTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C50C0AF4229125CAF4C6A99 /* MarkdownSourceTextView.swift */; };
+			96CC123BA8B91E42BD24988B /* OrbitButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC3E60A795D51747E39D007 /* OrbitButtonStyles.swift */; };
+			A7B91C22D4E74FB2A9C1D113 /* OrbitToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F8E410B2A64D71AEB35C09 /* OrbitToastView.swift */; };
+			A4B4B69DDCEF26B1A3F4998A /* MarkdownExportClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC36E74A03098D2843A1524B /* MarkdownExportClient.swift */; };
+			A91044BC5CD8B609A747ECEE /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F88D4E1F70F7B6FB8EFDDC /* WorkspaceView.swift */; };
 		AB6C444405882E05AADED0C9 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */; };
 		B4FC2B004887F046D550D8F4 /* SessionPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2740EBBEC4BEB38C2A7E3164 /* SessionPageView.swift */; };
 		B58893B59D3CCFCD6A37589C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C539D5AC9B61A2745598F2C /* Models.swift */; };
@@ -66,9 +67,10 @@
 		F4F88D4E1F70F7B6FB8EFDDC /* WorkspaceView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
 		F60A9C526798D1F4E7B8615C /* MarkdownEditingCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownEditingCore.swift; sourceTree = "<group>"; };
 		F647314B9140B90A4D91A1FE /* Schema.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Schema.swift; sourceTree = "<group>"; };
-		F6A0366521FB1CC140F62320 /* HotkeyManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
-		FD45782742C5B3180A06E9EE /* App.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
-		FDC3E60A795D51747E39D007 /* OrbitButtonStyles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitButtonStyles.swift; sourceTree = "<group>"; };
+			F6A0366521FB1CC140F62320 /* HotkeyManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
+			FD45782742C5B3180A06E9EE /* App.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+			FDC3E60A795D51747E39D007 /* OrbitButtonStyles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitButtonStyles.swift; sourceTree = "<group>"; };
+			C9F8E410B2A64D71AEB35C09 /* OrbitToastView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitToastView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -139,11 +141,12 @@
 				C23484D86A339BABFCE21B79 /* HotkeyHint.swift */,
 				F60A9C526798D1F4E7B8615C /* MarkdownEditingCore.swift */,
 				B8D965877A754D1CD6916D76 /* MarkdownFormattingBar.swift */,
-				8C50C0AF4229125CAF4C6A99 /* MarkdownSourceTextView.swift */,
-				FDC3E60A795D51747E39D007 /* OrbitButtonStyles.swift */,
-				66F7DAB48B777F1E13ABC150 /* OrbitSpaceBackground.swift */,
-				1BFED63E38C932C97DD8C809 /* QuickCapturePanelController.swift */,
-			);
+					8C50C0AF4229125CAF4C6A99 /* MarkdownSourceTextView.swift */,
+					FDC3E60A795D51747E39D007 /* OrbitButtonStyles.swift */,
+					66F7DAB48B777F1E13ABC150 /* OrbitSpaceBackground.swift */,
+					C9F8E410B2A64D71AEB35C09 /* OrbitToastView.swift */,
+					1BFED63E38C932C97DD8C809 /* QuickCapturePanelController.swift */,
+				);
 			path = Shared;
 			sourceTree = "<group>";
 		};
@@ -320,11 +323,12 @@
 				C1941AAA53B6E6A12C5F3D8F /* HotkeyHint.swift in Sources */,
 				CF6FD4FB57612D275C562C55 /* MarkdownEditingCore.swift in Sources */,
 				1EAC93A0DCC35E3ACFEFD029 /* MarkdownFormattingBar.swift in Sources */,
-				8EDFE4861A5383A70956B635 /* MarkdownSourceTextView.swift in Sources */,
-				96CC123BA8B91E42BD24988B /* OrbitButtonStyles.swift in Sources */,
-				1286FD6FED5E76D6BDD64FD2 /* OrbitSpaceBackground.swift in Sources */,
-				014513AE2CD58CE20D97A2F3 /* QuickCapturePanelController.swift in Sources */,
-				B4FC2B004887F046D550D8F4 /* SessionPageView.swift in Sources */,
+					8EDFE4861A5383A70956B635 /* MarkdownSourceTextView.swift in Sources */,
+					96CC123BA8B91E42BD24988B /* OrbitButtonStyles.swift in Sources */,
+					1286FD6FED5E76D6BDD64FD2 /* OrbitSpaceBackground.swift in Sources */,
+					A7B91C22D4E74FB2A9C1D113 /* OrbitToastView.swift in Sources */,
+					014513AE2CD58CE20D97A2F3 /* QuickCapturePanelController.swift in Sources */,
+					B4FC2B004887F046D550D8F4 /* SessionPageView.swift in Sources */,
 				A1C38E14B5D64F9A87C0E113 /* SessionTaskFilterBarView.swift in Sources */,
 				E1A4D2F03A84C55B97F0AA11 /* TaskRowView.swift in Sources */,
 				A91044BC5CD8B609A747ECEE /* WorkspaceView.swift in Sources */,

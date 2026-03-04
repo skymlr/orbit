@@ -165,10 +165,219 @@ struct AppFeatureTests {
     }
 
     @Test
+    func startSessionTappedShowsSuccessToastAndAutoDismisses() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+        let task = active.tasks[0]
+        let toastID = UUID(uuidString: "9289D0E7-BE5C-4FA0-9F84-F793A3BF9D7A")!
+        let clock = TestClock()
+
+        var initial = AppFeature.State()
+        initial.categories = sampleCategories
+
+        var repository = FocusRepository.testValue
+        repository.startSession = { _ in active }
+        repository.loadActiveSession = { active }
+        repository.listSessions = { [] }
+        repository.listCategories = { sampleCategories }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.focusRepository = repository
+            $0.continuousClock = clock
+            $0.date.now = Date(timeIntervalSince1970: 1_700_000_000)
+            $0.uuid = .constant(toastID)
+        }
+
+        await store.send(.startSessionTapped) {
+            $0.windowDestinations.insert(.workspaceWindow)
+        }
+        await store.receive(\.loadActiveSessionResponse) {
+            $0.activeSession = active
+            $0.taskDrafts = [
+                AppFeature.State.TaskDraft(
+                    id: task.id,
+                    categories: task.categories,
+                    markdown: task.markdown,
+                    priority: task.priority,
+                    completedAt: task.completedAt,
+                    carriedFromTaskID: task.carriedFromTaskID,
+                    carriedFromSessionName: task.carriedFromSessionName,
+                    createdAt: task.createdAt
+                )
+            ]
+            $0.captureDraft.selectedCategoryIDs = [projectACategoryID]
+        }
+        await store.receive(\.openWorkspaceTapped) {
+            $0.workspaceWindowFocusRequest = 1
+        }
+        await store.receive(\.settingsRefreshTapped)
+        await store.receive(\.showToast) {
+            $0.toast = AppFeature.State.Toast(
+                id: toastID,
+                tone: .success,
+                message: "Session started"
+            )
+        }
+        await store.receive(\.settingsDataResponse) {
+            $0.settings.categories = sampleCategories
+        }
+
+        await clock.advance(by: .milliseconds(2_500))
+        await store.receive(\.toastAutoDismissFired) {
+            $0.toast = nil
+        }
+        await store.send(.loadActiveSessionResponse(nil)) {
+            $0.activeSession = nil
+            $0.taskDrafts = []
+            $0.endSessionDraft = nil
+            $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
+            $0.selectedTaskCategoryFilterIDs = []
+            $0.selectedTaskPriorityFilters = []
+        }
+    }
+
+    @Test
+    func captureSubmitTappedWithoutEditModeShowsFailureToastWhenSaveFails() async {
+        let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
+        let toastID = UUID(uuidString: "BFF9F609-C1F5-4584-8FA0-C64A430D30F2")!
+        let clock = TestClock()
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+        initial.categories = sampleCategories
+        initial.captureDraft.markdown = "New task body"
+        initial.captureDraft.priority = .low
+        initial.captureDraft.selectedCategoryIDs = [projectACategoryID]
+        initial.windowDestinations.insert(.captureWindow)
+
+        var repository = FocusRepository.testValue
+        repository.createTask = { _, _, _, _, _ in
+            throw AppFeatureTestError.failed
+        }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.focusRepository = repository
+            $0.continuousClock = clock
+            $0.date.now = Date(timeIntervalSince1970: 1_700_000_000)
+            $0.uuid = .constant(toastID)
+        }
+
+        await store.send(.captureSubmitTapped) {
+            $0.captureDraft = AppFeature.State.CaptureDraft(
+                selectedCategoryIDs: [projectACategoryID]
+            )
+            $0.windowDestinations.remove(.captureWindow)
+        }
+        await store.receive(\.showToast) {
+            $0.toast = AppFeature.State.Toast(
+                id: toastID,
+                tone: .failure,
+                message: "Could not save task"
+            )
+        }
+        await store.send(.toastDismissTapped) {
+            $0.toast = nil
+        }
+    }
+
+    @Test
+    func settingsExportAllTappedWithNoCompletedSessionsShowsFailureToast() async {
+        let toastID = UUID(uuidString: "58D6FB1D-0A12-4D3E-B12A-17448DA0EED6")!
+        let clock = TestClock()
+
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.uuid = .constant(toastID)
+        }
+
+        await store.send(.settingsExportAllTapped(URL(fileURLWithPath: "/tmp/orbit-export")))
+        await store.receive(\.showToast) {
+            $0.toast = AppFeature.State.Toast(
+                id: toastID,
+                tone: .failure,
+                message: "No completed sessions to export"
+            )
+        }
+        await store.send(.toastDismissTapped) {
+            $0.toast = nil
+        }
+    }
+
+    @Test
+    func settingsAddCategoryTappedWithDuplicateOrInvalidValueShowsFailureToast() async {
+        let toastID = UUID(uuidString: "1A91951B-35A7-43A8-B4DC-4EA2463569FA")!
+        let clock = TestClock()
+
+        var repository = FocusRepository.testValue
+        repository.addCategory = { _, _ in nil }
+
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.focusRepository = repository
+            $0.uuid = .constant(toastID)
+        }
+
+        await store.send(.settingsAddCategoryTapped("project-a", "#58B5FF"))
+        await store.receive(\.showToast) {
+            $0.toast = AppFeature.State.Toast(
+                id: toastID,
+                tone: .failure,
+                message: "Category already exists or name is invalid"
+            )
+        }
+        await store.send(.toastDismissTapped) {
+            $0.toast = nil
+        }
+    }
+
+    @Test
+    func showToastReplacesCurrentToastAndCancelsPreviousAutoDismiss() async {
+        let firstToastID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        let secondToastID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+        let clock = TestClock()
+
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.uuid = .incrementing
+        }
+
+        await store.send(.showToast(tone: .success, message: "Hotkeys saved")) {
+            $0.toast = AppFeature.State.Toast(
+                id: firstToastID,
+                tone: .success,
+                message: "Hotkeys saved"
+            )
+        }
+        await store.send(.showToast(tone: .success, message: "Hotkeys reset to defaults")) {
+            $0.toast = AppFeature.State.Toast(
+                id: secondToastID,
+                tone: .success,
+                message: "Hotkeys reset to defaults"
+            )
+        }
+
+        await clock.advance(by: .milliseconds(2_500))
+        await store.receive(\.toastAutoDismissFired) {
+            $0.toast = nil
+        }
+    }
+
+    @Test
     func captureSubmitTappedInEditModeUpdatesExistingTask() async {
         let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
         let task = active.tasks[0]
         let tracker = TaskMutationTracker()
+        let toastID = UUID(uuidString: "5BE35653-3538-45D1-9DA3-42528E04D3DB")!
+        let clock = TestClock()
 
         var initial = AppFeature.State()
         initial.activeSession = active
@@ -182,7 +391,7 @@ struct AppFeatureTests {
         var repository = FocusRepository.testValue
         repository.updateTask = { taskID, _, _, categoryIDs, _ in
             await tracker.recordUpdate(taskID: taskID, categoryIDs: categoryIDs)
-            return nil
+            return task
         }
         repository.createTask = { sessionID, _, _, categoryIDs, _ in
             await tracker.recordCreate(sessionID: sessionID, categoryIDs: categoryIDs)
@@ -195,8 +404,10 @@ struct AppFeatureTests {
         let store = TestStore(initialState: initial) {
             AppFeature()
         } withDependencies: {
+            $0.continuousClock = clock
             $0.focusRepository = repository
             $0.date.now = Date(timeIntervalSince1970: 1_700_000_000)
+            $0.uuid = .constant(toastID)
         }
 
         await store.send(.captureSubmitTapped) {
@@ -204,6 +415,13 @@ struct AppFeatureTests {
                 selectedCategoryIDs: [projectBCategoryID, projectACategoryID]
             )
             $0.windowDestinations.remove(.captureWindow)
+        }
+        await store.receive(\.showToast) {
+            $0.toast = AppFeature.State.Toast(
+                id: toastID,
+                tone: .success,
+                message: "Task updated"
+            )
         }
         await store.receive(\.loadActiveSessionResponse) {
             $0.activeSession = nil
@@ -220,6 +438,9 @@ struct AppFeatureTests {
             $0.settings.categories = sampleCategories
             $0.categories = sampleCategories
         }
+        await store.send(.toastDismissTapped) {
+            $0.toast = nil
+        }
 
         let counts = await tracker.counts()
         #expect(counts.updated == [task.id])
@@ -231,6 +452,9 @@ struct AppFeatureTests {
     func captureSubmitTappedWithoutEditModeCreatesNewTask() async {
         let active = makeActiveSession(taskCategoryIDs: [projectACategoryID])
         let tracker = TaskMutationTracker()
+        let toastID = UUID(uuidString: "B5DFE991-8BCE-45B2-910D-1768030A2184")!
+        let createdTaskID = UUID(uuidString: "5F7B07B6-D730-4C6D-9A80-53E4597504BF")!
+        let clock = TestClock()
 
         var initial = AppFeature.State()
         initial.activeSession = active
@@ -247,7 +471,18 @@ struct AppFeatureTests {
         }
         repository.createTask = { sessionID, _, _, categoryIDs, _ in
             await tracker.recordCreate(sessionID: sessionID, categoryIDs: categoryIDs)
-            return nil
+            return FocusTaskRecord(
+                id: createdTaskID,
+                sessionID: sessionID,
+                categories: noteCategories(categoryIDs),
+                markdown: "New task body",
+                priority: .low,
+                completedAt: nil,
+                carriedFromTaskID: nil,
+                carriedFromSessionName: nil,
+                createdAt: Date(timeIntervalSince1970: 1_700_000_000),
+                updatedAt: Date(timeIntervalSince1970: 1_700_000_000)
+            )
         }
         repository.loadActiveSession = { nil }
         repository.listSessions = { [] }
@@ -256,8 +491,10 @@ struct AppFeatureTests {
         let store = TestStore(initialState: initial) {
             AppFeature()
         } withDependencies: {
+            $0.continuousClock = clock
             $0.focusRepository = repository
             $0.date.now = Date(timeIntervalSince1970: 1_700_000_000)
+            $0.uuid = .constant(toastID)
         }
 
         await store.send(.captureSubmitTapped) {
@@ -265,6 +502,13 @@ struct AppFeatureTests {
                 selectedCategoryIDs: [projectACategoryID, projectBCategoryID]
             )
             $0.windowDestinations.remove(.captureWindow)
+        }
+        await store.receive(\.showToast) {
+            $0.toast = AppFeature.State.Toast(
+                id: toastID,
+                tone: .success,
+                message: "Task saved"
+            )
         }
         await store.receive(\.loadActiveSessionResponse) {
             $0.activeSession = nil
@@ -280,6 +524,9 @@ struct AppFeatureTests {
         await store.receive(\.settingsDataResponse) {
             $0.settings.categories = sampleCategories
             $0.categories = sampleCategories
+        }
+        await store.send(.toastDismissTapped) {
+            $0.toast = nil
         }
 
         let counts = await tracker.counts()
@@ -410,6 +657,7 @@ struct AppFeatureTests {
         #expect(counts.updated == [task.id])
         #expect(counts.updatedCategories == [[projectACategoryID]])
         #expect(counts.updatedMarkdowns == ["- [x] Launch\n- [x] Review"])
+        #expect(store.state.toast == nil)
     }
 
     @Test
@@ -659,6 +907,10 @@ actor TaskMutationTracker {
             completedFlags
         )
     }
+}
+
+private enum AppFeatureTestError: Error {
+    case failed
 }
 
 private let projectACategoryID = UUID(uuidString: "3261E8B5-4302-4D32-9FDF-F5D4AB4AF4D9")!

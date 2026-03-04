@@ -62,6 +62,20 @@ struct WorkspaceView: View {
         .background {
             OrbitSpaceBackground()
         }
+        .overlay(alignment: .topTrailing) {
+            if let toast = store.toast {
+                OrbitToastView(
+                    toast: toast,
+                    onDismiss: {
+                        store.send(.toastDismissTapped)
+                    }
+                )
+                .padding(.top, 14)
+                .padding(.trailing, 18)
+                .transition(.orbitToastNotification)
+            }
+        }
+        .animation(.easeInOut(duration: 0.24), value: store.toast?.id)
     }
 
     @ViewBuilder
@@ -111,13 +125,6 @@ struct WorkspaceView: View {
                                 .id(selectedSection)
                                 .transition(.orbitMicro)
                         }
-
-                        if let message = store.settings.statusMessage {
-                            Text(message)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .transition(.orbitMicro)
-                        }
                     }
                     .padding(20)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -127,7 +134,6 @@ struct WorkspaceView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle(selectedSection.rawValue)
         .animation(.easeInOut(duration: 0.18), value: selectedSection)
-        .animation(.easeInOut(duration: 0.18), value: store.settings.statusMessage)
     }
 
     private var hotkeysSection: some View {

@@ -165,6 +165,7 @@ struct SessionPageView: View {
                         taskRow(for: draft)
                     }
                 }
+                .padding(.trailing, 8)
             }
             .scrollIndicators(.visible)
             .transition(.orbitMicro)

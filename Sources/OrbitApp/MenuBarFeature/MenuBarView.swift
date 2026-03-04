@@ -25,13 +25,6 @@ struct MenuBarView: View {
                 Spacer()
             }
 
-            if let statusMessage = store.settings.statusMessage {
-                Text(statusMessage)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .transition(.orbitMicro)
-            }
-
             if let activeSession = store.activeSession {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 8) {
@@ -90,7 +83,6 @@ struct MenuBarView: View {
         .padding(14)
         .frame(width: 360)
         .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
-        .animation(.easeInOut(duration: 0.18), value: store.settings.statusMessage)
         .background {
             ZStack {
                 OrbitSpaceBackground()

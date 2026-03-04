@@ -7,6 +7,7 @@ struct AppFeature {
     private enum CancelID {
         case inactivityMonitor
         case hotkeyRegistration
+        case toastAutoDismiss
     }
 
     @CasePathable
@@ -48,13 +49,23 @@ struct AppFeature {
             var createdAt: Date
         }
 
+        struct Toast: Equatable, Identifiable {
+            enum Tone: Equatable {
+                case success
+                case failure
+            }
+
+            var id: UUID
+            var tone: Tone
+            var message: String
+        }
+
         struct SettingsState: Equatable {
             var sessions: [FocusSessionRecord] = []
             var categories: [SessionCategoryRecord] = []
             var startShortcut = HotkeySettings.default.startShortcut
             var captureShortcut = HotkeySettings.default.captureShortcut
             var captureNextPriorityShortcut = HotkeySettings.default.captureNextPriorityShortcut
-            var statusMessage: String?
         }
 
         var activeSession: FocusSessionRecord?
@@ -70,6 +81,7 @@ struct AppFeature {
         var selectedTaskPriorityFilters: Set<NotePriority> = []
 
         var settings = SettingsState()
+        var toast: Toast?
 
         var windowDestinations: Set<WindowDestination> = []
         var workspaceWindowFocusRequest = 0
@@ -145,8 +157,9 @@ struct AppFeature {
         case settingsDeleteSessionTapped(UUID)
         case settingsExportAllTapped(URL)
         case settingsExportSessionTapped(UUID, URL)
-        case settingsExportCompleted(Int)
-        case operationFailed(String)
+        case showToast(tone: State.Toast.Tone, message: String)
+        case toastAutoDismissFired(UUID)
+        case toastDismissTapped
         case retryBootstrapActiveSessionButtonTapped
 
         case bootstrapActiveSessionLoaded(FocusSessionRecord?)
@@ -162,6 +175,7 @@ struct AppFeature {
     @Dependency(\.hotkeySettingsClient) var hotkeySettingsClient
     @Dependency(\.inactivityClient) var inactivityClient
     @Dependency(\.markdownExportClient) var markdownExportClient
+    @Dependency(\.continuousClock) var clock
     @Dependency(\.uuid) var uuid
 
     var body: some ReducerOf<Self> {
@@ -212,9 +226,11 @@ struct AppFeature {
                 state.taskDrafts = []
                 state.windowDestinations.removeAll()
                 state.endSessionDraft = nil
+                state.toast = nil
                 return .merge(
                     .cancel(id: CancelID.inactivityMonitor),
-                    .cancel(id: CancelID.hotkeyRegistration)
+                    .cancel(id: CancelID.hotkeyRegistration),
+                    .cancel(id: CancelID.toastAutoDismiss)
                 )
 
             case .inactivityTick:
@@ -264,14 +280,16 @@ struct AppFeature {
                     do {
                         _ = try await focusRepository.startSession(now)
                         let active = try await focusRepository.loadActiveSession()
+                        guard active != nil else {
+                            await send(.showToast(tone: .failure, message: "Could not start session"))
+                            return
+                        }
                         await send(.loadActiveSessionResponse(active))
                         await send(.openWorkspaceTapped)
                         await send(.settingsRefreshTapped)
-                        if active == nil {
-                            await send(.operationFailed("Failed to load the newly started session."))
-                        }
+                        await send(.showToast(tone: .success, message: "Session started"))
                     } catch {
-                        await send(.operationFailed("Failed to start session: \(error.localizedDescription)"))
+                        await send(.showToast(tone: .failure, message: "Could not start session"))
                     }
                 }
 
@@ -286,14 +304,15 @@ struct AppFeature {
                     do {
                         _ = try await focusRepository.startSession(now)
                         let active = try await focusRepository.loadActiveSession()
+                        guard active != nil else {
+                            await send(.showToast(tone: .failure, message: "Could not start session"))
+                            return
+                        }
                         await send(.loadActiveSessionResponse(active))
                         await send(.captureTapped)
                         await send(.settingsRefreshTapped)
-                        if active == nil {
-                            await send(.operationFailed("Failed to load the newly started session."))
-                        }
                     } catch {
-                        await send(.operationFailed("Failed to start capture session: \(error.localizedDescription)"))
+                        await send(.showToast(tone: .failure, message: "Could not start session"))
                     }
                 }
 
@@ -351,14 +370,45 @@ struct AppFeature {
                 state.windowDestinations.remove(.captureWindow)
 
                 return .run { send in
-                    if let taskID = editingTaskID {
-                        _ = try? await focusRepository.updateTask(taskID, markdown, priority, selectedCategoryIDs, now)
-                    } else {
-                        _ = try? await focusRepository.createTask(activeSession.id, markdown, priority, selectedCategoryIDs, now)
+                    do {
+                        if let taskID = editingTaskID {
+                            let updatedTask = try await focusRepository.updateTask(
+                                taskID,
+                                markdown,
+                                priority,
+                                selectedCategoryIDs,
+                                now
+                            )
+                            guard updatedTask != nil else {
+                                await send(.showToast(tone: .failure, message: "Could not update task"))
+                                return
+                            }
+                            await send(.showToast(tone: .success, message: "Task updated"))
+                        } else {
+                            let createdTask = try await focusRepository.createTask(
+                                activeSession.id,
+                                markdown,
+                                priority,
+                                selectedCategoryIDs,
+                                now
+                            )
+                            guard createdTask != nil else {
+                                await send(.showToast(tone: .failure, message: "Could not save task"))
+                                return
+                            }
+                            await send(.showToast(tone: .success, message: "Task saved"))
+                        }
+
+                        let active = try? await focusRepository.loadActiveSession()
+                        await send(.loadActiveSessionResponse(active))
+                        await send(.settingsRefreshTapped)
+                    } catch {
+                        if editingTaskID != nil {
+                            await send(.showToast(tone: .failure, message: "Could not update task"))
+                        } else {
+                            await send(.showToast(tone: .failure, message: "Could not save task"))
+                        }
                     }
-                    let active = try? await focusRepository.loadActiveSession()
-                    await send(.loadActiveSessionResponse(active))
-                    await send(.settingsRefreshTapped)
                 }
 
             case .sessionAddTaskTapped:
@@ -482,10 +532,15 @@ struct AppFeature {
                 guard state.activeSession != nil else { return .none }
 
                 return .run { send in
-                    try? await focusRepository.deleteTask(taskID)
-                    let active = try? await focusRepository.loadActiveSession()
-                    await send(.loadActiveSessionResponse(active))
-                    await send(.settingsRefreshTapped)
+                    do {
+                        try await focusRepository.deleteTask(taskID)
+                        let active = try? await focusRepository.loadActiveSession()
+                        await send(.loadActiveSessionResponse(active))
+                        await send(.settingsRefreshTapped)
+                        await send(.showToast(tone: .success, message: "Task deleted"))
+                    } catch {
+                        await send(.showToast(tone: .failure, message: "Could not delete task"))
+                    }
                 }
 
             case let .endSessionConfirmTapped(name):
@@ -497,15 +552,30 @@ struct AppFeature {
                 state.windowDestinations.remove(.workspaceWindow)
 
                 return .run { send in
-                    _ = try? await focusRepository.endSession(
-                        activeSession.id,
-                        name,
-                        .manual,
-                        now
-                    )
-                    let active = try? await focusRepository.loadActiveSession()
-                    await send(.loadActiveSessionResponse(active))
-                    await send(.settingsRefreshTapped)
+                    do {
+                        let endedSession = try await focusRepository.endSession(
+                            activeSession.id,
+                            name,
+                            .manual,
+                            now
+                        )
+                        guard endedSession != nil else {
+                            let active = try? await focusRepository.loadActiveSession()
+                            await send(.loadActiveSessionResponse(active))
+                            await send(.settingsRefreshTapped)
+                            await send(.showToast(tone: .failure, message: "Could not end session"))
+                            return
+                        }
+                        let active = try? await focusRepository.loadActiveSession()
+                        await send(.loadActiveSessionResponse(active))
+                        await send(.settingsRefreshTapped)
+                        await send(.showToast(tone: .success, message: "Session ended"))
+                    } catch {
+                        let active = try? await focusRepository.loadActiveSession()
+                        await send(.loadActiveSessionResponse(active))
+                        await send(.settingsRefreshTapped)
+                        await send(.showToast(tone: .failure, message: "Could not end session"))
+                    }
                 }
 
             case .endSessionCancelTapped:
@@ -571,9 +641,11 @@ struct AppFeature {
                 )
                 state.hotkeys = settings
                 hotkeySettingsClient.save(settings)
-                state.settings.statusMessage = "Hotkeys saved"
 
-                return .send(.registerHotkeys(settings))
+                return .merge(
+                    .send(.registerHotkeys(settings)),
+                    .send(.showToast(tone: .success, message: "Hotkeys saved"))
+                )
 
             case .settingsResetHotkeysTapped:
                 let previous = state.hotkeys
@@ -586,15 +658,26 @@ struct AppFeature {
                 state.settings.startShortcut = defaults.startShortcut
                 state.settings.captureShortcut = defaults.captureShortcut
                 state.settings.captureNextPriorityShortcut = defaults.captureNextPriorityShortcut
-                state.settings.statusMessage = "Hotkeys reset to defaults"
                 hotkeySettingsClient.save(defaults)
 
-                return .send(.registerHotkeys(defaults))
+                return .merge(
+                    .send(.registerHotkeys(defaults)),
+                    .send(.showToast(tone: .success, message: "Hotkeys reset to defaults"))
+                )
 
             case let .settingsAddCategoryTapped(name, colorHex):
                 return .run { send in
-                    _ = try? await focusRepository.addCategory(name, colorHex)
-                    await send(.settingsRefreshTapped)
+                    do {
+                        let category = try await focusRepository.addCategory(name, colorHex)
+                        guard category != nil else {
+                            await send(.showToast(tone: .failure, message: "Category already exists or name is invalid"))
+                            return
+                        }
+                        await send(.settingsRefreshTapped)
+                        await send(.showToast(tone: .success, message: "Category added"))
+                    } catch {
+                        await send(.showToast(tone: .failure, message: "Category already exists or name is invalid"))
+                    }
                 }
 
             case let .settingsRenameCategoryTapped(id, name, colorHex):
@@ -605,10 +688,15 @@ struct AppFeature {
 
             case let .settingsDeleteCategoryTapped(id):
                 return .run { send in
-                    try? await focusRepository.deleteCategory(id)
-                    await send(.settingsRefreshTapped)
-                    let active = try? await focusRepository.loadActiveSession()
-                    await send(.loadActiveSessionResponse(active))
+                    do {
+                        try await focusRepository.deleteCategory(id)
+                        await send(.settingsRefreshTapped)
+                        let active = try? await focusRepository.loadActiveSession()
+                        await send(.loadActiveSessionResponse(active))
+                        await send(.showToast(tone: .success, message: "Category deleted"))
+                    } catch {
+                        await send(.showToast(tone: .failure, message: "Could not delete category"))
+                    }
                 }
 
             case let .settingsRenameSessionTapped(id, name):
@@ -621,10 +709,15 @@ struct AppFeature {
 
             case let .settingsDeleteSessionTapped(id):
                 return .run { send in
-                    try? await focusRepository.deleteSession(id)
-                    await send(.settingsRefreshTapped)
-                    let active = try? await focusRepository.loadActiveSession()
-                    await send(.loadActiveSessionResponse(active))
+                    do {
+                        try await focusRepository.deleteSession(id)
+                        await send(.settingsRefreshTapped)
+                        let active = try? await focusRepository.loadActiveSession()
+                        await send(.loadActiveSessionResponse(active))
+                        await send(.showToast(tone: .success, message: "Session deleted"))
+                    } catch {
+                        await send(.showToast(tone: .failure, message: "Could not delete session"))
+                    }
                 }
 
             case let .settingsExportAllTapped(directoryURL):
@@ -632,30 +725,55 @@ struct AppFeature {
                     .filter { $0.endedAt != nil }
                     .map(\.id)
                 guard !sessionIDs.isEmpty else {
-                    state.settings.statusMessage = "No sessions available to export."
-                    return .none
+                    return .send(.showToast(tone: .failure, message: "No completed sessions to export"))
                 }
 
                 return .run { send in
-                    let urls = (try? await markdownExportClient.export(sessionIDs, directoryURL)) ?? []
-                    await send(.settingsExportCompleted(urls.count))
-                    await send(.settingsRefreshTapped)
+                    do {
+                        let urls = try await markdownExportClient.export(sessionIDs, directoryURL)
+                        await send(.settingsRefreshTapped)
+                        await send(.showToast(tone: .success, message: "Exported \(urls.count) session file(s)."))
+                    } catch {
+                        await send(.showToast(tone: .failure, message: "Export failed"))
+                    }
                 }
 
             case let .settingsExportSessionTapped(sessionID, directoryURL):
                 return .run { send in
-                    let urls = (try? await markdownExportClient.export([sessionID], directoryURL)) ?? []
-                    await send(.settingsExportCompleted(urls.count))
-                    await send(.settingsRefreshTapped)
+                    do {
+                        let urls = try await markdownExportClient.export([sessionID], directoryURL)
+                        guard !urls.isEmpty else {
+                            await send(.showToast(tone: .failure, message: "Export failed"))
+                            return
+                        }
+                        await send(.settingsRefreshTapped)
+                        await send(.showToast(tone: .success, message: "Session exported"))
+                    } catch {
+                        await send(.showToast(tone: .failure, message: "Export failed"))
+                    }
                 }
 
-            case let .settingsExportCompleted(count):
-                state.settings.statusMessage = "Exported \(count) session markdown file(s)."
+            case let .showToast(tone, message):
+                let toast = State.Toast(
+                    id: uuid(),
+                    tone: tone,
+                    message: message
+                )
+                state.toast = toast
+                return .run { [toastID = toast.id] send in
+                    try await clock.sleep(for: .milliseconds(2_500))
+                    await send(.toastAutoDismissFired(toastID))
+                }
+                .cancellable(id: CancelID.toastAutoDismiss, cancelInFlight: true)
+
+            case let .toastAutoDismissFired(toastID):
+                guard state.toast?.id == toastID else { return .none }
+                state.toast = nil
                 return .none
 
-            case let .operationFailed(message):
-                state.settings.statusMessage = message
-                return .none
+            case .toastDismissTapped:
+                state.toast = nil
+                return .cancel(id: CancelID.toastAutoDismiss)
 
             case .retryBootstrapActiveSessionButtonTapped:
                 state.sessionBootstrapState = .loading
