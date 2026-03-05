@@ -235,6 +235,10 @@ struct WorkspaceView: View {
                     .transition(.orbitMicro)
                 }
 
+                Text("Read-only browsing now lives in Session. Use History to manage archived sessions (rename, delete, export).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
                 if sessionGroups.isEmpty {
                     Text("No completed sessions yet.")
                         .font(.caption)

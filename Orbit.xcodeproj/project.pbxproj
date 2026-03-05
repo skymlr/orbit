@@ -12,6 +12,8 @@
 		1648677C96E755210B40B545 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40539519CA0DC39A10932103 /* Cocoa.framework */; };
 		18071E49E8F5275C196D0F48 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A0366521FB1CC140F62320 /* HotkeyManager.swift */; };
 		1EAC93A0DCC35E3ACFEFD029 /* MarkdownFormattingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D965877A754D1CD6916D76 /* MarkdownFormattingBar.swift */; };
+		9A3F18B42E6011D700000001 /* SessionHistoryBrowserSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3F18B62E6011D700000001 /* SessionHistoryBrowserSupport.swift */; };
+		9A3F18B52E6011D700000001 /* HistoryTaskRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3F18B72E6011D700000001 /* HistoryTaskRowView.swift */; };
 		A1C38E14B5D64F9A87C0E113 /* SessionTaskFilterBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C38E14B5D64F9A87C0E112 /* SessionTaskFilterBarView.swift */; };
 		E1A4D2F03A84C55B97F0AA11 /* TaskRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A4D2F13A84C55B97F0AA11 /* TaskRowView.swift */; };
 		3040F4F279F0358D23F1BA92 /* HotkeySettingsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF187644B7FBFA30F89A5C8 /* HotkeySettingsClient.swift */; };
@@ -48,6 +50,8 @@
 		119D9CC13DB5BBE6A54B8DF5 /* QuickCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
 		1BFED63E38C932C97DD8C809 /* QuickCapturePanelController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickCapturePanelController.swift; sourceTree = "<group>"; };
 		2740EBBEC4BEB38C2A7E3164 /* SessionPageView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionPageView.swift; sourceTree = "<group>"; };
+		9A3F18B62E6011D700000001 /* SessionHistoryBrowserSupport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionHistoryBrowserSupport.swift; sourceTree = "<group>"; };
+		9A3F18B72E6011D700000001 /* HistoryTaskRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoryTaskRowView.swift; sourceTree = "<group>"; };
 		A1C38E14B5D64F9A87C0E112 /* SessionTaskFilterBarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionTaskFilterBarView.swift; sourceTree = "<group>"; };
 		35F269DC84311AEF962A906A /* InactivityClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InactivityClient.swift; sourceTree = "<group>"; };
 		40539519CA0DC39A10932103 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
@@ -185,7 +189,9 @@
 		C83D2FC61A7E199793B2880E /* WorkspaceFeature */ = {
 			isa = PBXGroup;
 			children = (
+				9A3F18B72E6011D700000001 /* HistoryTaskRowView.swift */,
 				2740EBBEC4BEB38C2A7E3164 /* SessionPageView.swift */,
+				9A3F18B62E6011D700000001 /* SessionHistoryBrowserSupport.swift */,
 				A1C38E14B5D64F9A87C0E112 /* SessionTaskFilterBarView.swift */,
 				E1A4D2F13A84C55B97F0AA11 /* TaskRowView.swift */,
 				F4F88D4E1F70F7B6FB8EFDDC /* WorkspaceView.swift */,
@@ -329,8 +335,10 @@
 					A7B91C22D4E74FB2A9C1D113 /* OrbitToastView.swift in Sources */,
 					014513AE2CD58CE20D97A2F3 /* QuickCapturePanelController.swift in Sources */,
 					B4FC2B004887F046D550D8F4 /* SessionPageView.swift in Sources */,
+				9A3F18B42E6011D700000001 /* SessionHistoryBrowserSupport.swift in Sources */,
 				A1C38E14B5D64F9A87C0E113 /* SessionTaskFilterBarView.swift in Sources */,
 				E1A4D2F03A84C55B97F0AA11 /* TaskRowView.swift in Sources */,
+				9A3F18B52E6011D700000001 /* HistoryTaskRowView.swift in Sources */,
 				A91044BC5CD8B609A747ECEE /* WorkspaceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

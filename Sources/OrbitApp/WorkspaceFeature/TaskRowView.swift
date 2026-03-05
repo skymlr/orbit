@@ -38,6 +38,7 @@ struct TaskRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             completionToggle
+                .padding(.leading, 12)
 
             VStack(alignment: .leading, spacing: 12) {
                 MarkdownRenderedTaskView(
