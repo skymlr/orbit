@@ -9,7 +9,6 @@ struct WorkspaceView: View {
 
     private enum WorkspaceSection: String, CaseIterable, Identifiable {
         case session = "Session"
-        case history = "History"
         case categories = "Categories"
         case hotkeys = "Hotkeys"
         case about = "About"
@@ -20,8 +19,6 @@ struct WorkspaceView: View {
             switch self {
             case .session:
                 return "play.circle"
-            case .history:
-                return "clock.arrow.circlepath"
             case .categories:
                 return "folder"
             case .hotkeys:
@@ -30,13 +27,6 @@ struct WorkspaceView: View {
                 return "info.circle"
             }
         }
-    }
-
-    private struct SessionDayGroup: Identifiable {
-        let day: Date
-        let sessions: [FocusSessionRecord]
-
-        var id: Date { day }
     }
 
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
@@ -85,8 +75,6 @@ struct WorkspaceView: View {
             SessionPageView(store: store)
                 .id(section)
                 .transition(.orbitMicro)
-        case .history:
-            historySection
         case .categories:
             categoriesSection
         case .hotkeys:
@@ -212,77 +200,6 @@ struct WorkspaceView: View {
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
-    private var historySection: some View {
-        sectionCard {
-            VStack(alignment: .leading, spacing: 14) {
-                if let activeSession = store.activeSession {
-                    ActiveSessionHero(
-                        session: activeSession,
-                        endSessionDraft: store.endSessionDraft,
-                        onOpenSession: {
-                            openSessionSectionButtonTapped()
-                        },
-                        onEndSessionTapped: {
-                            store.send(.endSessionTapped)
-                        },
-                        onEndSessionConfirm: { name in
-                            store.send(.endSessionConfirmTapped(name: name))
-                        },
-                        onEndSessionCancel: {
-                            store.send(.endSessionCancelTapped)
-                        }
-                    )
-                    .transition(.orbitMicro)
-                }
-
-                Text("Read-only browsing now lives in Session. Use History to manage archived sessions (rename, delete, export).")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if sessionGroups.isEmpty {
-                    Text("No completed sessions yet.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .transition(.orbitMicro)
-                }
-
-                ForEach(sessionGroups) { group in
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(dayHeader(group.day))
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.cyan)
-
-                        ForEach(group.sessions) { session in
-                            SessionRow(
-                                session: session,
-                                onRename: { newName in
-                                    store.send(.settingsRenameSessionTapped(session.id, newName))
-                                },
-                                onDelete: {
-                                    store.send(.settingsDeleteSessionTapped(session.id))
-                                },
-                                onExport: {
-                                    exportSessionButtonTapped(sessionID: session.id)
-                                }
-                            )
-                        }
-                    }
-                }
-
-                HStack {
-                    Spacer()
-                    Button("Export All Sessions") {
-                        exportAllSessionsButtonTapped()
-                    }
-                    .buttonStyle(.orbitSecondary)
-                    .disabled(historicalSessions.isEmpty)
-                }
-            }
-        }
-        .frame(maxWidth: sectionMaxWidth(for: .history))
-        .frame(maxWidth: .infinity, alignment: .center)
-    }
-
     private var aboutSection: some View {
         sectionCard {
             VStack(alignment: .leading, spacing: 14) {
@@ -322,6 +239,17 @@ struct WorkspaceView: View {
                     Text("Capture Next Priority: \(store.settings.captureNextPriorityShortcut)")
                 }
                 .font(.subheadline)
+
+                Divider()
+
+                HStack {
+                    Spacer()
+                    Button("Export All Sessions") {
+                        exportAllSessionsButtonTapped()
+                    }
+                    .buttonStyle(.orbitSecondary)
+                    .disabled(historicalSessions.isEmpty)
+                }
             }
         }
         .frame(maxWidth: sectionMaxWidth(for: .about))
@@ -332,32 +260,6 @@ struct WorkspaceView: View {
         store.settings.sessions.filter { session in
             session.endedAt != nil && session.id != store.activeSession?.id
         }
-    }
-
-    private var sessionGroups: [SessionDayGroup] {
-        let grouped = Dictionary(grouping: historicalSessions) { session in
-            Calendar.current.startOfDay(for: session.startedAt)
-        }
-
-        return grouped.keys
-            .sorted(by: >)
-            .map { day in
-                SessionDayGroup(
-                    day: day,
-                    sessions: grouped[day, default: []].sorted(by: { $0.startedAt > $1.startedAt })
-                )
-            }
-    }
-
-    private func dayHeader(_ day: Date) -> String {
-        let formatted = day.formatted(date: .abbreviated, time: .omitted)
-        if Calendar.current.isDateInToday(day) {
-            return "Today • \(formatted)"
-        }
-        if Calendar.current.isDateInYesterday(day) {
-            return "Yesterday • \(formatted)"
-        }
-        return formatted
     }
 
     private func exportAllSessionsButtonTapped() {
@@ -373,17 +275,6 @@ struct WorkspaceView: View {
         store.send(.settingsAddCategoryTapped(trimmedName, newCategoryColorHex))
         newCategoryName = ""
         newCategoryColorHex = FocusDefaults.defaultCategoryColorHex
-    }
-
-    private func exportSessionButtonTapped(sessionID: UUID) {
-        chooseExportDirectory { url in
-            store.send(.settingsExportSessionTapped(sessionID, url))
-        }
-    }
-
-    private func openSessionSectionButtonTapped() {
-        selectedSection = .session
-        columnVisibility = .detailOnly
     }
 
     private func resetWorkspaceDestination() {
@@ -514,204 +405,6 @@ private struct CategoryColorPalettePicker: View {
                 .accessibilityLabel("Category color \(colorHex)")
             }
         }
-    }
-}
-
-private struct SessionRow: View {
-    let session: FocusSessionRecord
-    let onRename: (String) -> Void
-    let onDelete: () -> Void
-    let onExport: () -> Void
-
-    @State private var isRenaming = false
-    @State private var name = ""
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                if isRenaming {
-                    TextField("Session name", text: $name)
-                        .textFieldStyle(.roundedBorder)
-                } else {
-                    Text(session.name)
-                        .font(.headline.weight(.semibold))
-                        .lineLimit(2)
-                }
-
-                Spacer()
-
-                Button(isRenaming ? "Save" : "Rename") {
-                    renameButtonTapped()
-                }
-                .buttonStyle(.orbitSecondary)
-                .disabled(isRenaming && trimmedName.isEmpty)
-
-                Button("Export") {
-                    onExport()
-                }
-                .buttonStyle(.orbitSecondary)
-            }
-
-            HStack(spacing: 8) {
-                Text("\(session.tasks.count) \(session.tasks.count == 1 ? "task" : "tasks")")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Text("•")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Text("Started \(session.startedAt, style: .time)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if let endedAt = session.endedAt {
-                    Text("•")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Text("Ended \(endedAt, style: .time)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Text("•")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Text("Elapsed \(elapsedText(startedAt: session.startedAt, endedAt: endedAt))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Button("Delete", role: .destructive) {
-                    onDelete()
-                }
-                .buttonStyle(.orbitDestructive)
-            }
-        }
-        .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.thinMaterial)
-        )
-        .task(id: session.id) {
-            name = session.name
-            isRenaming = false
-        }
-    }
-
-    private var trimmedName: String {
-        name.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private func renameButtonTapped() {
-        if isRenaming {
-            onRename(trimmedName)
-            isRenaming = false
-        } else {
-            isRenaming = true
-        }
-    }
-
-    private func elapsedText(startedAt: Date, endedAt: Date) -> String {
-        let seconds = max(endedAt.timeIntervalSince(startedAt), 0)
-        let formatter = DateComponentsFormatter()
-        formatter.unitsStyle = .abbreviated
-        formatter.allowedUnits = seconds >= 3_600 ? [.hour, .minute] : [.minute, .second]
-        formatter.zeroFormattingBehavior = [.dropLeading]
-        return formatter.string(from: seconds) ?? "0m"
-    }
-}
-
-private struct ActiveSessionHero: View {
-    let session: FocusSessionRecord
-    let endSessionDraft: AppFeature.State.EndSessionDraft?
-    let onOpenSession: () -> Void
-    let onEndSessionTapped: () -> Void
-    let onEndSessionConfirm: (String) -> Void
-    let onEndSessionCancel: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Current Session")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    Text(session.name)
-                        .font(.title3.weight(.bold))
-                        .lineLimit(2)
-                }
-
-                Spacer()
-
-                Button("Go to Session") {
-                    onOpenSession()
-                }
-                .buttonStyle(.orbitPrimary)
-            }
-
-            HStack(spacing: 8) {
-                Text("\(session.tasks.count) \(session.tasks.count == 1 ? "task" : "tasks")")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Text("Started \(session.startedAt, style: .time)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Text("Elapsed \(session.startedAt, style: .timer)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Text("•")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Text("Ends at \(FocusDefaults.nextSessionBoundary(after: session.startedAt), style: .time)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                Button("End Session", role: .destructive) {
-                    onEndSessionTapped()
-                }
-                .buttonStyle(.orbitDestructive)
-                .popover(
-                    isPresented: Binding(
-                        get: { endSessionDraft != nil },
-                        set: { isPresented in
-                            if !isPresented {
-                                onEndSessionCancel()
-                            }
-                        }
-                    ),
-                    arrowEdge: .bottom
-                ) {
-                    if let draft = endSessionDraft {
-                        EndSessionPromptView(
-                            draft: draft,
-                            onConfirm: onEndSessionConfirm,
-                            onCancel: onEndSessionCancel
-                        )
-                    }
-                }
-                .transition(.orbitMicro)
-            }
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.thinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.cyan.opacity(0.60), lineWidth: 1)
-                )
-        )
     }
 }
 

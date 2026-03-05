@@ -1,3 +1,4 @@
+import AppKit
 import ComposableArchitecture
 import Foundation
 import SwiftUI
@@ -29,8 +30,18 @@ struct SessionPageView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     SessionHeader(
                         session: activeSession,
+                        endSessionDraft: store.endSessionDraft,
                         onRename: { name in
                             store.send(.sessionRenameTapped(name))
+                        },
+                        onEndSessionTapped: {
+                            store.send(.endSessionTapped)
+                        },
+                        onEndSessionConfirm: { name in
+                            store.send(.endSessionConfirmTapped(name: name))
+                        },
+                        onEndSessionCancel: {
+                            store.send(.endSessionCancelTapped)
                         }
                     )
 
@@ -202,6 +213,15 @@ struct SessionPageView: View {
                         selectedSessionID: selectedHistorySession?.id,
                         onSelect: { sessionID in
                             selectedHistorySessionID = sessionID
+                        },
+                        onRename: { sessionID, name in
+                            store.send(.settingsRenameSessionTapped(sessionID, name))
+                        },
+                        onDelete: { sessionID in
+                            store.send(.settingsDeleteSessionTapped(sessionID))
+                        },
+                        onExport: { sessionID in
+                            exportSessionButtonTapped(sessionID: sessionID)
                         }
                     )
 
@@ -616,6 +636,25 @@ struct SessionPageView: View {
         store.send(.startSessionTapped)
     }
 
+    private func exportSessionButtonTapped(sessionID: UUID) {
+        chooseExportDirectory { url in
+            store.send(.settingsExportSessionTapped(sessionID, url))
+        }
+    }
+
+    private func chooseExportDirectory(_ onURLSelected: (URL) -> Void) {
+        let panel = NSOpenPanel()
+        panel.title = "Choose Export Folder"
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Export"
+
+        if panel.runModal() == .OK, let url = panel.url {
+            onURLSelected(url)
+        }
+    }
+
     private func enterHistoryMode(on day: Date) {
         let wasHistoryMode = isHistoryMode
         isHistoryMode = true
@@ -737,6 +776,19 @@ private struct HistorySessionStripView: View {
     let sessions: [FocusSessionRecord]
     let selectedSessionID: UUID?
     let onSelect: (UUID) -> Void
+    let onRename: (UUID, String) -> Void
+    let onDelete: (UUID) -> Void
+    let onExport: (UUID) -> Void
+
+    @State private var menuSessionID: UUID?
+    @State private var menuMode: MenuMode = .actions
+    @State private var renameDraft = ""
+    @State private var deleteConfirmationSessionID: UUID?
+
+    private enum MenuMode {
+        case actions
+        case rename
+    }
 
     var body: some View {
         ScrollView(.horizontal) {
@@ -748,43 +800,172 @@ private struct HistorySessionStripView: View {
             .padding(.vertical, 2)
         }
         .scrollIndicators(.hidden)
+        .confirmationDialog(
+            "Delete Session?",
+            isPresented: Binding(
+                get: { deleteConfirmationSessionID != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        deleteConfirmationSessionID = nil
+                    }
+                }
+            )
+        ) {
+            if let session = sessions.first(where: { $0.id == deleteConfirmationSessionID }) {
+                Button("Delete \"\(session.name)\"", role: .destructive) {
+                    onDelete(session.id)
+                    deleteConfirmationSessionID = nil
+                }
+            } else {
+                Button("Delete Session", role: .destructive) {
+                    if let sessionID = deleteConfirmationSessionID {
+                        onDelete(sessionID)
+                    }
+                    deleteConfirmationSessionID = nil
+                }
+            }
+
+            Button("Cancel", role: .cancel) {
+                deleteConfirmationSessionID = nil
+            }
+        } message: {
+            Text("This cannot be undone.")
+        }
     }
 
     private func sessionButton(for session: FocusSessionRecord) -> some View {
         let isSelected = session.id == selectedSessionID
         let taskCountLabel = "\(session.tasks.count) \(session.tasks.count == 1 ? "task" : "tasks")"
 
-        return Button {
-            onSelect(session.id)
-        } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(session.name)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
+        return ZStack(alignment: .topTrailing) {
+            Button {
+                onSelect(session.id)
+            } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(session.name)
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
 
-                Text("Started \(session.startedAt, style: .time)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    Text("Started \(session.startedAt, style: .time)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
 
-                Text(taskCountLabel)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    Text(taskCountLabel)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .padding(.trailing, 24)
+                .frame(minWidth: 164, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(isSelected ? Color.cyan.opacity(0.18) : Color.white.opacity(0.05))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(isSelected ? Color.cyan.opacity(0.86) : Color.white.opacity(0.22), lineWidth: 1)
+                )
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .frame(minWidth: 164, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isSelected ? Color.cyan.opacity(0.18) : Color.white.opacity(0.05))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(isSelected ? Color.cyan.opacity(0.86) : Color.white.opacity(0.22), lineWidth: 1)
-            )
+            .buttonStyle(.plain)
+            .accessibilityLabel(session.name)
+            .accessibilityHint("Open this session in read-only mode")
+
+            Button {
+                menuSessionID = session.id
+                menuMode = .actions
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(8)
+            }
+            .buttonStyle(.plain)
+            .popover(
+                isPresented: Binding(
+                    get: { menuSessionID == session.id },
+                    set: { isPresented in
+                        if !isPresented && menuSessionID == session.id {
+                            menuSessionID = nil
+                            menuMode = .actions
+                        }
+                    }
+                ),
+                arrowEdge: .top
+            ) {
+                sessionMenuPopover(for: session)
+            }
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(session.name)
-        .accessibilityHint("Open this session in read-only mode")
+    }
+
+    @ViewBuilder
+    private func sessionMenuPopover(for session: FocusSessionRecord) -> some View {
+        switch menuMode {
+        case .actions:
+            VStack(alignment: .leading, spacing: 8) {
+                Button("Rename") {
+                    renameDraft = session.name
+                    menuMode = .rename
+                }
+                .buttonStyle(.orbitSecondary)
+
+                Button("Export") {
+                    onExport(session.id)
+                    closeMenu()
+                }
+                .buttonStyle(.orbitSecondary)
+
+                Button("Delete", role: .destructive) {
+                    deleteConfirmationSessionID = session.id
+                    closeMenu()
+                }
+                .buttonStyle(.orbitDestructive)
+            }
+            .padding(10)
+            .frame(width: 170, alignment: .leading)
+
+        case .rename:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Rename Session")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                TextField("Session name", text: $renameDraft)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit {
+                        saveRename(for: session.id)
+                    }
+
+                HStack {
+                    Button("Cancel") {
+                        menuMode = .actions
+                    }
+                    .buttonStyle(.orbitSecondary)
+
+                    Spacer()
+
+                    Button("Save") {
+                        saveRename(for: session.id)
+                    }
+                    .buttonStyle(.orbitPrimary)
+                    .disabled(renameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            .padding(10)
+            .frame(width: 240, alignment: .leading)
+        }
+    }
+
+    private func saveRename(for sessionID: UUID) {
+        let trimmed = renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        onRename(sessionID, trimmed)
+        closeMenu()
+    }
+
+    private func closeMenu() {
+        menuSessionID = nil
+        menuMode = .actions
     }
 }
 
@@ -1013,10 +1194,15 @@ private struct HistoryCalendarPickerView: View {
 
 private struct SessionHeader: View {
     let session: FocusSessionRecord
+    let endSessionDraft: AppFeature.State.EndSessionDraft?
     let onRename: (String) -> Void
+    let onEndSessionTapped: () -> Void
+    let onEndSessionConfirm: (String) -> Void
+    let onEndSessionCancel: () -> Void
 
     @State private var isRenaming = false
     @State private var name = ""
+    @State private var isSessionMenuPresented = false
     @FocusState private var isNameFieldFocused: Bool
 
     var body: some View {
@@ -1053,6 +1239,18 @@ private struct SessionHeader: View {
                     .buttonStyle(.orbitSecondary)
                     .disabled(trimmedName.isEmpty)
                 }
+
+                Button {
+                    isSessionMenuPresented = true
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title3.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .help("Session management")
+                .popover(isPresented: $isSessionMenuPresented, arrowEdge: .bottom) {
+                    sessionManagementPopover
+                }
             }
 
             HStack(spacing: 8) {
@@ -1071,15 +1269,58 @@ private struct SessionHeader: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
         }
+        .alert(
+            "End Session?",
+            isPresented: Binding(
+                get: { endSessionDraft != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        onEndSessionCancel()
+                    }
+                }
+            )
+        ) {
+            Button("End Session", role: .destructive) {
+                onEndSessionConfirm(endSessionName)
+            }
+            Button("Cancel", role: .cancel) {
+                onEndSessionCancel()
+            }
+        } message: {
+            Text("This will end the current focus session.")
+        }
         .task(id: session.id) {
             name = session.name
             isRenaming = false
+            isSessionMenuPresented = false
         }
         .onChange(of: session.name) { _, newValue in
             if !isRenaming {
                 name = newValue
             }
         }
+    }
+
+    private var sessionManagementPopover: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button("Rename Session") {
+                isSessionMenuPresented = false
+                beginRenaming()
+            }
+            .buttonStyle(.orbitSecondary)
+
+            Button("End Session", role: .destructive) {
+                isSessionMenuPresented = false
+                onEndSessionTapped()
+            }
+            .buttonStyle(.orbitDestructive)
+        }
+        .padding(10)
+        .frame(width: 190, alignment: .leading)
+    }
+
+    private var endSessionName: String {
+        endSessionDraft?.name ?? session.name
     }
 
     private var trimmedName: String {
