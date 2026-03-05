@@ -75,19 +75,7 @@ struct WorkspaceView: View {
                 .transition(.orbitToastNotification)
             }
         }
-        .overlay {
-            if let transitionState = store.sessionWindowTransitionState {
-                SessionWindowTransitionOverlay(
-                    transitionState: transitionState,
-                    onRetry: {
-                        store.send(.sessionWindowTransitionRetryTapped)
-                    }
-                )
-                .transition(.opacity)
-            }
-        }
         .animation(.easeInOut(duration: 0.24), value: store.toast?.id)
-        .animation(.easeInOut(duration: 0.18), value: store.sessionWindowTransitionState)
     }
 
     @ViewBuilder
@@ -442,60 +430,6 @@ struct WorkspaceView: View {
             content()
         }
         .padding(14)
-    }
-}
-
-private struct SessionWindowTransitionOverlay: View {
-    let transitionState: AppFeature.State.SessionWindowTransitionState
-    let onRetry: () -> Void
-
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.40)
-                .ignoresSafeArea()
-
-            VStack(spacing: 12) {
-                switch transitionState {
-                case let .inProgress(from, to):
-                    ProgressView()
-                        .controlSize(.large)
-                    Text("Ending \(from.title) Session and starting \(to.title) Session...")
-                        .font(.subheadline.weight(.semibold))
-                        .multilineTextAlignment(.center)
-
-                case let .failed(from, to, message):
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.orange)
-                    Text("Could not start \(to.title) Session")
-                        .font(.headline)
-                    Text(message)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(4)
-                        .frame(maxWidth: 360)
-                    Button("Retry") {
-                        onRetry()
-                    }
-                    .buttonStyle(.orbitPrimary)
-                    .help("Retry ending \(from.title) Session and starting \(to.title) Session")
-                }
-            }
-            .padding(20)
-            .frame(maxWidth: 460)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(.regularMaterial)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
-            )
-            .padding(24)
-        }
-        .allowsHitTesting(true)
-        .accessibilityElement(children: .contain)
     }
 }
 

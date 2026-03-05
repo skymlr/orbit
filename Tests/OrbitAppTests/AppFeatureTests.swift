@@ -165,6 +165,7 @@ struct AppFeatureTests {
             $0.windowDestinations = []
             $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
             $0.selectedTaskCategoryFilterIDs = []
+            $0.selectedTaskPriorityFilters = []
         }
     }
 
@@ -221,12 +222,10 @@ struct AppFeatureTests {
     }
 
     @Test
-    func sessionWindowBoundaryReachedWorkspaceOpenEndsAndStartsNextSession() async {
+    func sessionWindowBoundaryReachedWorkspaceOpenEndsOnly() async {
         let tracker = SessionWindowTransitionTracker()
-        let clock = TestClock()
 
         let staleSessionID = UUID(uuidString: "5A3D9A4E-22D4-41B0-995E-137377F7B15E")!
-        let nextSessionID = UUID(uuidString: "4E557F5F-A4C1-42FA-9E58-7AF737D688F2")!
         let staleStartedAt = Date(timeIntervalSince1970: 1_700_000_000) // afternoon
         let rolloverNow = Date(timeIntervalSince1970: 1_700_010_000) // evening
 
@@ -234,11 +233,6 @@ struct AppFeatureTests {
             id: staleSessionID,
             startedAt: staleStartedAt,
             taskCategoryIDs: [projectACategoryID]
-        )
-        let next = makeSession(
-            id: nextSessionID,
-            startedAt: rolloverNow,
-            taskCategoryIDs: [projectBCategoryID]
         )
 
         var initial = AppFeature.State()
@@ -252,11 +246,7 @@ struct AppFeatureTests {
             await tracker.recordEnd(reason: reason)
             return stale
         }
-        repository.startSession = { startedAt in
-            await tracker.recordStart(at: startedAt)
-            return next
-        }
-        repository.loadActiveSession = { next }
+        repository.loadActiveSession = { nil }
         repository.listSessions = { [] }
         repository.listCategories = { sampleCategories }
 
@@ -265,43 +255,13 @@ struct AppFeatureTests {
         } withDependencies: {
             $0.focusRepository = repository
             $0.date.now = rolloverNow
-            $0.continuousClock = clock
         }
 
         await store.send(.sessionWindowBoundaryReached) {
             $0.endSessionDraft = nil
             $0.windowDestinations.remove(.captureWindow)
-            $0.sessionWindowTransitionState = .inProgress(from: .afternoon, to: .evening)
         }
         await store.receive(\.loadActiveSessionResponse) {
-            $0.activeSession = next
-            $0.taskDrafts = [
-                AppFeature.State.TaskDraft(
-                    id: next.tasks[0].id,
-                    categories: next.tasks[0].categories,
-                    markdown: next.tasks[0].markdown,
-                    priority: next.tasks[0].priority,
-                    completedAt: next.tasks[0].completedAt,
-                    carriedFromTaskID: next.tasks[0].carriedFromTaskID,
-                    carriedFromSessionName: next.tasks[0].carriedFromSessionName,
-                    createdAt: next.tasks[0].createdAt
-                )
-            ]
-            $0.captureDraft.selectedCategoryIDs = [projectBCategoryID]
-        }
-        await store.receive(\.settingsRefreshTapped)
-        await store.receive(\.sessionWindowTransitionCompleted) {
-            $0.sessionWindowTransitionState = nil
-        }
-        await store.receive(\.settingsDataResponse) {
-            $0.settings.categories = sampleCategories
-        }
-
-        let endReasons = await tracker.endReasons()
-        #expect(endReasons == [.timeWindow])
-        #expect(await tracker.startCount() == 1)
-
-        await store.send(.loadActiveSessionResponse(nil)) {
             $0.activeSession = nil
             $0.taskDrafts = []
             $0.endSessionDraft = nil
@@ -309,6 +269,15 @@ struct AppFeatureTests {
             $0.selectedTaskCategoryFilterIDs = []
             $0.selectedTaskPriorityFilters = []
         }
+        await store.receive(\.settingsRefreshTapped)
+        await store.receive(\.settingsDataResponse) {
+            $0.settings.categories = sampleCategories
+            $0.categories = sampleCategories
+        }
+
+        let endReasons = await tracker.endReasons()
+        #expect(endReasons == [.timeWindow])
+        #expect(await tracker.startCount() == 0)
     }
 
     @Test
@@ -334,10 +303,6 @@ struct AppFeatureTests {
         var repository = FocusRepository.testValue
         repository.endSession = { _, _, reason, _ in
             await tracker.recordEnd(reason: reason)
-            return stale
-        }
-        repository.startSession = { startedAt in
-            await tracker.recordStart(at: startedAt)
             return stale
         }
         repository.loadActiveSession = { nil }
@@ -371,141 +336,6 @@ struct AppFeatureTests {
 
         #expect(await tracker.endReasons() == [.timeWindow])
         #expect(await tracker.startCount() == 0)
-        #expect(store.state.sessionWindowTransitionState == nil)
-    }
-
-    @Test
-    func sessionWindowBoundaryReachedFailureShowsBlockingErrorAndRetryStartsSession() async {
-        let clock = TestClock()
-        let staleSessionID = UUID(uuidString: "9BA5A197-0FC3-49D5-A716-B1C467EA95C3")!
-        let nextSessionID = UUID(uuidString: "F7E546B4-C8CB-47F5-BEA6-A72020AA75AA")!
-        let staleStartedAt = Date(timeIntervalSince1970: 1_700_000_000) // afternoon
-        let rolloverNow = Date(timeIntervalSince1970: 1_700_010_000) // evening
-
-        let stale = makeSession(
-            id: staleSessionID,
-            startedAt: staleStartedAt,
-            taskCategoryIDs: [projectACategoryID]
-        )
-        let next = makeSession(
-            id: nextSessionID,
-            startedAt: rolloverNow,
-            taskCategoryIDs: [projectBCategoryID]
-        )
-
-        var initial = AppFeature.State()
-        initial.activeSession = stale
-        initial.categories = sampleCategories
-        initial.windowDestinations = [.workspaceWindow]
-
-        let tracker = SessionWindowTransitionTracker()
-        let failureState = SessionWindowFailureState(
-            shouldFailBoundary: true,
-            loadedAfterFailure: false
-        )
-        var repository = FocusRepository.testValue
-        repository.endSession = { _, _, reason, _ in
-            await tracker.recordEnd(reason: reason)
-            if await failureState.shouldFailBoundary() {
-                throw NSError(
-                    domain: "OrbitTests",
-                    code: 1,
-                    userInfo: [NSLocalizedDescriptionKey: "Boundary transition failed"]
-                )
-            }
-            return stale
-        }
-        repository.startSession = { startedAt in
-            await tracker.recordStart(at: startedAt)
-            return next
-        }
-        repository.loadActiveSession = {
-            if await failureState.shouldFailBoundary() {
-                return await failureState.loadedAfterFailure() ? nil : stale
-            }
-            return next
-        }
-        repository.listSessions = { [] }
-        repository.listCategories = { sampleCategories }
-
-        let store = TestStore(initialState: initial) {
-            AppFeature()
-        } withDependencies: {
-            $0.focusRepository = repository
-            $0.date.now = rolloverNow
-            $0.continuousClock = clock
-        }
-
-        await store.send(.sessionWindowBoundaryReached) {
-            $0.sessionWindowTransitionState = .inProgress(from: .afternoon, to: .evening)
-        }
-        await failureState.setLoadedAfterFailure(true)
-        await store.receive(\.sessionWindowTransitionFailed) {
-            $0.sessionWindowTransitionState = .failed(
-                from: .afternoon,
-                to: .evening,
-                message: "Boundary transition failed"
-            )
-        }
-        await store.receive(\.loadActiveSessionResponse) {
-            $0.activeSession = stale
-            $0.taskDrafts = [
-                AppFeature.State.TaskDraft(
-                    id: stale.tasks[0].id,
-                    categories: stale.tasks[0].categories,
-                    markdown: stale.tasks[0].markdown,
-                    priority: stale.tasks[0].priority,
-                    completedAt: stale.tasks[0].completedAt,
-                    carriedFromTaskID: stale.tasks[0].carriedFromTaskID,
-                    carriedFromSessionName: stale.tasks[0].carriedFromSessionName,
-                    createdAt: stale.tasks[0].createdAt
-                )
-            ]
-            $0.captureDraft.selectedCategoryIDs = [projectACategoryID]
-        }
-        await store.receive(\.settingsRefreshTapped)
-        await store.receive(\.settingsDataResponse) {
-            $0.settings.categories = sampleCategories
-            $0.categories = sampleCategories
-        }
-
-        await failureState.setShouldFailBoundary(false)
-        await store.send(.sessionWindowTransitionRetryTapped) {
-            $0.sessionWindowTransitionState = .inProgress(from: .afternoon, to: .evening)
-        }
-        await store.receive(\.sessionWindowBoundaryReached)
-        await store.receive(\.loadActiveSessionResponse) {
-            $0.activeSession = next
-            $0.taskDrafts = [
-                AppFeature.State.TaskDraft(
-                    id: next.tasks[0].id,
-                    categories: next.tasks[0].categories,
-                    markdown: next.tasks[0].markdown,
-                    priority: next.tasks[0].priority,
-                    completedAt: next.tasks[0].completedAt,
-                    carriedFromTaskID: next.tasks[0].carriedFromTaskID,
-                    carriedFromSessionName: next.tasks[0].carriedFromSessionName,
-                    createdAt: next.tasks[0].createdAt
-                )
-            ]
-            $0.captureDraft.selectedCategoryIDs = [projectBCategoryID]
-        }
-        await store.receive(\.settingsRefreshTapped)
-        await store.receive(\.sessionWindowTransitionCompleted) {
-            $0.sessionWindowTransitionState = nil
-        }
-        await store.receive(\.settingsDataResponse)
-
-        #expect(await tracker.startCount() == 1)
-
-        await store.send(.loadActiveSessionResponse(nil)) {
-            $0.activeSession = nil
-            $0.taskDrafts = []
-            $0.endSessionDraft = nil
-            $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
-            $0.selectedTaskCategoryFilterIDs = []
-            $0.selectedTaskPriorityFilters = []
-        }
     }
 
     @Test
@@ -1343,32 +1173,6 @@ actor SessionWindowTransitionTracker {
 
     func startCount() -> Int {
         startTimes.count
-    }
-}
-
-actor SessionWindowFailureState {
-    private var shouldFail: Bool
-    private var didLoadAfterFailure: Bool
-
-    init(shouldFailBoundary: Bool, loadedAfterFailure: Bool) {
-        self.shouldFail = shouldFailBoundary
-        self.didLoadAfterFailure = loadedAfterFailure
-    }
-
-    func shouldFailBoundary() -> Bool {
-        shouldFail
-    }
-
-    func setShouldFailBoundary(_ value: Bool) {
-        shouldFail = value
-    }
-
-    func loadedAfterFailure() -> Bool {
-        didLoadAfterFailure
-    }
-
-    func setLoadedAfterFailure(_ value: Bool) {
-        didLoadAfterFailure = value
     }
 }
 

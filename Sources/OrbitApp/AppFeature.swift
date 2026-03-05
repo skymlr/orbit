@@ -68,11 +68,6 @@ struct AppFeature {
             var captureNextPriorityShortcut = HotkeySettings.default.captureNextPriorityShortcut
         }
 
-        enum SessionWindowTransitionState: Equatable {
-            case inProgress(from: SessionPeriod, to: SessionPeriod)
-            case failed(from: SessionPeriod, to: SessionPeriod, message: String)
-        }
-
         var activeSession: FocusSessionRecord?
         var taskDrafts: IdentifiedArrayOf<TaskDraft> = []
 
@@ -87,7 +82,6 @@ struct AppFeature {
 
         var settings = SettingsState()
         var toast: Toast?
-        var sessionWindowTransitionState: SessionWindowTransitionState?
 
         var windowDestinations: Set<WindowDestination> = []
         var workspaceWindowFocusRequest = 0
@@ -151,9 +145,6 @@ struct AppFeature {
         case endSessionCancelTapped
         case autoEndSession
         case sessionWindowBoundaryReached
-        case sessionWindowTransitionFailed(String, SessionPeriod, SessionPeriod)
-        case sessionWindowTransitionCompleted
-        case sessionWindowTransitionRetryTapped
 
         case settingsRefreshTapped
         case settingsResetHotkeysTapped
@@ -235,7 +226,6 @@ struct AppFeature {
                 state.windowDestinations.removeAll()
                 state.endSessionDraft = nil
                 state.toast = nil
-                state.sessionWindowTransitionState = nil
                 return .merge(
                     .cancel(id: CancelID.inactivityMonitor),
                     .cancel(id: CancelID.sessionWindowMonitor),
@@ -546,7 +536,6 @@ struct AppFeature {
                 guard let activeSession = state.activeSession else { return .none }
 
                 state.endSessionDraft = nil
-                state.sessionWindowTransitionState = nil
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.workspaceWindow)
 
@@ -584,7 +573,6 @@ struct AppFeature {
             case .autoEndSession:
                 guard let activeSession = state.activeSession else { return .none }
                 state.endSessionDraft = nil
-                state.sessionWindowTransitionState = nil
                 state.windowDestinations.remove(.captureWindow)
                 state.windowDestinations.remove(.workspaceWindow)
 
@@ -605,102 +593,20 @@ struct AppFeature {
 
                 let fromPeriod = FocusDefaults.sessionPeriod(for: activeSession.startedAt)
                 let toPeriod = FocusDefaults.sessionPeriod(for: now)
-                guard fromPeriod != toPeriod else {
-                    if case .inProgress = state.sessionWindowTransitionState {
-                        state.sessionWindowTransitionState = nil
-                    }
-                    return .none
-                }
-
-                let workspaceOpen = state.windowDestinations.contains(.workspaceWindow)
+                guard fromPeriod != toPeriod else { return .none }
                 state.endSessionDraft = nil
                 state.windowDestinations.remove(.captureWindow)
-                if workspaceOpen {
-                    state.sessionWindowTransitionState = .inProgress(from: fromPeriod, to: toPeriod)
-                }
 
                 return .run { send in
-                    do {
-                        let ended = try await focusRepository.endSession(
-                            activeSession.id,
-                            nil,
-                            .timeWindow,
-                            now
-                        )
-                        guard ended != nil else {
-                            throw SessionWindowTransitionError.endSessionFailed
-                        }
-
-                        if workspaceOpen {
-                            _ = try await focusRepository.startSession(now)
-                        }
-
-                        let active = try? await focusRepository.loadActiveSession()
-                        await send(.loadActiveSessionResponse(active))
-                        await send(.settingsRefreshTapped)
-                        if workspaceOpen {
-                            await send(.sessionWindowTransitionCompleted)
-                        }
-                    } catch {
-                        if workspaceOpen {
-                            await send(
-                                .sessionWindowTransitionFailed(
-                                    error.localizedDescription,
-                                    fromPeriod,
-                                    toPeriod
-                                )
-                            )
-                        }
-                        let active = try? await focusRepository.loadActiveSession()
-                        await send(.loadActiveSessionResponse(active))
-                        await send(.settingsRefreshTapped)
-                    }
-                }
-
-            case let .sessionWindowTransitionFailed(message, fromPeriod, toPeriod):
-                state.sessionWindowTransitionState = .failed(
-                    from: fromPeriod,
-                    to: toPeriod,
-                    message: message
-                )
-                return .none
-
-            case .sessionWindowTransitionCompleted:
-                state.sessionWindowTransitionState = nil
-                return .none
-
-            case .sessionWindowTransitionRetryTapped:
-                guard case let .failed(fromPeriod, toPeriod, _) = state.sessionWindowTransitionState else {
-                    return .none
-                }
-
-                state.sessionWindowTransitionState = .inProgress(from: fromPeriod, to: toPeriod)
-
-                if state.activeSession != nil {
-                    return .send(.sessionWindowBoundaryReached)
-                }
-
-                guard state.windowDestinations.contains(.workspaceWindow) else {
-                    state.sessionWindowTransitionState = nil
-                    return .none
-                }
-
-                return .run { send in
-                    do {
-                        _ = try await focusRepository.startSession(now)
-                        let active = try? await focusRepository.loadActiveSession()
-                        await send(.loadActiveSessionResponse(active))
-                        await send(.settingsRefreshTapped)
-                        await send(.sessionWindowTransitionCompleted)
-                    } catch {
-                        await send(
-                            .sessionWindowTransitionFailed(
-                                error.localizedDescription,
-                                fromPeriod,
-                                toPeriod
-                            )
-                        )
-                    }
+                    _ = try? await focusRepository.endSession(
+                        activeSession.id,
+                        nil,
+                        .timeWindow,
+                        now
+                    )
+                    let active = try? await focusRepository.loadActiveSession()
+                    await send(.loadActiveSessionResponse(active))
+                    await send(.settingsRefreshTapped)
                 }
 
             case .settingsRefreshTapped:
@@ -897,7 +803,6 @@ struct AppFeature {
                 state.activeSession = nil
                 state.taskDrafts = []
                 state.endSessionDraft = nil
-                state.sessionWindowTransitionState = nil
                 state.windowDestinations.remove(.captureWindow)
                 state.selectedTaskCategoryFilterIDs.removeAll()
                 state.selectedTaskPriorityFilters.removeAll()
@@ -917,10 +822,6 @@ struct AppFeature {
                         categories: state.categories
                     )
                     ensureCategorySelections(&state)
-
-                    if case .failed = state.sessionWindowTransitionState {
-                        return .none
-                    }
 
                     return .merge(
                         .run { send in
@@ -1082,8 +983,4 @@ private func nextPriority(after priority: NotePriority) -> NotePriority {
     }
 
     return priorities[nextIndex]
-}
-
-private enum SessionWindowTransitionError: Error {
-    case endSessionFailed
 }
