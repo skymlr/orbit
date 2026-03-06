@@ -75,18 +75,18 @@ struct MenuBarView: View {
         }
         .padding(14)
         .frame(width: 360)
-        .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
+        .animation(.easeInOut(duration: OrbitTheme.Motion.standard), value: store.activeSession?.id)
         .background {
             ZStack {
                 OrbitSpaceBackground()
 
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
                     .fill(.ultraThinMaterial.opacity(0.44))
 
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
+                    .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous))
         }
     }
 }

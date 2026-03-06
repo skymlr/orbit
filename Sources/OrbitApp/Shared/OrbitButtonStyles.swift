@@ -52,19 +52,27 @@ private struct OrbitHoverEffectModifier: ViewModifier {
     let shadowRadius: CGFloat
 
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
     func body(content: Content) -> some View {
+        let isActive = isHovered && isEnabled
+        let effectiveScale = reduceMotion ? 1 : scale
+        let effectiveLift = reduceMotion ? 0 : lift
+
         content
-            .scaleEffect(isHovered && isEnabled ? scale : 1)
-            .offset(y: isHovered && isEnabled ? lift : 0)
+            .scaleEffect(isActive ? effectiveScale : 1)
+            .offset(y: isActive ? effectiveLift : 0)
             .shadow(
-                color: isHovered && isEnabled ? shadowColor : .clear,
+                color: isActive ? shadowColor : .clear,
                 radius: shadowRadius,
                 x: 0,
-                y: abs(lift) + 2
+                y: abs(effectiveLift) + 2
             )
-            .animation(.easeOut(duration: 0.14), value: isHovered)
+            .animation(
+                reduceMotion ? nil : .easeOut(duration: OrbitTheme.Motion.hover),
+                value: isHovered
+            )
             .onHover { hovering in
                 isHovered = hovering
             }
@@ -79,7 +87,7 @@ extension View {
     func orbitHoverEffect(
         scale: CGFloat = 1.02,
         lift: CGFloat = -1.5,
-        shadowColor: Color = Color.cyan.opacity(0.22),
+        shadowColor: Color = OrbitTheme.Palette.heroCyan.opacity(0.22),
         shadowRadius: CGFloat = 10
     ) -> some View {
         modifier(
@@ -95,7 +103,7 @@ extension View {
     func orbitInteractiveControl(
         scale: CGFloat = 1.02,
         lift: CGFloat = -1.5,
-        shadowColor: Color = Color.cyan.opacity(0.22),
+        shadowColor: Color = OrbitTheme.Palette.heroCyan.opacity(0.22),
         shadowRadius: CGFloat = 10
     ) -> some View {
         orbitHoverEffect(
@@ -109,33 +117,9 @@ extension View {
 }
 
 private enum OrbitButtonPalette {
-    static let heroBackground = LinearGradient(
-        colors: [
-            Color(red: 0.02, green: 0.14, blue: 0.24),
-            Color(red: 0.02, green: 0.29, blue: 0.40),
-            Color(red: 0.24, green: 0.19, blue: 0.04)
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-
-    static let heroStroke = LinearGradient(
-        colors: [
-            Color.cyan.opacity(0.95),
-            Color.orange.opacity(0.85)
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-
-    static let primaryBackground = LinearGradient(
-        colors: [
-            Color(red: 0.03, green: 0.20, blue: 0.32),
-            Color(red: 0.03, green: 0.30, blue: 0.42)
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    static let heroBackground = OrbitTheme.Gradients.heroButtonBackground
+    static let heroStroke = OrbitTheme.Gradients.heroButtonStroke
+    static let primaryBackground = OrbitTheme.Gradients.primaryButtonBackground
 }
 
 struct OrbitHeroButtonStyle: ButtonStyle {
@@ -146,21 +130,21 @@ struct OrbitHeroButtonStyle: ButtonStyle {
             .padding(.vertical, 13)
             .frame(maxWidth: .infinity, minHeight: 90, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.hero, style: .continuous)
                     .fill(OrbitButtonPalette.heroBackground)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.hero, style: .continuous)
                     .stroke(OrbitButtonPalette.heroStroke, lineWidth: 1.3)
             )
-            .shadow(color: Color.cyan.opacity(0.25), radius: 10, y: 4)
+            .shadow(color: OrbitTheme.Palette.heroCyan.opacity(0.25), radius: 10, y: 4)
             .opacity(configuration.isPressed ? 0.96 : 1)
             .scaleEffect(configuration.isPressed ? 0.99 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .animation(.easeOut(duration: OrbitTheme.Motion.press), value: configuration.isPressed)
             .orbitInteractiveControl(
                 scale: 1.015,
                 lift: -2.0,
-                shadowColor: Color.cyan.opacity(0.32),
+                shadowColor: OrbitTheme.Palette.heroCyan.opacity(0.32),
                 shadowRadius: 12
             )
     }
@@ -174,20 +158,20 @@ struct OrbitPrimaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.button, style: .continuous)
                     .fill(OrbitButtonPalette.primaryBackground)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.cyan.opacity(0.55), lineWidth: 1)
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.button, style: .continuous)
+                    .stroke(OrbitTheme.Palette.heroCyan.opacity(0.55), lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.9 : 1)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .animation(.easeOut(duration: OrbitTheme.Motion.press), value: configuration.isPressed)
             .orbitInteractiveControl(
                 scale: 1.014,
                 lift: -1.4,
-                shadowColor: Color.cyan.opacity(0.24),
+                shadowColor: OrbitTheme.Palette.heroCyan.opacity(0.24),
                 shadowRadius: 10
             )
     }
@@ -203,16 +187,16 @@ struct OrbitSecondaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.button, style: .continuous)
                     .fill(secondaryBackgroundColor)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.button, style: .continuous)
                     .stroke(secondaryStrokeColor, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.9 : 1)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .animation(.easeOut(duration: OrbitTheme.Motion.press), value: configuration.isPressed)
             .orbitInteractiveControl(
                 scale: 1.012,
                 lift: -1.2,
@@ -224,25 +208,25 @@ struct OrbitSecondaryButtonStyle: ButtonStyle {
     private var secondaryTextColor: Color {
         colorScheme == .dark
             ? .primary
-            : Color(red: 0.05, green: 0.20, blue: 0.32)
+            : OrbitTheme.Palette.lightText
     }
 
     private var secondaryBackgroundColor: Color {
         colorScheme == .dark
-            ? Color.white.opacity(0.08)
-            : Color(red: 0.90, green: 0.95, blue: 0.99)
+            ? OrbitTheme.Palette.glassFill
+            : OrbitTheme.Palette.lightPanel
     }
 
     private var secondaryStrokeColor: Color {
         colorScheme == .dark
-            ? Color.cyan.opacity(0.38)
-            : Color(red: 0.08, green: 0.43, blue: 0.62).opacity(0.52)
+            ? OrbitTheme.Palette.heroCyan.opacity(0.38)
+            : OrbitTheme.Palette.lightStroke.opacity(0.52)
     }
 
     private var secondaryHoverShadowColor: Color {
         colorScheme == .dark
-            ? Color.cyan.opacity(0.16)
-            : Color.cyan.opacity(0.22)
+            ? OrbitTheme.Palette.heroCyan.opacity(0.16)
+            : OrbitTheme.Palette.heroCyan.opacity(0.22)
     }
 }
 
@@ -276,25 +260,25 @@ struct OrbitQuietButtonStyle: ButtonStyle {
     private var quietTextColor: Color {
         colorScheme == .dark
             ? .secondary
-            : Color(red: 0.10, green: 0.30, blue: 0.43)
+            : OrbitTheme.Palette.lightTextSecondary
     }
 
     private var quietBackgroundColor: Color {
         colorScheme == .dark
-            ? Color.white.opacity(0.05)
-            : Color(red: 0.92, green: 0.96, blue: 1.00)
+            ? OrbitTheme.Palette.glassFillSubtle
+            : OrbitTheme.Palette.lightPanelSoft
     }
 
     private var quietStrokeColor: Color {
         colorScheme == .dark
-            ? Color.white.opacity(0.18)
-            : Color(red: 0.11, green: 0.46, blue: 0.65).opacity(0.40)
+            ? OrbitTheme.Palette.glassBorderStrong.opacity(0.9)
+            : OrbitTheme.Palette.lightStrokeSoft.opacity(0.40)
     }
 
     private var quietHoverShadowColor: Color {
         colorScheme == .dark
             ? Color.white.opacity(0.14)
-            : Color.cyan.opacity(0.16)
+            : OrbitTheme.Palette.heroCyan.opacity(0.16)
     }
 }
 
@@ -316,11 +300,11 @@ struct OrbitDestructiveButtonStyle: ButtonStyle {
                     .stroke(destructiveStrokeColor, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.7 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .animation(.easeOut(duration: OrbitTheme.Motion.press), value: configuration.isPressed)
             .orbitInteractiveControl(
                 scale: 1.01,
                 lift: -1.0,
-                shadowColor: Color.red.opacity(0.18),
+                shadowColor: OrbitTheme.Palette.toastFailure.opacity(0.18),
                 shadowRadius: 6
             )
     }

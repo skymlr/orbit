@@ -71,7 +71,7 @@ struct SessionTaskFilterBar: View {
         ForEach(selectedFilteredCategories) { category in
             activeFilterChip(
                 title: "Category: \(category.name)",
-                tint: Color(categoryHex: category.colorHex),
+                tint: Color(orbitHex: category.colorHex),
                 icon: "tag.fill",
                 accessibilityLabel: "Category filter \(category.name), active"
             ) {
@@ -132,7 +132,7 @@ struct SessionTaskFilterBar: View {
                                 title: category.name,
                                 count: countForCategory(category.id),
                                 isSelected: isCategorySelected(category.id),
-                                tint: Color(categoryHex: category.colorHex)
+                                tint: Color(orbitHex: category.colorHex)
                             ) {
                                 store.send(.sessionTaskCategoryFilterToggled(category.id))
                             }
@@ -324,16 +324,4 @@ struct SessionTaskFilterBar: View {
         .low,
         .none,
     ]
-}
-
-private extension Color {
-    init(categoryHex: String) {
-        let normalized = FocusDefaults.normalizedCategoryColorHex(categoryHex)
-        let hex = String(normalized.dropFirst())
-        let value = UInt64(hex, radix: 16) ?? 0
-        let red = Double((value >> 16) & 0xFF) / 255
-        let green = Double((value >> 8) & 0xFF) / 255
-        let blue = Double(value & 0xFF) / 255
-        self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
-    }
 }

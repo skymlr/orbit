@@ -25,7 +25,7 @@ struct HistoryTaskRowView: View {
                             ForEach(task.categories) { category in
                                 OrbitCategoryChip(
                                     title: category.name,
-                                    tint: Color(categoryHex: category.colorHex),
+                                    tint: Color(orbitHex: category.colorHex),
                                     isSelected: true
                                 )
                             }
@@ -111,17 +111,5 @@ struct HistoryTaskRowView: View {
         case .high:
             return Color(red: 1.00, green: 0.45, blue: 0.42)
         }
-    }
-}
-
-private extension Color {
-    init(categoryHex: String) {
-        let normalized = FocusDefaults.normalizedCategoryColorHex(categoryHex)
-        let hex = String(normalized.dropFirst())
-        let value = UInt64(hex, radix: 16) ?? 0
-        let red = Double((value >> 16) & 0xFF) / 255
-        let green = Double((value >> 8) & 0xFF) / 255
-        let blue = Double(value & 0xFF) / 255
-        self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
     }
 }

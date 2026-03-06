@@ -4,18 +4,11 @@ struct OrbitSpaceBackground: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.04, green: 0.09, blue: 0.16),
-                        Color(red: 0.06, green: 0.14, blue: 0.24)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+                OrbitTheme.Gradients.spaceCanvas
 
                 RadialGradient(
                     colors: [
-                        Color(red: 0.20, green: 0.42, blue: 0.56).opacity(0.28),
+                        OrbitTheme.Palette.nebula.opacity(0.28),
                         .clear
                     ],
                     center: .init(x: 1, y: 1),
@@ -74,11 +67,11 @@ private struct OrbitMotif: View {
 
     private let orbitFractions: [CGFloat] = [0.40, 0.55, 0.70, 0.85, 1.00]
     private let planets: [PlanetSpec] = [
-        PlanetSpec(orbitIndex: 0, angle: 238, size: 0.011, color: Color(red: 0.67, green: 0.88, blue: 0.97)),
-        PlanetSpec(orbitIndex: 1, angle: 212, size: 0.013, color: Color(red: 0.97, green: 0.74, blue: 0.44)),
-        PlanetSpec(orbitIndex: 2, angle: 252, size: 0.015, color: Color(red: 0.94, green: 0.66, blue: 0.49)),
-        PlanetSpec(orbitIndex: 3, angle: 226, size: 0.017, color: Color(red: 0.66, green: 0.81, blue: 0.95)),
-        PlanetSpec(orbitIndex: 4, angle: 244, size: 0.018, color: Color(red: 0.96, green: 0.70, blue: 0.43)),
+        PlanetSpec(orbitIndex: 0, angle: 238, size: 0.011, color: OrbitTheme.Palette.planetIce),
+        PlanetSpec(orbitIndex: 1, angle: 212, size: 0.013, color: OrbitTheme.Palette.planetGold),
+        PlanetSpec(orbitIndex: 2, angle: 252, size: 0.015, color: OrbitTheme.Palette.planetCoral),
+        PlanetSpec(orbitIndex: 3, angle: 226, size: 0.017, color: OrbitTheme.Palette.planetIce.opacity(0.95)),
+        PlanetSpec(orbitIndex: 4, angle: 244, size: 0.018, color: OrbitTheme.Palette.planetGold.opacity(0.98)),
     ]
 
     var body: some View {
@@ -92,8 +85,7 @@ private struct OrbitMotif: View {
                 ForEach(Array(orbitFractions.enumerated()), id: \.offset) { index, fraction in
                     Circle()
                         .stroke(
-                            Color(red: 0.58, green: 0.84, blue: 0.95)
-                                .opacity(0.05 + Double(index) * 0.03),
+                            OrbitTheme.Palette.orbitLine.opacity(0.05 + Double(index) * 0.03),
                             lineWidth: 0.8
                         )
                         .frame(width: size * fraction * 2, height: size * fraction * 2)
@@ -114,18 +106,21 @@ private struct OrbitMotif: View {
 
     @ViewBuilder
     private func sun(center: CGPoint, size: CGFloat) -> some View {
+        let haloEndRadius = size * 0.40
+        let coreEndRadius = size * 0.086
+
         ZStack {
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color(red: 1.00, green: 0.83, blue: 0.46).opacity(0.55),
-                            Color(red: 0.96, green: 0.63, blue: 0.26).opacity(0.22),
+                            OrbitTheme.Palette.sunHalo.opacity(0.55),
+                            OrbitTheme.Palette.sunFlare.opacity(0.22),
                             .clear
                         ],
                         center: .center,
                         startRadius: 2,
-                        endRadius: size * 0.40
+                        endRadius: haloEndRadius
                     )
                 )
                 .frame(width: size * 0.88, height: size * 0.88)
@@ -134,12 +129,12 @@ private struct OrbitMotif: View {
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color(red: 1.00, green: 0.93, blue: 0.70),
-                            Color(red: 1.00, green: 0.74, blue: 0.39)
+                            OrbitTheme.Palette.sunCore,
+                            OrbitTheme.Palette.sunCoreEdge
                         ],
                         center: .center,
                         startRadius: 1,
-                        endRadius: size * 0.086
+                        endRadius: coreEndRadius
                     )
                 )
                 .overlay(

@@ -383,7 +383,7 @@ private struct CategoryColorPalettePicker: View {
                     selectedHex = colorHex
                 } label: {
                     Circle()
-                        .fill(Color(categoryHex: colorHex))
+                        .fill(Color(orbitHex: colorHex))
                         .frame(width: 18, height: 18)
                         .overlay(
                             Circle()
@@ -405,17 +405,5 @@ private struct CategoryColorPalettePicker: View {
                 .accessibilityLabel("Category color \(colorHex)")
             }
         }
-    }
-}
-
-private extension Color {
-    init(categoryHex: String) {
-        let normalized = FocusDefaults.normalizedCategoryColorHex(categoryHex)
-        let hex = String(normalized.dropFirst())
-        let value = UInt64(hex, radix: 16) ?? 0
-        let red = Double((value >> 16) & 0xFF) / 255.0
-        let green = Double((value >> 8) & 0xFF) / 255.0
-        let blue = Double(value & 0xFF) / 255.0
-        self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
     }
 }

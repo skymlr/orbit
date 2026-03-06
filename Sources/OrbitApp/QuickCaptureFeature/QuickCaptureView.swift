@@ -71,7 +71,7 @@ struct QuickCaptureView: View {
             }
             .transition(.orbitMicro)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.small, style: .continuous)
                     .fill(.ultraThinMaterial)
             )
 
@@ -170,17 +170,17 @@ struct QuickCaptureView: View {
             ZStack {
                 OrbitSpaceBackground()
 
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
                     .fill(.ultraThinMaterial.opacity(0.32))
                     .blur(radius: 8)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous))
         )
         .onExitCommand {
             dismissCapture()
         }
-        .animation(.easeInOut(duration: 0.16), value: editorState.isPreviewVisible)
-        .animation(.easeInOut(duration: 0.16), value: store.captureDraft.editingTaskID != nil)
+        .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: editorState.isPreviewVisible)
+        .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: store.captureDraft.editingTaskID != nil)
         .background {
             keyboardShortcutBindings
         }
@@ -349,7 +349,7 @@ struct QuickCaptureView: View {
 
     private func categoryChipButton(for category: SessionCategoryRecord) -> some View {
         let selected = isCategorySelected(category.id)
-        let tint = Color(categoryHex: category.colorHex)
+        let tint = Color(orbitHex: category.colorHex)
 
         return Button {
             toggleCategorySelection(category.id)
@@ -365,17 +365,5 @@ struct QuickCaptureView: View {
         .focusable()
         .focused($focusedField, equals: .categoryChip(category.id))
         .help("Toggle \(category.name)")
-    }
-}
-
-private extension Color {
-    init(categoryHex: String) {
-        let normalized = FocusDefaults.normalizedCategoryColorHex(categoryHex)
-        let hex = String(normalized.dropFirst())
-        let value = UInt64(hex, radix: 16) ?? 0
-        let red = Double((value >> 16) & 0xFF) / 255
-        let green = Double((value >> 8) & 0xFF) / 255
-        let blue = Double(value & 0xFF) / 255
-        self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
     }
 }

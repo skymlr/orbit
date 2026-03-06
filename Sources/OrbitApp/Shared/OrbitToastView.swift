@@ -31,10 +31,10 @@ struct OrbitToastView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
                         .stroke(borderColor, lineWidth: 1)
                 )
         )
@@ -54,18 +54,18 @@ struct OrbitToastView: View {
     private var accentColor: Color {
         switch toast.tone {
         case .success:
-            return Color(red: 0.38, green: 0.85, blue: 0.60)
+            return OrbitTheme.Palette.toastSuccess
         case .failure:
-            return Color(red: 0.98, green: 0.45, blue: 0.42)
+            return OrbitTheme.Palette.toastFailure
         }
     }
 
     private var borderColor: Color {
         switch toast.tone {
         case .success:
-            return Color(red: 0.38, green: 0.85, blue: 0.60).opacity(0.55)
+            return OrbitTheme.Palette.toastSuccess.opacity(0.55)
         case .failure:
-            return Color(red: 0.98, green: 0.45, blue: 0.42).opacity(0.55)
+            return OrbitTheme.Palette.toastFailure.opacity(0.55)
         }
     }
 }

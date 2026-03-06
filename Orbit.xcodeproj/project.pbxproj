@@ -26,6 +26,7 @@
 		96CC123BA8B91E42BD24988B /* OrbitButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC3E60A795D51747E39D007 /* OrbitButtonStyles.swift */; };
 		9A3F18B42E6011D700000001 /* SessionHistoryBrowserSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3F18B62E6011D700000001 /* SessionHistoryBrowserSupport.swift */; };
 		9A3F18B52E6011D700000001 /* HistoryTaskRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3F18B72E6011D700000001 /* HistoryTaskRowView.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* OrbitDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* OrbitDesignSystem.swift */; };
 		A1C38E14B5D64F9A87C0E113 /* SessionTaskFilterBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C38E14B5D64F9A87C0E112 /* SessionTaskFilterBarView.swift */; };
 		A4B4B69DDCEF26B1A3F4998A /* MarkdownExportClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC36E74A03098D2843A1524B /* MarkdownExportClient.swift */; };
 		A7B91C22D4E74FB2A9C1D113 /* OrbitToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F8E410B2A64D71AEB35C09 /* OrbitToastView.swift */; };
@@ -59,6 +60,13 @@
 		9589E10F327CF6C7BCA98486 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9A3F18B62E6011D700000001 /* SessionHistoryBrowserSupport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionHistoryBrowserSupport.swift; sourceTree = "<group>"; };
 		9A3F18B72E6011D700000001 /* HistoryTaskRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoryTaskRowView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5D /* OrbitDesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrbitDesignSystem.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5E /* MASTER.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; path = MASTER.md; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5F /* menu-bar.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; path = "menu-bar.md"; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B60 /* quick-capture.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; path = "quick-capture.md"; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B61 /* session-live.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; path = "session-live.md"; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B62 /* session-history.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; path = "session-history.md"; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B63 /* workspace-settings.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; path = "workspace-settings.md"; sourceTree = "<group>"; };
 		A1C38E14B5D64F9A87C0E112 /* SessionTaskFilterBarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionTaskFilterBarView.swift; sourceTree = "<group>"; };
 		AAB6775658599F836CBD40C4 /* FocusRepository.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FocusRepository.swift; sourceTree = "<group>"; };
 		B8D965877A754D1CD6916D76 /* MarkdownFormattingBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownFormattingBar.swift; sourceTree = "<group>"; };
@@ -132,6 +140,7 @@
 				EE2408C857E0647D5F9208EA /* Frameworks */,
 				996616A39D66EE1A5B049447 /* Sources */,
 				36A4DAFAAD04A70CAFF19B7B /* Resources */,
+				A1B2C3D4E5F60718293A4B64 /* Design System */,
 			);
 			sourceTree = "<group>";
 		};
@@ -144,11 +153,41 @@
 				B8D965877A754D1CD6916D76 /* MarkdownFormattingBar.swift */,
 				8C50C0AF4229125CAF4C6A99 /* MarkdownSourceTextView.swift */,
 				FDC3E60A795D51747E39D007 /* OrbitButtonStyles.swift */,
+				A1B2C3D4E5F60718293A4B5D /* OrbitDesignSystem.swift */,
 				66F7DAB48B777F1E13ABC150 /* OrbitSpaceBackground.swift */,
 				C9F8E410B2A64D71AEB35C09 /* OrbitToastView.swift */,
 				1BFED63E38C932C97DD8C809 /* QuickCapturePanelController.swift */,
 			);
 			path = Shared;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60718293A4B64 /* Design System */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60718293A4B65 /* orbit */,
+			);
+			path = "design-system";
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60718293A4B65 /* orbit */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60718293A4B5E /* MASTER.md */,
+				A1B2C3D4E5F60718293A4B66 /* pages */,
+			);
+			path = orbit;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60718293A4B66 /* pages */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60718293A4B5F /* menu-bar.md */,
+				A1B2C3D4E5F60718293A4B60 /* quick-capture.md */,
+				A1B2C3D4E5F60718293A4B62 /* session-history.md */,
+				A1B2C3D4E5F60718293A4B61 /* session-live.md */,
+				A1B2C3D4E5F60718293A4B63 /* workspace-settings.md */,
+			);
+			path = pages;
 			sourceTree = "<group>";
 		};
 		831FC8A49ED0D9C9504B99CE /* OrbitApp */ = {
@@ -327,6 +366,7 @@
 				1EAC93A0DCC35E3ACFEFD029 /* MarkdownFormattingBar.swift in Sources */,
 				8EDFE4861A5383A70956B635 /* MarkdownSourceTextView.swift in Sources */,
 				96CC123BA8B91E42BD24988B /* OrbitButtonStyles.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* OrbitDesignSystem.swift in Sources */,
 				1286FD6FED5E76D6BDD64FD2 /* OrbitSpaceBackground.swift in Sources */,
 				A7B91C22D4E74FB2A9C1D113 /* OrbitToastView.swift in Sources */,
 				014513AE2CD58CE20D97A2F3 /* QuickCapturePanelController.swift in Sources */,

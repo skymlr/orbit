@@ -193,7 +193,7 @@ struct TaskRow: View {
                         ForEach(draft.categories) { category in
                             OrbitCategoryChip(
                                 title: category.name,
-                                tint: Color(categoryHex: category.colorHex),
+                                tint: Color(orbitHex: category.colorHex),
                                 isSelected: true
                             )
                         }
@@ -407,7 +407,7 @@ struct TaskRow: View {
         completionBurstProgress = 0
         isCompletionBurstVisible = true
 
-        withAnimation(.easeOut(duration: 0.54)) {
+        withAnimation(.easeOut(duration: OrbitTheme.Motion.celebration)) {
             completionBurstProgress = 1
         }
 
@@ -432,16 +432,16 @@ struct TaskRow: View {
 }
 
 private enum TaskRowPalette {
-    static let heroNavy = Color(red: 0.02, green: 0.14, blue: 0.24)
-    static let heroCyan = Color(red: 0.02, green: 0.29, blue: 0.40)
-    static let heroAmber = Color(red: 0.24, green: 0.19, blue: 0.04)
-    static let completionGreen = Color(red: 0.36, green: 0.86, blue: 0.46)
-    static let starlight = Color(red: 0.72, green: 0.93, blue: 1.00)
-    static let supernovaRed = Color(red: 0.93, green: 0.38, blue: 0.48)
-    static let priorityNone = Color(red: 0.62, green: 0.70, blue: 0.84)
-    static let priorityLow = Color(red: 0.08, green: 0.86, blue: 0.78)
-    static let priorityMedium = Color(red: 1.00, green: 0.74, blue: 0.18)
-    static let priorityHigh = Color(red: 1.00, green: 0.27, blue: 0.54)
+    static let heroNavy = OrbitTheme.Palette.heroNavy
+    static let heroCyan = OrbitTheme.Palette.heroCyan
+    static let heroAmber = OrbitTheme.Palette.heroAmber
+    static let completionGreen = OrbitTheme.Palette.completionGreen
+    static let starlight = OrbitTheme.Palette.starlight
+    static let supernovaRed = OrbitTheme.Palette.toastFailure
+    static let priorityNone = OrbitTheme.Palette.priorityNone
+    static let priorityLow = OrbitTheme.Palette.priorityLow
+    static let priorityMedium = OrbitTheme.Palette.priorityMedium
+    static let priorityHigh = OrbitTheme.Palette.priorityHigh
 
     static let completedFill = RadialGradient(
         colors: [
@@ -571,17 +571,7 @@ struct TaskRowFloatingTools: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            TaskRowPalette.heroNavy.opacity(0.95),
-                            TaskRowPalette.heroCyan.opacity(0.95),
-                            TaskRowPalette.heroAmber.opacity(0.82),
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .fill(OrbitTheme.Gradients.taskInfoPanel)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -850,16 +840,4 @@ struct MarkdownRenderedTaskView: View {
     private static let orderedListRegex = try! NSRegularExpression(
         pattern: #"^([ \t]*)(\d+)([.)])\s+(.*)$"#
     )
-}
-
-private extension Color {
-    init(categoryHex: String) {
-        let normalized = FocusDefaults.normalizedCategoryColorHex(categoryHex)
-        let hex = String(normalized.dropFirst())
-        let value = UInt64(hex, radix: 16) ?? 0
-        let red = Double((value >> 16) & 0xFF) / 255
-        let green = Double((value >> 8) & 0xFF) / 255
-        let blue = Double(value & 0xFF) / 255
-        self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
-    }
 }
