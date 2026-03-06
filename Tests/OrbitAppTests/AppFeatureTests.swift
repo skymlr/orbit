@@ -1,7 +1,11 @@
 import ComposableArchitecture
 import Foundation
 import Testing
+#if canImport(Orbit)
+@testable import Orbit
+#else
 @testable import OrbitApp
+#endif
 
 @MainActor
 struct AppFeatureTests {

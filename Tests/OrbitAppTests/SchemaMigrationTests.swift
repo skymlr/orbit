@@ -2,7 +2,11 @@ import Foundation
 import SQLiteData
 import StructuredQueries
 import Testing
+#if canImport(Orbit)
+@testable import Orbit
+#else
 @testable import OrbitApp
+#endif
 
 struct SchemaMigrationTests {
     @Test

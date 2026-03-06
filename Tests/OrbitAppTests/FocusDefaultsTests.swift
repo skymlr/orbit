@@ -1,6 +1,10 @@
 import Foundation
 import Testing
+#if canImport(Orbit)
+@testable import Orbit
+#else
 @testable import OrbitApp
+#endif
 
 struct FocusDefaultsTests {
     @Test
