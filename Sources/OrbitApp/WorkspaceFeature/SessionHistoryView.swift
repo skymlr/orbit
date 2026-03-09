@@ -395,13 +395,13 @@ private struct HistoryTaskListView: View {
                 .foregroundStyle(.secondary)
             }
 
-            Picker("Task filter", selection: $historyTaskFilter) {
-                ForEach(HistoryTaskFilter.allCases) { filter in
-                    Text(filter.title)
-                        .tag(filter)
-                }
+            OrbitSegmentedControl(
+                "Task filter",
+                selection: $historyTaskFilter,
+                options: HistoryTaskFilter.allCases
+            ) { filter in
+                filter.title
             }
-            .pickerStyle(.segmented)
             .frame(maxWidth: 320)
 
             if filteredTasks.isEmpty {

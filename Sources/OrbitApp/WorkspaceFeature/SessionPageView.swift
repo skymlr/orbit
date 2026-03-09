@@ -10,6 +10,7 @@ struct SessionPageView: View {
     @State private var selectedHistoryDay = SessionHistoryBrowserSupport.normalizedDay(for: Date())
     @State private var selectedHistorySessionID: UUID?
     @State private var isHistoryCalendarPresented = false
+    @State private var isExportAllConfirmationPresented = false
     @State private var isHistorySearchPresented = false
     @State private var historySearchPanelController = HistorySearchPanelController()
 
@@ -75,10 +76,37 @@ struct SessionPageView: View {
                         Label("Search History", systemImage: "magnifyingglass")
                     }
                     .help("Open floating history search")
+
+                    Button {
+                        exportAllSessionsToolbarButtonTapped()
+                    } label: {
+                        Label("Export All Sessions", systemImage: "square.and.arrow.up")
+                    }
+                    .disabled(completedHistorySessionIDs.isEmpty)
+                    .help("Export markdown files for all completed sessions")
                 }
+
+                SettingsLink {
+                    Label("Preferences", systemImage: "gearshape")
+                }
+                .help("Open Settings")
             }
         }
         .toolbarBackground(.hidden, for: .windowToolbar)
+        .confirmationDialog(
+            "Export All Sessions?",
+            isPresented: $isExportAllConfirmationPresented
+        ) {
+            Button("Export \(completedHistorySessionIDs.count) Session\(completedHistorySessionIDs.count == 1 ? "" : "s")") {
+                exportAllSessionsConfirmationAccepted()
+            }
+
+            Button("Cancel", role: .cancel) {
+                isExportAllConfirmationPresented = false
+            }
+        } message: {
+            Text("Export markdown files for every completed session currently saved in history.")
+        }
         .task(id: store.activeSession?.id) {
             reconcileHistorySelection()
             refreshHistorySearchPanelIfNeeded()
@@ -152,8 +180,26 @@ struct SessionPageView: View {
         )
     }
 
+    private var completedHistorySessionIDs: [UUID] {
+        store.settings.sessions
+            .filter { $0.endedAt != nil }
+            .map(\.id)
+    }
+
     private func selectHistorySession(_ sessionID: UUID) {
         selectedHistorySessionID = sessionID
+    }
+
+    private func exportAllSessionsToolbarButtonTapped() {
+        guard !completedHistorySessionIDs.isEmpty else { return }
+        isExportAllConfirmationPresented = true
+    }
+
+    private func exportAllSessionsConfirmationAccepted() {
+        guard !completedHistorySessionIDs.isEmpty else { return }
+        chooseExportDirectory { url in
+            store.send(.settingsExportAllTapped(url))
+        }
     }
 
     private func exportSessionButtonTapped(sessionID: UUID) {

@@ -10,7 +10,8 @@ Orbit is a macOS focus companion built with SwiftUI, TCA, and SQLite.
 - Task metadata includes priority (`none`, `low`, `medium`, `high`).
 - Tasks support multiple user-defined categories.
 - Task-level completion with carry-over from the most recently ended session.
-- Session management in Settings (rename, delete, export markdown).
+- Session history management (rename, delete, and export markdown).
+- Dedicated Preferences window for categories, hotkeys, and app credits.
 - Auto-end behavior:
   - 8 hours of inactivity.
   - App termination.
@@ -19,7 +20,7 @@ Orbit is a macOS focus companion built with SwiftUI, TCA, and SQLite.
 - Start/Open session: `ctrl+option+cmd+k`
 - Quick capture: `ctrl+option+cmd+j`
 
-Both are configurable in Settings, and can be reset to defaults.
+Both are configurable in Preferences, and can be reset to defaults.
 
 ## Tech Stack
 - SwiftUI

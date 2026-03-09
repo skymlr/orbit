@@ -55,6 +55,11 @@ struct OrbitApp: App {
             }
         }
         .defaultSize(width: 920, height: 680)
+
+        Settings {
+            PreferencesView(store: store)
+        }
+        .defaultSize(width: 920, height: 680)
     }
 }
 

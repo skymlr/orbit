@@ -9,13 +9,13 @@ struct HistorySearchView: View {
         VStack(alignment: .leading, spacing: 16) {
             header
 
-            Picker("Task filter", selection: $model.filter) {
-                ForEach(searchFilterOrder) { filter in
-                    Text(filter.title)
-                        .tag(filter)
-                }
+            OrbitSegmentedControl(
+                "Task filter",
+                selection: $model.filter,
+                options: searchFilterOrder
+            ) { filter in
+                filter.title
             }
-            .pickerStyle(.segmented)
             .frame(maxWidth: 320)
 
             content
