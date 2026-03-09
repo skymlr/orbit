@@ -201,7 +201,16 @@ struct WorkspaceView: View {
     }
 
     private var aboutSection: some View {
-        sectionCard {
+        VStack(alignment: .leading, spacing: 16) {
+            aboutSummaryCard
+            thirdPartyCreditsCard
+        }
+        .frame(maxWidth: sectionMaxWidth(for: .about))
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private var aboutSummaryCard: some View {
+        aboutPanel {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Orbit: A Focus Manager")
@@ -252,8 +261,29 @@ struct WorkspaceView: View {
                 }
             }
         }
-        .frame(maxWidth: sectionMaxWidth(for: .about))
-        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private var thirdPartyCreditsCard: some View {
+        aboutPanel {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Third-Party Credits")
+                        .font(.title3.weight(.semibold))
+                    Text("\(ThirdPartyCredits.all.count) packages in Orbit's current SwiftPM dependency graph.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text("Each package links to its project page and the pinned license file for the revision currently resolved in this app.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    ForEach(ThirdPartyCredits.all) { credit in
+                        ThirdPartyCreditCard(credit: credit)
+                    }
+                }
+            }
+        }
     }
 
     private var historicalSessions: [FocusSessionRecord] {
@@ -325,6 +355,110 @@ struct WorkspaceView: View {
             content()
         }
         .padding(14)
+    }
+
+    @ViewBuilder
+    private func aboutPanel<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        sectionCard {
+            content()
+        }
+        .background(
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
+                .fill(.thinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
+                .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
+        )
+    }
+}
+
+private struct ThirdPartyCreditCard: View {
+    let credit: ThirdPartyCredit
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(credit.name)
+                        .font(.headline.weight(.semibold))
+
+                    Text(credit.packageID)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 12)
+
+                HStack(spacing: 8) {
+                    CreditMetadataChip(title: "v\(credit.version)", usesMonospacedDigits: true)
+                    CreditMetadataChip(title: credit.licenseName)
+                }
+            }
+
+            HStack(spacing: 8) {
+                Link(destination: credit.repositoryURL) {
+                    Label("Project", systemImage: "link")
+                }
+                .buttonStyle(.orbitQuiet)
+
+                Link(destination: credit.licenseURL) {
+                    Label("License", systemImage: "doc.text")
+                }
+                .buttonStyle(.orbitQuiet)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
+                .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
+        )
+    }
+}
+
+private struct CreditMetadataChip: View {
+    let title: String
+    var usesMonospacedDigits = false
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Text(title)
+            .font(usesMonospacedDigits ? .caption.monospacedDigit().weight(.semibold) : .caption.weight(.semibold))
+            .foregroundStyle(textColor)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(backgroundColor)
+            )
+            .overlay(
+                Capsule()
+                    .stroke(borderColor, lineWidth: 1)
+            )
+    }
+
+    private var textColor: Color {
+        colorScheme == .dark
+            ? .primary
+            : OrbitTheme.Palette.lightTextSecondary
+    }
+
+    private var backgroundColor: Color {
+        colorScheme == .dark
+            ? OrbitTheme.Palette.glassFillSubtle
+            : OrbitTheme.Palette.lightPanelSoft
+    }
+
+    private var borderColor: Color {
+        colorScheme == .dark
+            ? OrbitTheme.Palette.glassBorderStrong.opacity(0.88)
+            : OrbitTheme.Palette.lightStrokeSoft.opacity(0.42)
     }
 }
 

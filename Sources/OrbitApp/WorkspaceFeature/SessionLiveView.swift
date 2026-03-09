@@ -173,7 +173,7 @@ struct SessionLiveView: View {
                                 .id(draft.id)
                         }
                     }
-                    .padding(8)
+                    .padding(.trailing, 8)
                 }
                 .scrollIndicators(.visible)
                 .onChange(of: focusedTaskID) { _, _ in

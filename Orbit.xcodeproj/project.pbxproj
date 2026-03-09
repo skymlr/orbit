@@ -3,23 +3,23 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1A2B3C4D5E6F708192A3B431 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B42B /* CasePaths */; };
-		1A2B3C4D5E6F708192A3B432 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B42D /* GRDB */; };
-		1A2B3C4D5E6F708192A3B433 /* IdentifiedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B42E /* IdentifiedCollections */; };
-		1A2B3C4D5E6F708192A3B434 /* Clocks in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B430 /* Clocks */; };
-		1A2B3C4D5E6F708192A3B427 /* PerceptionCore in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B42A /* PerceptionCore */; };
-		1A2B3C4D5E6F708192A3B421 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B41E /* GRDB */; };
-		1A2B3C4D5E6F708192A3B422 /* IdentifiedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B41F /* IdentifiedCollections */; };
-		1A2B3C4D5E6F708192A3B423 /* Perception in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B420 /* Perception */; };
+		1648677C96E755210B40B545 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40539519CA0DC39A10932103 /* Cocoa.framework */; };
 		1A2B3C4D5E6F708192A3B401 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B417 /* ComposableArchitecture */; };
 		1A2B3C4D5E6F708192A3B402 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B418 /* Dependencies */; };
 		1A2B3C4D5E6F708192A3B403 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B419 /* SQLiteData */; };
 		1A2B3C4D5E6F708192A3B404 /* StructuredQueries in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B41A /* StructuredQueries */; };
-		1648677C96E755210B40B545 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40539519CA0DC39A10932103 /* Cocoa.framework */; };
+		1A2B3C4D5E6F708192A3B421 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B41E /* GRDB */; };
+		1A2B3C4D5E6F708192A3B422 /* IdentifiedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B41F /* IdentifiedCollections */; };
+		1A2B3C4D5E6F708192A3B423 /* Perception in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B420 /* Perception */; };
+		1A2B3C4D5E6F708192A3B427 /* PerceptionCore in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B42A /* PerceptionCore */; };
+		1A2B3C4D5E6F708192A3B431 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B42B /* CasePaths */; };
+		1A2B3C4D5E6F708192A3B432 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B42D /* GRDB */; };
+		1A2B3C4D5E6F708192A3B433 /* IdentifiedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B42E /* IdentifiedCollections */; };
+		1A2B3C4D5E6F708192A3B434 /* Clocks in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B430 /* Clocks */; };
 		510A3D49BF048B5454665B17 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 44492BB61285D2CADF1D3884 /* ComposableArchitecture */; };
 		5D9BCD66DCAE6DE5376C3393 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD45782742C5B3180A06E9EE /* App.swift */; };
 		7B5C28F45D9E184E171F6FC2 /* StructuredQueries in Frameworks */ = {isa = PBXBuildFile; productRef = D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */; };
@@ -54,46 +54,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4E7306FD5537C1CE4A3EA528 /* MenuBarFeature */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MenuBarFeature;
-			sourceTree = "<group>";
-		};
-		81FDE7F96248D28C065316A7 /* Shared */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Shared;
-			sourceTree = "<group>";
-		};
-		A1B2C3D4E5F60718293A4B66 /* pages */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = pages;
-			sourceTree = "<group>";
-		};
-		A1B2C3D4E5F60718293A4B74 /* OrbitAppTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = OrbitAppTests;
-			sourceTree = "<group>";
-		};
-		B932C15A3FF09684DFB12B49 /* Persistence */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Persistence;
-			sourceTree = "<group>";
-		};
-		C83D2FC61A7E199793B2880E /* WorkspaceFeature */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = WorkspaceFeature;
-			sourceTree = "<group>";
-		};
-		D29FEC83C70DEC6B841FF701 /* QuickCaptureFeature */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = QuickCaptureFeature;
-			sourceTree = "<group>";
-		};
-		F9AA0DBB2391D047BB8070EC /* Dependencies */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Dependencies;
-			sourceTree = "<group>";
-		};
+		4E7306FD5537C1CE4A3EA528 /* MenuBarFeature */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = MenuBarFeature; sourceTree = "<group>"; };
+		81FDE7F96248D28C065316A7 /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Shared; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B66 /* pages */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = pages; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B74 /* OrbitAppTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = OrbitAppTests; sourceTree = "<group>"; };
+		B932C15A3FF09684DFB12B49 /* Persistence */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Persistence; sourceTree = "<group>"; };
+		C83D2FC61A7E199793B2880E /* WorkspaceFeature */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = WorkspaceFeature; sourceTree = "<group>"; };
+		D29FEC83C70DEC6B841FF701 /* QuickCaptureFeature */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = QuickCaptureFeature; sourceTree = "<group>"; };
+		F9AA0DBB2391D047BB8070EC /* Dependencies */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Dependencies; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,33 +134,8 @@
 				996616A39D66EE1A5B049447 /* Sources */,
 				36A4DAFAAD04A70CAFF19B7B /* Resources */,
 				A1B2C3D4E5F60718293A4B73 /* Tests */,
-				A1B2C3D4E5F60718293A4B64 /* Design System */,
+				A1B2C3D4E5F60718293A4B64 /* design-system */,
 			);
-			sourceTree = "<group>";
-		};
-		A1B2C3D4E5F60718293A4B64 /* Design System */ = {
-			isa = PBXGroup;
-			children = (
-				A1B2C3D4E5F60718293A4B65 /* orbit */,
-			);
-			path = "design-system";
-			sourceTree = "<group>";
-		};
-		A1B2C3D4E5F60718293A4B65 /* orbit */ = {
-			isa = PBXGroup;
-			children = (
-				A1B2C3D4E5F60718293A4B5E /* MASTER.md */,
-				A1B2C3D4E5F60718293A4B66 /* pages */,
-			);
-			path = orbit;
-			sourceTree = "<group>";
-		};
-		A1B2C3D4E5F60718293A4B73 /* Tests */ = {
-			isa = PBXGroup;
-			children = (
-				A1B2C3D4E5F60718293A4B74 /* OrbitAppTests */,
-			);
-			path = Tests;
 			sourceTree = "<group>";
 		};
 		831FC8A49ED0D9C9504B99CE /* OrbitApp */ = {
@@ -217,6 +160,31 @@
 				831FC8A49ED0D9C9504B99CE /* OrbitApp */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60718293A4B64 /* design-system */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60718293A4B65 /* orbit */,
+			);
+			path = "design-system";
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60718293A4B65 /* orbit */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60718293A4B5E /* MASTER.md */,
+				A1B2C3D4E5F60718293A4B66 /* pages */,
+			);
+			path = orbit;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60718293A4B73 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60718293A4B74 /* OrbitAppTests */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		EE2408C857E0647D5F9208EA /* Frameworks */ = {
@@ -292,12 +260,12 @@
 				1A2B3C4D5E6F708192A3B429 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				F9AA0DBB2391D047BB8070EC /* Dependencies */,
 				4E7306FD5537C1CE4A3EA528 /* MenuBarFeature */,
-				B932C15A3FF09684DFB12B49 /* Persistence */,
-				D29FEC83C70DEC6B841FF701 /* QuickCaptureFeature */,
 				81FDE7F96248D28C065316A7 /* Shared */,
+				B932C15A3FF09684DFB12B49 /* Persistence */,
 				C83D2FC61A7E199793B2880E /* WorkspaceFeature */,
+				D29FEC83C70DEC6B841FF701 /* QuickCaptureFeature */,
+				F9AA0DBB2391D047BB8070EC /* Dependencies */,
 			);
 			name = Orbit;
 			packageProductDependencies = (
@@ -341,7 +309,6 @@
 				Base,
 			);
 			mainGroup = 5237878ED1375E65C64987B7;
-			preferredProjectObjectVersion = 77;
 			packageReferences = (
 				E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				CB2704642CDBA57F9A97A9DA /* XCRemoteSwiftPackageReference "swift-case-paths" */,
@@ -349,7 +316,7 @@
 				0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */,
 				8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */,
 				F0A1B2C3D4E5F60718293A4E /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */,
-				1A2B3C4D5E6F708192A3B41B /* XCRemoteSwiftPackageReference "GRDB.swift" */,
+				1A2B3C4D5E6F708192A3B41B /* XCRemoteSwiftPackageReference "GRDB" */,
 				1A2B3C4D5E6F708192A3B41C /* XCRemoteSwiftPackageReference "swift-identified-collections" */,
 				1A2B3C4D5E6F708192A3B41D /* XCRemoteSwiftPackageReference "swift-perception" */,
 				1A2B3C4D5E6F708192A3B42F /* XCRemoteSwiftPackageReference "swift-clocks" */,
@@ -383,13 +350,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		1A2B3C4D5E6F708192A3B40A /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		0F3CFBEA201BA52A9347A351 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -400,9 +360,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		1A2B3C4D5E6F708192A3B40A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		008CFACC628BAA4C1E889833 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 3AAF415269A2878FE0A31517 /* SQLiteData */;
+		};
+		0E10C950B8CBD91E9468B34C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */;
+		};
 		1A2B3C4D5E6F708192A3B40B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D5AFD5ECD954E79D19FE5594 /* Orbit */;
@@ -424,22 +399,6 @@
 			isa = PBXTargetDependency;
 			productRef = 1A2B3C4D5E6F708192A3B41A /* StructuredQueries */;
 		};
-		1A2B3C4D5E6F708192A3B435 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = 1A2B3C4D5E6F708192A3B42B /* CasePaths */;
-		};
-		1A2B3C4D5E6F708192A3B436 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = 1A2B3C4D5E6F708192A3B430 /* Clocks */;
-		};
-		1A2B3C4D5E6F708192A3B437 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = 1A2B3C4D5E6F708192A3B42D /* GRDB */;
-		};
-		1A2B3C4D5E6F708192A3B438 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = 1A2B3C4D5E6F708192A3B42E /* IdentifiedCollections */;
-		};
 		1A2B3C4D5E6F708192A3B424 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = 1A2B3C4D5E6F708192A3B41E /* GRDB */;
@@ -456,13 +415,21 @@
 			isa = PBXTargetDependency;
 			productRef = 1A2B3C4D5E6F708192A3B42A /* PerceptionCore */;
 		};
-		008CFACC628BAA4C1E889833 /* PBXTargetDependency */ = {
+		1A2B3C4D5E6F708192A3B435 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = 3AAF415269A2878FE0A31517 /* SQLiteData */;
+			productRef = 1A2B3C4D5E6F708192A3B42B /* CasePaths */;
 		};
-		0E10C950B8CBD91E9468B34C /* PBXTargetDependency */ = {
+		1A2B3C4D5E6F708192A3B436 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */;
+			productRef = 1A2B3C4D5E6F708192A3B430 /* Clocks */;
+		};
+		1A2B3C4D5E6F708192A3B437 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 1A2B3C4D5E6F708192A3B42D /* GRDB */;
+		};
+		1A2B3C4D5E6F708192A3B438 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 1A2B3C4D5E6F708192A3B42E /* IdentifiedCollections */;
 		};
 		60E62E5FF00A5B2EB60B198C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -740,7 +707,15 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		1A2B3C4D5E6F708192A3B41B /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
+		0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/sqlite-data";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+		1A2B3C4D5E6F708192A3B41B /* XCRemoteSwiftPackageReference "GRDB" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/groue/GRDB.swift";
 			requirement = {
@@ -770,14 +745,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.0.6;
-			};
-		};
-		0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/sqlite-data";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
 			};
 		};
 		8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */ = {
@@ -823,9 +790,29 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		1A2B3C4D5E6F708192A3B417 /* ComposableArchitecture */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			productName = ComposableArchitecture;
+		};
+		1A2B3C4D5E6F708192A3B418 /* Dependencies */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA98A25D73F7F7F2EC1B04FD /* XCRemoteSwiftPackageReference "swift-dependencies" */;
+			productName = Dependencies;
+		};
+		1A2B3C4D5E6F708192A3B419 /* SQLiteData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */;
+			productName = SQLiteData;
+		};
+		1A2B3C4D5E6F708192A3B41A /* StructuredQueries */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */;
+			productName = StructuredQueries;
+		};
 		1A2B3C4D5E6F708192A3B41E /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 1A2B3C4D5E6F708192A3B41B /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			package = 1A2B3C4D5E6F708192A3B41B /* XCRemoteSwiftPackageReference "GRDB" */;
 			productName = GRDB;
 		};
 		1A2B3C4D5E6F708192A3B41F /* IdentifiedCollections */ = {
@@ -850,7 +837,7 @@
 		};
 		1A2B3C4D5E6F708192A3B42D /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 1A2B3C4D5E6F708192A3B41B /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			package = 1A2B3C4D5E6F708192A3B41B /* XCRemoteSwiftPackageReference "GRDB" */;
 			productName = GRDB;
 		};
 		1A2B3C4D5E6F708192A3B42E /* IdentifiedCollections */ = {
@@ -862,26 +849,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1A2B3C4D5E6F708192A3B42F /* XCRemoteSwiftPackageReference "swift-clocks" */;
 			productName = Clocks;
-		};
-		1A2B3C4D5E6F708192A3B417 /* ComposableArchitecture */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E8036A8EC6E2BCC91769A56D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
-			productName = ComposableArchitecture;
-		};
-		1A2B3C4D5E6F708192A3B418 /* Dependencies */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AA98A25D73F7F7F2EC1B04FD /* XCRemoteSwiftPackageReference "swift-dependencies" */;
-			productName = Dependencies;
-		};
-		1A2B3C4D5E6F708192A3B419 /* SQLiteData */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0723F2B9EDC6B28633054F3B /* XCRemoteSwiftPackageReference "sqlite-data" */;
-			productName = SQLiteData;
-		};
-		1A2B3C4D5E6F708192A3B41A /* StructuredQueries */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 8E3DE50D2E9275D5D3588761 /* XCRemoteSwiftPackageReference "swift-structured-queries" */;
-			productName = StructuredQueries;
 		};
 		3AAF415269A2878FE0A31517 /* SQLiteData */ = {
 			isa = XCSwiftPackageProductDependency;
