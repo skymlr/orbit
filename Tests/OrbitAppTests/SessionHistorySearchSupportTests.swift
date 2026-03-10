@@ -196,11 +196,18 @@ struct SessionHistorySearchSupportTests {
             completedAt: nil
         )
 
+        let carriedTask = makeTask(
+            markdown: "History carryover",
+            createdAt: date(2026, 3, 5, 10, 30, calendar: calendar),
+            completedAt: nil,
+            carriedFromTaskID: UUID()
+        )
+
         let session = makeSession(
             name: "History Search",
             startedAt: date(2026, 3, 5, 10, 0, calendar: calendar),
             endedAt: date(2026, 3, 5, 13, 0, calendar: calendar),
-            tasks: [openTask, completedTask]
+            tasks: [openTask, completedTask, carriedTask]
         )
 
         let all = SessionHistorySearchSupport.dayGroups(
@@ -224,10 +231,18 @@ struct SessionHistorySearchSupportTests {
             filter: .open,
             calendar: calendar
         )
+        let createdHere = SessionHistorySearchSupport.dayGroups(
+            from: [session],
+            excludingActiveSessionID: nil,
+            query: "history",
+            filter: .createdInSession,
+            calendar: calendar
+        )
 
-        #expect(all[0].sessions[0].tasks.map(\.id) == [completedTask.id, openTask.id])
+        #expect(all[0].sessions[0].tasks.map(\.id) == [completedTask.id, openTask.id, carriedTask.id])
         #expect(completed[0].sessions[0].tasks.map(\.id) == [completedTask.id])
-        #expect(open[0].sessions[0].tasks.map(\.id) == [openTask.id])
+        #expect(open[0].sessions[0].tasks.map(\.id) == [openTask.id, carriedTask.id])
+        #expect(createdHere[0].sessions[0].tasks.map(\.id) == [completedTask.id, openTask.id])
     }
 
     @Test
@@ -310,7 +325,8 @@ private func makeTask(
     sessionID: UUID = UUID(),
     markdown: String,
     createdAt: Date,
-    completedAt: Date?
+    completedAt: Date?,
+    carriedFromTaskID: UUID? = nil
 ) -> FocusTaskRecord {
     FocusTaskRecord(
         id: id,
@@ -319,7 +335,7 @@ private func makeTask(
         markdown: markdown,
         priority: .none,
         completedAt: completedAt,
-        carriedFromTaskID: nil,
+        carriedFromTaskID: carriedFromTaskID,
         carriedFromSessionName: nil,
         createdAt: createdAt,
         updatedAt: createdAt

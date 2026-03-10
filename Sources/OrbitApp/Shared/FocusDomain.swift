@@ -81,6 +81,10 @@ struct FocusTaskRecord: Equatable, Identifiable, Sendable {
     var carriedFromSessionName: String?
     var createdAt: Date
     var updatedAt: Date
+
+    var wasCreatedInSession: Bool {
+        carriedFromTaskID == nil
+    }
 }
 
 struct FocusSessionRecord: Equatable, Identifiable, Sendable {

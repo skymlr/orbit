@@ -3,8 +3,6 @@ import SwiftUI
 struct HistorySearchView: View {
     @ObservedObject var model: HistorySearchPanelModel
 
-    private let searchFilterOrder: [HistoryTaskFilter] = [.all, .completed, .open]
-
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             header
@@ -12,11 +10,11 @@ struct HistorySearchView: View {
             OrbitSegmentedControl(
                 "Task filter",
                 selection: $model.filter,
-                options: searchFilterOrder
+                options: HistoryTaskFilter.searchTabs
             ) { filter in
                 filter.title
             }
-            .frame(maxWidth: 320)
+            .frame(maxWidth: 440)
 
             content
         }
@@ -52,7 +50,7 @@ struct HistorySearchView: View {
         } else if searchResults.isEmpty {
             emptyState(
                 title: "No Matches Found",
-                message: "Try a different phrase or switch between All, Completed, and Open."
+                message: "Try a different phrase or switch between All, Completed, Open, and Created Here."
             )
         } else {
             ScrollView {

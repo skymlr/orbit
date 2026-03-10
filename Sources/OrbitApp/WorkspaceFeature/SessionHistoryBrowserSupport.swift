@@ -4,8 +4,12 @@ enum HistoryTaskFilter: String, CaseIterable, Identifiable {
     case completed
     case all
     case open
+    case createdInSession
 
     var id: Self { self }
+
+    static let sessionHistoryTabs: [Self] = [.completed, .createdInSession, .open, .all]
+    static let searchTabs: [Self] = [.completed, .createdInSession, .open, .all]
 
     var title: String {
         switch self {
@@ -15,6 +19,8 @@ enum HistoryTaskFilter: String, CaseIterable, Identifiable {
             return "All"
         case .open:
             return "Open"
+        case .createdInSession:
+            return "Created"
         }
     }
 }
@@ -119,6 +125,8 @@ enum SessionHistoryBrowserSupport {
             return sortedTasks
         case .open:
             return sortedTasks.filter { $0.completedAt == nil }
+        case .createdInSession:
+            return sortedTasks.filter(\.wasCreatedInSession)
         }
     }
 

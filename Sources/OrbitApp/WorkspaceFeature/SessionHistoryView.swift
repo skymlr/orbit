@@ -398,17 +398,17 @@ private struct HistoryTaskListView: View {
             OrbitSegmentedControl(
                 "Task filter",
                 selection: $historyTaskFilter,
-                options: HistoryTaskFilter.allCases
+                options: HistoryTaskFilter.sessionHistoryTabs
             ) { filter in
                 filter.title
             }
-            .frame(maxWidth: 320)
+            .frame(maxWidth: 440)
 
             if filteredTasks.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("No tasks for this filter")
                         .font(.subheadline.weight(.semibold))
-                    Text("Try switching between Completed, All, and Open.")
+                    Text("Try switching between Completed, All, Open, and Created Here.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

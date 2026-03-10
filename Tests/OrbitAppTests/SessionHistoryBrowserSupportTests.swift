@@ -126,6 +126,13 @@ struct SessionHistoryBrowserSupportTests {
             completedAt: nil
         )
 
+        let carriedTask = makeTask(
+            markdown: "Carried",
+            createdAt: date(2026, 3, 5, 10, 30, calendar: calendar),
+            completedAt: nil,
+            carriedFromTaskID: UUID()
+        )
+
         let completedOldest = makeTask(
             markdown: "Done oldest",
             createdAt: date(2026, 3, 5, 10, 0, calendar: calendar),
@@ -135,16 +142,18 @@ struct SessionHistoryBrowserSupportTests {
         let session = makeSession(
             startedAt: date(2026, 3, 5, 9, 0, calendar: calendar),
             endedAt: date(2026, 3, 5, 13, 0, calendar: calendar),
-            tasks: [completedOldest, completedNewest, openTask]
+            tasks: [completedOldest, completedNewest, openTask, carriedTask]
         )
 
         let completed = SessionHistoryBrowserSupport.filteredTasks(for: session, filter: .completed)
         let all = SessionHistoryBrowserSupport.filteredTasks(for: session, filter: .all)
         let open = SessionHistoryBrowserSupport.filteredTasks(for: session, filter: .open)
+        let createdHere = SessionHistoryBrowserSupport.filteredTasks(for: session, filter: .createdInSession)
 
         #expect(completed.map(\.id) == [completedNewest.id, completedOldest.id])
-        #expect(all.map(\.id) == [completedNewest.id, openTask.id, completedOldest.id])
-        #expect(open.map(\.id) == [openTask.id])
+        #expect(all.map(\.id) == [completedNewest.id, openTask.id, carriedTask.id, completedOldest.id])
+        #expect(open.map(\.id) == [openTask.id, carriedTask.id])
+        #expect(createdHere.map(\.id) == [completedNewest.id, openTask.id, completedOldest.id])
     }
 
     @Test
@@ -276,7 +285,8 @@ private func makeTask(
     id: UUID = UUID(),
     markdown: String,
     createdAt: Date,
-    completedAt: Date?
+    completedAt: Date?,
+    carriedFromTaskID: UUID? = nil
 ) -> FocusTaskRecord {
     FocusTaskRecord(
         id: id,
@@ -285,7 +295,7 @@ private func makeTask(
         markdown: markdown,
         priority: .none,
         completedAt: completedAt,
-        carriedFromTaskID: nil,
+        carriedFromTaskID: carriedFromTaskID,
         carriedFromSessionName: nil,
         createdAt: createdAt,
         updatedAt: createdAt
