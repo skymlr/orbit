@@ -14,6 +14,8 @@ final class QuickCapturePanelController {
 
     private var panel: OrbitQuickCapturePanel?
     private var hostingController: NSHostingController<QuickCapturePanelRootView>?
+    // Reset reused SwiftUI state after the panel is hidden.
+    private var captureViewResetToken = 0
 
     private init() {}
 
@@ -37,6 +39,7 @@ final class QuickCapturePanelController {
     }
 
     func dismiss() {
+        captureViewResetToken &+= 1
         panel?.orderOut(nil)
     }
 
@@ -69,7 +72,10 @@ final class QuickCapturePanelController {
     }
 
     private func updateRootView(store: StoreOf<AppFeature>) {
-        let rootView = QuickCapturePanelRootView(store: store)
+        let rootView = QuickCapturePanelRootView(
+            store: store,
+            resetToken: captureViewResetToken
+        )
 
         if let hostingController {
             hostingController.rootView = rootView
@@ -116,9 +122,11 @@ private final class OrbitQuickCapturePanel: NSPanel {
 
 private struct QuickCapturePanelRootView: View {
     let store: StoreOf<AppFeature>
+    let resetToken: Int
 
     var body: some View {
         QuickCaptureView(store: store)
+            .id(resetToken)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .preferredColorScheme(.dark)
             .onExitCommand {
