@@ -138,7 +138,7 @@ struct HotkeyHintLabel: View {
 
     var body: some View {
         Text(HotkeyHintFormatter.hint(from: shortcut))
-            .font(.caption2.monospacedDigit().weight(.semibold))
+            .orbitFont(.caption2, weight: .semibold, monospacedDigits: true)
             .foregroundStyle(tone == .inverted ? Color.white.opacity(0.92) : Color.secondary)
     }
 }

@@ -11,7 +11,6 @@ struct HistoryTaskRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             MarkdownRenderedTaskView(markdown: task.markdown)
-                .font(.body)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .strikethrough(isCompleted, color: .secondary)
                 .opacity(isCompleted ? 0.72 : 1)
@@ -47,7 +46,7 @@ struct HistoryTaskRowView: View {
 
                 Text("Created \(task.createdAt, style: .time)")
             }
-            .font(.caption)
+            .orbitFont(.caption)
             .foregroundStyle(.secondary)
         }
         .padding(12)
@@ -68,12 +67,12 @@ struct HistoryTaskRowView: View {
     private var priorityBadge: some View {
         HStack(spacing: 6) {
             Image(systemName: priorityIcon)
-                .font(.caption2.weight(.bold))
+                .orbitFont(.caption2, weight: .bold)
 
             Text(task.priority.title)
                 .lineLimit(1)
         }
-        .font(.caption.weight(.semibold))
+        .orbitFont(.caption, weight: .semibold)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(

@@ -45,7 +45,6 @@ struct TaskRow: View {
                     markdown: draft.markdown,
                     onTaskLineToggle: onToggleChecklistLine
                 )
-                .font(.body)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .strikethrough(isCompleted, color: .secondary)
                 .opacity(isCompleted ? 0.65 : 1)
@@ -135,7 +134,7 @@ struct TaskRow: View {
 
                 if isCompleted {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 14, weight: .black, design: .rounded))
+                        .orbitFont(size: 14, weight: .black, design: .rounded)
                         .foregroundStyle(.white)
                         .shadow(color: TaskRowPalette.completionGreen.opacity(0.75), radius: 6)
                         .symbolEffect(.bounce, value: completionAnimationToken)
@@ -238,12 +237,12 @@ struct TaskRow: View {
 
         return HStack(spacing: 6) {
             Image(systemName: priorityIcon(for: draft.priority))
-                .font(.caption2.weight(.bold))
+                .orbitFont(.caption2, weight: .bold)
 
             Text(draft.priority.title)
                 .lineLimit(1)
         }
-        .font(.caption.weight(.semibold))
+        .orbitFont(.caption, weight: .semibold)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(
@@ -260,7 +259,7 @@ struct TaskRow: View {
     private var priorityPickerPopover: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Set Priority")
-                .font(.caption.weight(.semibold))
+                .orbitFont(.caption, weight: .semibold)
                 .foregroundStyle(.secondary)
 
             ForEach(NotePriority.allCases, id: \.self) { priority in
@@ -270,18 +269,18 @@ struct TaskRow: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: priorityIcon(for: priority))
-                            .font(.caption.weight(.bold))
+                            .orbitFont(.caption, weight: .bold)
                             .foregroundStyle(priorityAccentColor(for: priority))
 
                         Text(priority.title)
-                            .font(.subheadline)
+                            .orbitFont(.subheadline)
                             .foregroundStyle(.primary)
 
                         Spacer(minLength: 10)
 
                         if draft.priority == priority {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.caption.weight(.bold))
+                                .orbitFont(.caption, weight: .bold)
                                 .foregroundStyle(priorityAccentColor(for: priority))
                         }
                     }

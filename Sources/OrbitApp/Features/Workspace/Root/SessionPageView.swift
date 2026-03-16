@@ -115,6 +115,9 @@ struct SessionPageView: View {
             reconcileHistorySelection()
             refreshHistorySearchPanelIfNeeded()
         }
+        .onChange(of: store.appearance) { _, _ in
+            refreshHistorySearchPanelIfNeeded()
+        }
         .onChange(of: selectedHistoryDay) { _, newDay in
             let normalized = SessionHistoryBrowserSupport.normalizedDay(for: newDay)
             if selectedHistoryDay != normalized {
@@ -133,9 +136,6 @@ struct SessionPageView: View {
         .onDisappear {
             dismissHistorySearchPanel()
         }
-        .background {
-            OrbitSpaceBackground()
-        }
         .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
         .animation(.easeInOut(duration: 0.16), value: isHistoryMode)
     }
@@ -143,7 +143,7 @@ struct SessionPageView: View {
     private var historyCalendarPopover: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Jump To Day")
-                .font(.headline)
+                .orbitFont(.headline)
 
             HistoryCalendarPickerView(
                 availableDays: Set(historyDayGroups.map(\.day)),
@@ -286,6 +286,7 @@ struct SessionPageView: View {
         HistorySearchPanelConfiguration(
             sessions: store.settings.sessions,
             excludingActiveSessionID: store.activeSession?.id,
+            appearance: store.appearance,
             onGoToDay: navigateToHistoryDayFromSearch(_:),
             onGoToSession: navigateToHistorySessionFromSearch(day:sessionID:),
             onClose: {

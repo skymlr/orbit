@@ -19,7 +19,7 @@ struct SessionHeader: View {
                 if isRenaming {
                     TextField("Session name", text: $name)
                         .textFieldStyle(.roundedBorder)
-                        .font(.title2.weight(.bold))
+                        .orbitFont(.title2, weight: .bold)
                         .focused($isNameFieldFocused)
                         .onSubmit {
                             saveRenaming()
@@ -29,7 +29,7 @@ struct SessionHeader: View {
                         }
                 } else {
                     Text(session.name)
-                        .font(.largeTitle.weight(.bold))
+                        .orbitFont(.largeTitle, weight: .bold)
                         .lineLimit(2)
                         .contentShape(Rectangle())
                         .orbitPointerCursor()
@@ -52,7 +52,7 @@ struct SessionHeader: View {
                     isSessionMenuPresented = true
                 } label: {
                     Image(systemName: "ellipsis.circle")
-                        .font(.title3.weight(.semibold))
+                        .orbitFont(.title3, weight: .semibold)
                 }
                 .buttonStyle(.plain)
                 .help("Session management")
@@ -74,7 +74,7 @@ struct SessionHeader: View {
                 Text("•")
                 Text("\(completedTaskCount) completed")
             }
-            .font(.subheadline)
+            .orbitFont(.subheadline)
             .foregroundStyle(.secondary)
         }
         .alert(

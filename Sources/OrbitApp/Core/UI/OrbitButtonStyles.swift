@@ -37,7 +37,7 @@ struct OrbitHeroButtonStyle: ButtonStyle {
 struct OrbitPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.callout.weight(.semibold))
+            .orbitFont(.callout, weight: .semibold)
             .foregroundStyle(.white)
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
@@ -66,7 +66,7 @@ struct OrbitSecondaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.callout.weight(.semibold))
+            .orbitFont(.callout, weight: .semibold)
             .foregroundStyle(secondaryTextColor)
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
@@ -119,7 +119,7 @@ struct OrbitQuietButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.caption.weight(.semibold))
+            .orbitFont(.caption, weight: .semibold)
             .foregroundStyle(quietTextColor)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -171,7 +171,7 @@ struct OrbitDestructiveButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.caption.weight(.semibold))
+            .orbitFont(.caption, weight: .semibold)
             .foregroundStyle(Color(.systemRed))
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -234,9 +234,9 @@ private struct OrbitButtonStylesPreviewGallery: View {
             } label: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Begin Focus Session")
-                        .font(.headline.weight(.semibold))
+                        .orbitFont(.headline, weight: .semibold)
                     Text("Track tasks, priorities, and progress")
-                        .font(.caption)
+                        .orbitFont(.caption)
                         .foregroundStyle(.secondary)
                 }
             }

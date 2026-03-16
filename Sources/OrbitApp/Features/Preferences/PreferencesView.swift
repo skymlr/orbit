@@ -12,6 +12,7 @@ struct PreferencesView: View {
     private enum PreferencesSection: String, CaseIterable, Identifiable {
         case categories = "Categories"
         case hotkeys = "Hotkeys"
+        case appearance = "Appearance"
         case about = "About"
         case credits = "Credits"
 
@@ -25,6 +26,8 @@ struct PreferencesView: View {
                 return "Organize quick capture and session notes with reusable category labels."
             case .hotkeys:
                 return "Configure the global shortcuts Orbit registers with macOS."
+            case .appearance:
+                return "Choose the typography and background treatment Orbit uses across the app."
             case .about:
                 return "Versioning, identifiers, and the product-level details for this build."
             case .credits:
@@ -38,6 +41,8 @@ struct PreferencesView: View {
                 return "square.grid.2x2"
             case .hotkeys:
                 return "command"
+            case .appearance:
+                return "paintpalette"
             case .about:
                 return "info.circle"
             case .credits:
@@ -49,7 +54,7 @@ struct PreferencesView: View {
             switch self {
             case .categories, .hotkeys:
                 return .workspace
-            case .about, .credits:
+            case .appearance, .about, .credits:
                 return .orbit
             }
         }
@@ -118,6 +123,8 @@ struct PreferencesView: View {
                 categoriesPage
             case .hotkeys:
                 hotkeysPage
+            case .appearance:
+                appearancePage
             case .about:
                 aboutPage
             case .credits:
@@ -148,7 +155,7 @@ struct PreferencesView: View {
 
                     if store.settings.categories.isEmpty {
                         Text("No categories yet. Add one to make it available everywhere Orbit groups work.")
-                            .font(.subheadline)
+                            .orbitFont(.subheadline)
                             .foregroundStyle(.secondary)
                             .padding(.top, 4)
                     } else {
@@ -221,12 +228,12 @@ struct PreferencesView: View {
             preferencesSectionCard(title: "App Information") {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Orbit: A Focus Manager")
-                        .font(.title3.weight(.semibold))
+                        .orbitFont(.title3, weight: .semibold)
                     Text("Version \(appVersionString)")
-                        .font(.subheadline)
+                        .orbitFont(.subheadline)
                         .foregroundStyle(.secondary)
                     Text(bundleIdentifier)
-                        .font(.caption)
+                        .orbitFont(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -234,14 +241,14 @@ struct PreferencesView: View {
             preferencesSectionCard(title: "Feature Snapshot") {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Built for focused work on macOS.")
-                        .font(.body)
+                        .orbitFont(.body)
 
                     Text("Menu bar-first session management")
                     Text("Quick capture with markdown tasks")
                     Text("Task categories, filters, priorities, and session exports")
                     Text("Local-first SQLite persistence")
                 }
-                .font(.subheadline)
+                .orbitFont(.subheadline)
             }
         }
     }
@@ -258,6 +265,54 @@ struct PreferencesView: View {
                             ThirdPartyCreditCard(credit: credit)
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private var appearancePage: some View {
+        detailPage(for: .appearance) {
+            preferencesSectionCard(
+                title: "Typography",
+                subtitle: "Keep the default system font or switch Orbit to a bundled alternate family."
+            ) {
+                Picker("Font", selection: $store.settings.appearanceDraft.font) {
+                    ForEach(OrbitFontOption.allCases) { option in
+                        fontOptionRow(for: option)
+                            .tag(option)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+                .labelsHidden()
+            }
+
+            preferencesSectionCard(
+                title: "Background",
+                subtitle: "Choose a background treatment that stays in Orbit's visual language."
+            ) {
+                Picker("Background", selection: $store.settings.appearanceDraft.background) {
+                    ForEach(OrbitBackgroundOption.allCases) { option in
+                        backgroundOptionRow(for: option)
+                            .tag(option)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+                .labelsHidden()
+            }
+
+            preferencesSectionCard(title: "Apply Appearance") {
+                HStack {
+                    Button("Reset Appearance") {
+                        store.send(.settingsResetAppearanceTapped)
+                    }
+                    .buttonStyle(.orbitSecondary)
+
+                    Spacer()
+
+                    Button("Save Appearance") {
+                        store.send(.settingsSaveAppearanceTapped)
+                    }
+                    .buttonStyle(.orbitPrimary)
                 }
             }
         }
@@ -299,7 +354,7 @@ struct PreferencesView: View {
     private func hotkeyField(title: String, prompt: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.caption)
+                .orbitFont(.caption)
                 .foregroundStyle(.secondary)
             TextField(prompt, text: text)
                 .textFieldStyle(.roundedBorder)
@@ -308,7 +363,7 @@ struct PreferencesView: View {
 
     private func sidebarRow(for section: PreferencesSection) -> some View {
         Label(section.title, systemImage: section.symbolName)
-            .font(.body.weight(.medium))
+            .orbitFont(.body, weight: .medium)
             .symbolRenderingMode(.hierarchical)
             .padding(.vertical, 4)
     }
@@ -322,9 +377,9 @@ struct PreferencesView: View {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(section.title)
-                        .font(.title.weight(.semibold))
+                        .orbitFont(.title, weight: .semibold)
                     Text(section.subtitle)
-                        .font(.subheadline)
+                        .orbitFont(.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
@@ -345,11 +400,11 @@ struct PreferencesView: View {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.headline.weight(.semibold))
+                        .orbitFont(.headline, weight: .semibold)
 
                     if let subtitle {
                         Text(subtitle)
-                            .font(.subheadline)
+                            .orbitFont(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -380,5 +435,50 @@ struct PreferencesView: View {
             RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
                 .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
         )
+    }
+
+    private func fontOptionRow(for option: OrbitFontOption) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(option.title)
+                .font(OrbitTypography.previewFont(for: option, style: .body, weight: .semibold))
+            Text(option.previewName)
+                .font(OrbitTypography.previewFont(for: option, style: .caption))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func backgroundOptionRow(for option: OrbitBackgroundOption) -> some View {
+        HStack(spacing: 12) {
+            OrbitSpaceBackground(style: option)
+                .frame(width: 96, height: 58)
+                .clipShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.medium, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: OrbitTheme.Radius.medium, style: .continuous)
+                        .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
+                )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(option.title)
+                    .orbitFont(.body, weight: .semibold)
+                Text(backgroundPreviewSubtitle(for: option))
+                    .orbitFont(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func backgroundPreviewSubtitle(for option: OrbitBackgroundOption) -> String {
+        switch option {
+        case .orbit:
+            return "Current orbital canvas with stars and the solar motif."
+        case .blue:
+            return "Plain blue gradient with a calmer, cleaner backdrop."
+        case .purple:
+            return "Blue-violet gradient that stays restrained and nocturnal."
+        case .glass:
+            return "Dark translucent glass with a softer liquid treatment."
+        }
     }
 }

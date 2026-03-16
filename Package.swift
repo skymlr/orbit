@@ -28,6 +28,9 @@ let package = Package(
                 .product(name: "SQLiteData", package: "sqlite-data"),
                 .product(name: "StructuredQueries", package: "swift-structured-queries"),
                 .product(name: "Flow", package: "swiftui-flow"),
+            ],
+            resources: [
+                .copy("../../Resources/Fonts"),
             ]
         ),
         .testTarget(

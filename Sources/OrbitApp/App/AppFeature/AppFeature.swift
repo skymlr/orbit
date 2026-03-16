@@ -12,6 +12,7 @@ struct AppFeature {
     }
 
     @Dependency(\.continuousClock) var continuousClock
+    @Dependency(\.appearanceSettingsClient) var appearanceSettingsClient
     @Dependency(\.date.now) var now
     @Dependency(\.focusRepository) var focusRepository
     @Dependency(\.hotkeyManager) var hotkeyManager
@@ -71,9 +72,11 @@ struct AppFeature {
                     .settingsExportAllTapped,
                     .settingsExportSessionTapped,
                     .settingsRefreshTapped,
+                    .settingsResetAppearanceTapped,
                     .settingsRenameCategoryTapped,
                     .settingsRenameSessionTapped,
                     .settingsResetHotkeysTapped,
+                    .settingsSaveAppearanceTapped,
                     .settingsSaveHotkeysTapped,
                     .showToast,
                     .toastAutoDismissFired,

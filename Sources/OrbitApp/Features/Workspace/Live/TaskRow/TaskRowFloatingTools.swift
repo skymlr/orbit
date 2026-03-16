@@ -24,7 +24,7 @@ struct TaskRowFloatingTools: View {
             isTaskInfoPopoverPresented.toggle()
         } label: {
             Image(systemName: "info.circle")
-                .font(.body.weight(.semibold))
+                .orbitFont(.body, weight: .semibold)
         }
         .buttonStyle(.plain)
         .popover(
@@ -47,14 +47,14 @@ struct TaskRowFloatingTools: View {
     private var taskInfoPopover: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Task Information")
-                .font(.subheadline.weight(.semibold))
+                .orbitFont(.subheadline, weight: .semibold)
 
             Text("Created: \(draft.createdAt.formatted(date: .abbreviated, time: .shortened))")
-                .font(.caption)
+                .orbitFont(.caption)
 
             if draft.carriedFromTaskID != nil {
                 Text("Carried from: \(draft.carriedFromSessionName ?? "Previous session")")
-                    .font(.caption)
+                    .orbitFont(.caption)
             }
 
             Divider()
@@ -67,7 +67,7 @@ struct TaskRowFloatingTools: View {
                 } label: {
                     Label("Edit Task", systemImage: "pencil")
                         .labelStyle(.titleAndIcon)
-                        .font(.caption.weight(.semibold))
+                        .orbitFont(.caption, weight: .semibold)
                 }
                 .buttonStyle(.plain)
 
@@ -84,7 +84,7 @@ struct TaskRowFloatingTools: View {
                     } label: {
                         Label("Delete Task", systemImage: "trash")
                             .labelStyle(.titleAndIcon)
-                            .font(.caption.weight(.semibold))
+                            .orbitFont(.caption, weight: .semibold)
                     }
                     .buttonStyle(.plain)
                 }

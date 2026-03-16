@@ -65,15 +65,15 @@ struct HistorySessionStripView: View {
             } label: {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(session.name)
-                        .font(.caption.weight(.semibold))
+                        .orbitFont(.caption, weight: .semibold)
                         .lineLimit(1)
 
                     Text("Started \(session.startedAt, style: .time)")
-                        .font(.caption2)
+                        .orbitFont(.caption2)
                         .foregroundStyle(.secondary)
 
                     Text(taskCountLabel)
-                        .font(.caption2)
+                        .orbitFont(.caption2)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 10)
@@ -98,7 +98,7 @@ struct HistorySessionStripView: View {
                 menuMode = .actions
             } label: {
                 Image(systemName: "ellipsis.circle")
-                    .font(.caption.weight(.semibold))
+                    .orbitFont(.caption, weight: .semibold)
                     .foregroundStyle(.secondary)
                     .padding(8)
             }
@@ -141,7 +141,7 @@ struct HistorySessionStripView: View {
         case .rename:
             VStack(alignment: .leading, spacing: 8) {
                 Text("Rename Session")
-                    .font(.caption.weight(.semibold))
+                    .orbitFont(.caption, weight: .semibold)
                     .foregroundStyle(.secondary)
 
                 TextField("Session name", text: $renameDraft)

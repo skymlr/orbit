@@ -33,7 +33,7 @@ struct SessionTaskFilterBar: View {
 
                 if activeFilterCount > 0 {
                     Text("\(activeFilterCount)")
-                        .font(.caption2.monospacedDigit())
+                        .orbitFont(.caption2, monospacedDigits: true)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(
@@ -42,7 +42,7 @@ struct SessionTaskFilterBar: View {
                         )
                 }
             }
-            .font(.caption.weight(.semibold))
+            .orbitFont(.caption, weight: .semibold)
         }
         .buttonStyle(.orbitQuiet)
         .popover(isPresented: $isTaskFilterPopoverPresented, arrowEdge: .bottom) {
@@ -84,7 +84,7 @@ struct SessionTaskFilterBar: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Filters")
-                    .font(.headline)
+                    .orbitFont(.headline)
 
                 Spacer()
 
@@ -98,7 +98,7 @@ struct SessionTaskFilterBar: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Priorities")
-                    .font(.caption.weight(.semibold))
+                    .orbitFont(.caption, weight: .semibold)
                     .foregroundStyle(.secondary)
 
                 ScrollView(.horizontal) {
@@ -122,7 +122,7 @@ struct SessionTaskFilterBar: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Categories")
-                    .font(.caption.weight(.semibold))
+                    .orbitFont(.caption, weight: .semibold)
                     .foregroundStyle(.secondary)
 
                 ScrollView(.horizontal) {
@@ -164,15 +164,15 @@ struct SessionTaskFilterBar: View {
         Button(action: onTap) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.caption2.weight(.bold))
+                    .orbitFont(.caption2, weight: .bold)
 
                 Text(title)
                     .lineLimit(1)
 
                 Image(systemName: "xmark.circle.fill")
-                    .font(.caption2.weight(.bold))
+                    .orbitFont(.caption2, weight: .bold)
             }
-            .font(.caption.weight(.semibold))
+            .orbitFont(.caption, weight: .semibold)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
@@ -251,13 +251,13 @@ struct SessionTaskFilterBar: View {
         Button(action: onTap) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.caption2.weight(.bold))
+                    .orbitFont(.caption2, weight: .bold)
 
                 Text(title)
                     .lineLimit(1)
 
                 Text("\(count)")
-                    .font(.caption2.monospacedDigit())
+                    .orbitFont(.caption2, monospacedDigits: true)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(
@@ -265,7 +265,7 @@ struct SessionTaskFilterBar: View {
                             .fill(.black.opacity(0.15))
                     )
             }
-            .font(.caption.weight(.semibold))
+            .orbitFont(.caption, weight: .semibold)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(

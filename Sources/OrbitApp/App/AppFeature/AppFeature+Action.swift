@@ -43,6 +43,8 @@ extension AppFeature {
         case settingsRefreshTapped
         case settingsResetHotkeysTapped
         case settingsSaveHotkeysTapped
+        case settingsResetAppearanceTapped
+        case settingsSaveAppearanceTapped
         case settingsAddCategoryTapped(String, String)
         case settingsRenameCategoryTapped(UUID, String, String)
         case settingsDeleteCategoryTapped(UUID)

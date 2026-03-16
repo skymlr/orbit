@@ -58,6 +58,7 @@ extension AppFeature {
             var startShortcut = HotkeySettings.default.startShortcut
             var captureShortcut = HotkeySettings.default.captureShortcut
             var captureNextPriorityShortcut = HotkeySettings.default.captureNextPriorityShortcut
+            var appearanceDraft = AppearanceSettings.default
         }
 
         var activeSession: FocusSessionRecord?
@@ -65,6 +66,7 @@ extension AppFeature {
 
         var categories: [SessionCategoryRecord] = []
         var hotkeys: HotkeySettings = .default
+        var appearance: AppearanceSettings = .default
 
         var captureDraft = CaptureDraft()
         var endSessionDraft: EndSessionDraft?

@@ -20,7 +20,7 @@ struct SessionHistoryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Read-Only Session History")
-                .font(.title3.weight(.bold))
+                .orbitFont(.title3, weight: .bold)
 
             if let activeSession = store.activeSession {
                 CurrentSessionHistoryBanner(
@@ -38,11 +38,11 @@ struct SessionHistoryView: View {
             } else {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(SessionHistoryBrowserSupport.dayLabel(selectedHistoryDay))
-                        .font(.headline.weight(.semibold))
+                        .orbitFont(.headline, weight: .semibold)
                         .foregroundStyle(.cyan)
 
                     Text("\(selectedHistoryDaySessions.count) \(selectedHistoryDaySessions.count == 1 ? "session" : "sessions")")
-                        .font(.caption)
+                        .orbitFont(.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -77,7 +77,7 @@ struct SessionHistoryView: View {
     private var noActiveSessionBanner: some View {
         HStack(spacing: 10) {
             Text("No active session. You are browsing archived history.")
-                .font(.caption)
+                .orbitFont(.caption)
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -117,10 +117,10 @@ struct SessionHistoryView: View {
     private func historyContentUnavailableState(message: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("No Sessions To Show")
-                .font(.title3.weight(.semibold))
+                .orbitFont(.title3, weight: .semibold)
 
             Text(message)
-                .font(.caption)
+                .orbitFont(.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

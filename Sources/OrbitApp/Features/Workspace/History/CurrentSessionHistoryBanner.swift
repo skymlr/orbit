@@ -9,11 +9,11 @@ struct CurrentSessionHistoryBanner: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Current Session")
-                        .font(.caption2.weight(.semibold))
+                        .orbitFont(.caption2, weight: .semibold)
                         .foregroundStyle(.secondary)
 
                     Text(session.name)
-                        .font(.headline.weight(.semibold))
+                        .orbitFont(.headline, weight: .semibold)
                         .lineLimit(2)
                 }
 
@@ -32,7 +32,7 @@ struct CurrentSessionHistoryBanner: View {
                 Text("•")
                 Text("Elapsed \(session.startedAt, style: .timer)")
             }
-            .font(.caption)
+            .orbitFont(.caption)
             .foregroundStyle(.secondary)
         }
         .padding(12)

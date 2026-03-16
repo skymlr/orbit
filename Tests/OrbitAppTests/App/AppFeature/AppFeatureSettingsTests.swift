@@ -10,6 +10,43 @@ import Testing
 @MainActor
 struct AppFeatureSettingsTests {
     @Test
+    func onLaunchLoadsPersistedAppearanceIntoAppliedAndDraftState() async {
+        let persistedAppearance = AppearanceSettings(
+            font: .sourceSerif4,
+            background: .glass
+        )
+
+        var appearanceClient = AppearanceSettingsClient.testValue
+        appearanceClient.load = { persistedAppearance }
+
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        } withDependencies: {
+            $0.appearanceSettingsClient = appearanceClient
+        }
+
+        await store.send(.onLaunch) {
+            $0.appearance = persistedAppearance
+            $0.hasLaunched = true
+            $0.sessionBootstrapState = .loading
+            $0.settings.appearanceDraft = persistedAppearance
+            $0.hotkeys = .default
+            $0.settings.startShortcut = HotkeySettings.default.startShortcut
+            $0.settings.captureShortcut = HotkeySettings.default.captureShortcut
+            $0.settings.captureNextPriorityShortcut = HotkeySettings.default.captureNextPriorityShortcut
+        }
+        await store.receive(\.registerHotkeys)
+        await store.receive(\.settingsRefreshTapped)
+        await store.receive(\.bootstrapActiveSessionLoaded) {
+            $0.sessionBootstrapState = .loaded
+        }
+        await store.receive(\.loadActiveSessionResponse)
+        await store.receive(\.loadCategoriesResponse)
+        await store.receive(\.settingsDataResponse)
+        await store.send(.appWillTerminate)
+    }
+
+    @Test
     func settingsExportAllTappedWithNoCompletedSessionsShowsFailureToast() async {
         let toastID = UUID(uuidString: "58D6FB1D-0A12-4D3E-B12A-17448DA0EED6")!
         let clock = TestClock()
@@ -132,5 +169,95 @@ struct AppFeatureSettingsTests {
         await store.send(.toastDismissTapped) {
             $0.toast = nil
         }
+    }
+
+    @Test
+    func settingsSaveAppearanceTappedPersistsAppliedAppearanceAndShowsToast() async {
+        let toastID = UUID(uuidString: "AC0A8360-F5B2-4D47-A2C8-47AB319538A4")!
+        let clock = TestClock()
+        let tracker = AppearanceSettingsTracker()
+        let customAppearance = AppearanceSettings(
+            font: .geist,
+            background: .purple
+        )
+
+        var initial = AppFeature.State()
+        initial.settings.appearanceDraft = customAppearance
+
+        var appearanceClient = AppearanceSettingsClient.testValue
+        appearanceClient.save = { settings in
+            tracker.record(settings)
+        }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.appearanceSettingsClient = appearanceClient
+            $0.continuousClock = clock
+            $0.uuid = .constant(toastID)
+        }
+
+        await store.send(.settingsSaveAppearanceTapped) {
+            $0.appearance = customAppearance
+        }
+        await store.receive(\.showToast) {
+            $0.toast = AppFeature.State.Toast(
+                id: toastID,
+                tone: .success,
+                message: "Appearance saved"
+            )
+        }
+        await store.send(.toastDismissTapped) {
+            $0.toast = nil
+        }
+
+        #expect(tracker.values() == [customAppearance])
+    }
+
+    @Test
+    func settingsResetAppearanceTappedRestoresDefaultsPersistsAndShowsToast() async {
+        let toastID = UUID(uuidString: "8C3B93B8-F828-46E1-B999-2FF5A3E1E0DD")!
+        let clock = TestClock()
+        let tracker = AppearanceSettingsTracker()
+
+        var initial = AppFeature.State()
+        initial.appearance = AppearanceSettings(
+            font: .geist,
+            background: .glass
+        )
+        initial.settings.appearanceDraft = AppearanceSettings(
+            font: .sourceSerif4,
+            background: .purple
+        )
+
+        var appearanceClient = AppearanceSettingsClient.testValue
+        appearanceClient.save = { settings in
+            tracker.record(settings)
+        }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.appearanceSettingsClient = appearanceClient
+            $0.continuousClock = clock
+            $0.uuid = .constant(toastID)
+        }
+
+        await store.send(.settingsResetAppearanceTapped) {
+            $0.appearance = .default
+            $0.settings.appearanceDraft = .default
+        }
+        await store.receive(\.showToast) {
+            $0.toast = AppFeature.State.Toast(
+                id: toastID,
+                tone: .success,
+                message: "Appearance reset to defaults"
+            )
+        }
+        await store.send(.toastDismissTapped) {
+            $0.toast = nil
+        }
+
+        #expect(tracker.values() == [.default])
     }
 }

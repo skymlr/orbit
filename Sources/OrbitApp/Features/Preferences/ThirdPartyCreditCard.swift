@@ -8,10 +8,10 @@ struct ThirdPartyCreditCard: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(credit.name)
-                        .font(.headline.weight(.semibold))
+                        .orbitFont(.headline, weight: .semibold)
 
                     Text(credit.packageID)
-                        .font(.caption.monospaced())
+                        .orbitFont(.caption, monospaced: true)
                         .foregroundStyle(.secondary)
                 }
 

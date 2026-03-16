@@ -11,7 +11,7 @@ struct OrbitCategoryChip: View {
         HStack(spacing: 6) {
             if showsCheckmark && isSelected {
                 Image(systemName: "checkmark")
-                    .font(.caption2.weight(.bold))
+                    .orbitFont(.caption2, weight: .bold)
             }
 
             Text(title)
@@ -19,7 +19,7 @@ struct OrbitCategoryChip: View {
 
             if let count {
                 Text("\(count)")
-                    .font(.caption2.monospacedDigit())
+                    .orbitFont(.caption2, monospacedDigits: true)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(
@@ -28,7 +28,7 @@ struct OrbitCategoryChip: View {
                     )
             }
         }
-        .font(.caption.weight(.semibold))
+        .orbitFont(.caption, weight: .semibold)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(

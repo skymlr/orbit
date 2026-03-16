@@ -85,7 +85,7 @@ struct SessionLiveView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(emptyStateTitle)
-                .font(.title3.weight(.semibold))
+                .orbitFont(.title3, weight: .semibold)
 
             HStack(spacing: 6) {
                 if store.taskDrafts.isEmpty {
@@ -96,7 +96,7 @@ struct SessionLiveView: View {
                     Text(emptyStateSubtitle)
                 }
             }
-            .font(.caption)
+            .orbitFont(.caption)
             .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -127,7 +127,7 @@ struct SessionLiveView: View {
             ProgressView()
                 .controlSize(.large)
             Text("Loading active session…")
-                .font(.subheadline.weight(.semibold))
+                .orbitFont(.subheadline, weight: .semibold)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -137,14 +137,14 @@ struct SessionLiveView: View {
     private func startupLoadErrorView(message: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.title2)
+                .orbitFont(.title2)
                 .foregroundStyle(.orange)
 
             Text("Could not load active session")
-                .font(.headline)
+                .orbitFont(.headline)
 
             Text(message)
-                .font(.caption)
+                .orbitFont(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
@@ -472,14 +472,14 @@ struct SessionLiveView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text("Start Session")
-                    .font(.title3.weight(.bold))
+                    .orbitFont(.title3, weight: .bold)
                 Spacer()
                 HotkeyHintLabel(shortcut: shortcut, tone: .inverted)
-                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .orbitFont(.caption, weight: .semibold, monospacedDigits: true)
             }
 
             Text("Ignite a new focus orbit")
-                .font(.caption)
+                .orbitFont(.caption)
                 .foregroundStyle(.white.opacity(0.86))
         }
         .foregroundStyle(.white)

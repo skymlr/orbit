@@ -65,11 +65,11 @@ private extension MenuBarView {
     var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Orbit: A Focus Manager")
-                .font(.headline)
+                .orbitFont(.headline)
 
             if store.activeSession == nil {
                 Text("No active session")
-                    .font(.caption)
+                    .orbitFont(.caption)
                     .foregroundStyle(.secondary)
             }
         }
@@ -89,16 +89,16 @@ private extension MenuBarView {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "atom")
-                    .font(.title3.weight(.semibold))
+                    .orbitFont(.title3, weight: .semibold)
                 Text("Start Session")
-                    .font(.title3.weight(.bold))
+                    .orbitFont(.title3, weight: .bold)
                 Spacer()
                 HotkeyHintLabel(shortcut: shortcut, tone: .inverted)
-                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .orbitFont(.caption, weight: .semibold, monospacedDigits: true)
             }
 
             Text("Ignite a new focus orbit")
-                .font(.caption)
+                .orbitFont(.caption)
                 .foregroundStyle(.white.opacity(0.86))
         }
         .foregroundStyle(.white)
@@ -131,7 +131,7 @@ private struct ActiveSessionMenuCard: View {
                     eyebrowRow
 
                     Text(session.name)
-                        .font(.title2.weight(.bold))
+                        .orbitFont(.title2, weight: .bold)
                         .foregroundStyle(.white)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -230,7 +230,7 @@ private extension ActiveSessionMenuCard {
                 .shadow(color: OrbitTheme.Palette.completionGreen.opacity(0.55), radius: 5)
 
             Text("Active")
-                .font(.caption2.weight(.black))
+                .orbitFont(.caption2, weight: .black)
                 .textCase(.uppercase)
         }
         .foregroundStyle(.white)
@@ -252,7 +252,7 @@ private extension ActiveSessionMenuCard {
             Text("•")
             Text("Elapsed \(session.startedAt, style: .timer)")
         }
-        .font(.caption2.monospacedDigit().weight(.medium))
+        .orbitFont(.caption2, weight: .medium, monospacedDigits: true)
         .foregroundStyle(OrbitTheme.Palette.starlight.opacity(0.84))
         .lineLimit(1)
         .minimumScaleFactor(0.88)
@@ -312,12 +312,12 @@ private struct MenuBarMetricChip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Label(title, systemImage: systemImage)
-                .font(.caption2.weight(.semibold))
+                .orbitFont(.caption2, weight: .semibold)
                 .foregroundStyle(OrbitTheme.Palette.starlight.opacity(0.78))
                 .labelStyle(.titleAndIcon)
 
             Text(value)
-                .font(.caption.monospacedDigit().weight(.bold))
+                .orbitFont(.caption, weight: .bold, monospacedDigits: true)
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)

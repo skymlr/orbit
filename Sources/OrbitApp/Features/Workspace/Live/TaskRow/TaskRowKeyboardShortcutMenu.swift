@@ -4,7 +4,7 @@ struct TaskRowKeyboardShortcutMenu: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Keyboard")
-                .font(.caption2.weight(.bold))
+                .orbitFont(.caption2, weight: .bold)
                 .foregroundStyle(.secondary)
 
             keyboardShortcutRow(key: "Return", action: "Edit task")
@@ -19,7 +19,7 @@ struct TaskRowKeyboardShortcutMenu: View {
     private func keyboardShortcutRow(key: String, action: String) -> some View {
         HStack(spacing: 8) {
             Text(key)
-                .font(.caption2.monospaced().weight(.semibold))
+                .orbitFont(.caption2, weight: .semibold, monospaced: true)
                 .padding(.horizontal, 5)
                 .padding(.vertical, 2)
                 .background(
@@ -33,7 +33,7 @@ struct TaskRowKeyboardShortcutMenu: View {
                 .foregroundStyle(.secondary)
 
             Text(action)
-                .font(.caption2.weight(.semibold))
+                .orbitFont(.caption2, weight: .semibold)
         }
     }
 }

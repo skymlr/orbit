@@ -4,6 +4,7 @@ import SwiftUI
 struct HistorySearchPanelConfiguration {
     let sessions: [FocusSessionRecord]
     let excludingActiveSessionID: UUID?
+    let appearance: AppearanceSettings
     let onGoToDay: (Date) -> Void
     let onGoToSession: (Date, UUID) -> Void
     let onClose: () -> Void
@@ -15,6 +16,7 @@ final class HistorySearchPanelModel: ObservableObject {
     @Published var filter: HistoryTaskFilter = .all
     @Published var sessions: [FocusSessionRecord] = []
     @Published var excludingActiveSessionID: UUID?
+    @Published var appearance: AppearanceSettings = .default
     var onGoToDayRequested: (Date) -> Void = { _ in }
     var onGoToSessionRequested: (FocusSessionRecord) -> Void = { _ in }
     var onCloseRequested: () -> Void = {}
@@ -87,6 +89,7 @@ final class HistorySearchPanelController: NSObject, NSWindowDelegate, NSToolbarD
         onClose = configuration.onClose
         model.sessions = configuration.sessions
         model.excludingActiveSessionID = configuration.excludingActiveSessionID
+        model.appearance = configuration.appearance
         model.onGoToDayRequested = { [weak self] day in
             configuration.onGoToDay(day)
             self?.closePanel()
@@ -225,6 +228,8 @@ final class HistorySearchPanelController: NSObject, NSWindowDelegate, NSToolbarD
 
     private func syncSearchFieldFromModel() {
         guard let searchField = searchToolbarItem?.searchField else { return }
+        let font = OrbitTypography.appKitFont(.body, appearance: model.appearance)
+        applySearchFieldTypography(searchField, font: font)
         if searchField.stringValue != model.query {
             searchField.stringValue = model.query
         }
@@ -286,6 +291,10 @@ final class HistorySearchPanelController: NSObject, NSWindowDelegate, NSToolbarD
         item.searchField.sendsSearchStringImmediately = true
         item.searchField.delegate = self
         item.searchField.stringValue = model.query
+        applySearchFieldTypography(
+            item.searchField,
+            font: OrbitTypography.appKitFont(.body, appearance: model.appearance)
+        )
         searchToolbarItem = item
         return item
     }
@@ -293,6 +302,21 @@ final class HistorySearchPanelController: NSObject, NSWindowDelegate, NSToolbarD
     func controlTextDidChange(_ obj: Notification) {
         guard let searchField = obj.object as? NSSearchField else { return }
         model.query = searchField.stringValue
+    }
+
+    private func applySearchFieldTypography(_ searchField: NSSearchField, font: NSFont) {
+        if searchField.font?.fontName != font.fontName || searchField.font?.pointSize != font.pointSize {
+            searchField.font = font
+        }
+
+        let placeholder = searchField.placeholderString ?? "Search history"
+        searchField.placeholderAttributedString = NSAttributedString(
+            string: placeholder,
+            attributes: [
+                .font: font,
+                .foregroundColor: NSColor.secondaryLabelColor
+            ]
+        )
     }
 }
 
@@ -312,6 +336,7 @@ private struct HistorySearchPanelRootView: View {
                 .padding(18)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .orbitAppearance(model.appearance)
         .preferredColorScheme(.dark)
     }
 }

@@ -46,7 +46,7 @@ struct MarkdownRenderedTaskView: View {
     @ViewBuilder
     private func headingLineRow(_ heading: HeadingLine) -> some View {
         Text(MarkdownAttributedRenderer.renderAttributed(markdown: heading.text.isEmpty ? " " : heading.text))
-            .font(font(for: heading.level))
+            .modifier(OrbitMarkdownHeadingFontModifier(level: heading.level))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, indentationWidth(for: heading.indentation))
     }
@@ -55,7 +55,7 @@ struct MarkdownRenderedTaskView: View {
     private func listLineRow(marker: String, text: String, indentation: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(marker)
-                .font(.body.weight(.semibold))
+                .orbitFont(.body, weight: .semibold)
                 .foregroundStyle(.secondary)
 
             Text(MarkdownAttributedRenderer.renderAttributed(markdown: text.isEmpty ? " " : text))
@@ -82,7 +82,7 @@ struct MarkdownRenderedTaskView: View {
     private func checklistLineContent(_ checklist: ChecklistLine) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Image(systemName: checklist.isChecked ? "checkmark.square.fill" : "square")
-                .font(.body.weight(.semibold))
+                .orbitFont(.body, weight: .semibold)
                 .foregroundStyle(checklist.isChecked ? OrbitTheme.Palette.completionGreen : .secondary)
 
             Text(MarkdownAttributedRenderer.renderAttributed(markdown: checklist.text.isEmpty ? " " : checklist.text))
@@ -98,17 +98,6 @@ struct MarkdownRenderedTaskView: View {
             partialResult + (character == "\t" ? 4 : 1)
         }
         return CGFloat(columns) * 6
-    }
-
-    private func font(for headingLevel: Int) -> Font {
-        switch headingLevel {
-        case 1:
-            return .title3.weight(.bold)
-        case 2:
-            return .headline.weight(.semibold)
-        default:
-            return .subheadline.weight(.semibold)
-        }
     }
 
     private func parseHeadingLine(_ line: String) -> HeadingLine? {
@@ -214,4 +203,19 @@ struct MarkdownRenderedTaskView: View {
     private static let orderedListRegex = try! NSRegularExpression(
         pattern: #"^([ \t]*)(\d+)([.)])\s+(.*)$"#
     )
+}
+
+private struct OrbitMarkdownHeadingFontModifier: ViewModifier {
+    let level: Int
+
+    func body(content: Content) -> some View {
+        switch level {
+        case 1:
+            content.orbitFont(.title3, weight: .bold)
+        case 2:
+            content.orbitFont(.headline, weight: .semibold)
+        default:
+            content.orbitFont(.subheadline, weight: .semibold)
+        }
+    }
 }

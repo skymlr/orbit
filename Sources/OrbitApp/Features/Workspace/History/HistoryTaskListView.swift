@@ -9,7 +9,7 @@ struct HistoryTaskListView: View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(session.name)
-                    .font(.title3.weight(.semibold))
+                    .orbitFont(.title3, weight: .semibold)
 
                 HStack(spacing: 8) {
                     Text("Started \(session.startedAt, style: .time)")
@@ -22,7 +22,7 @@ struct HistoryTaskListView: View {
                     Text("•")
                     Text("\(session.tasks.count) \(session.tasks.count == 1 ? "task" : "tasks")")
                 }
-                .font(.caption)
+                .orbitFont(.caption)
                 .foregroundStyle(.secondary)
             }
 
@@ -38,9 +38,9 @@ struct HistoryTaskListView: View {
             if filteredTasks.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("No tasks for this filter")
-                        .font(.subheadline.weight(.semibold))
+                        .orbitFont(.subheadline, weight: .semibold)
                     Text("Try switching between Completed, All, Open, and Created Here.")
-                        .font(.caption)
+                        .orbitFont(.caption)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

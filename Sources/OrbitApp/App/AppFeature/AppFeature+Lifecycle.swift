@@ -30,9 +30,11 @@ extension AppFeature {
                 .settingsExportAllTapped,
                 .settingsExportSessionTapped,
                 .settingsRefreshTapped,
+                .settingsResetAppearanceTapped,
                 .settingsRenameCategoryTapped,
                 .settingsRenameSessionTapped,
                 .settingsResetHotkeysTapped,
+                .settingsSaveAppearanceTapped,
                 .settingsSaveHotkeysTapped,
                 .showToast,
                 .startSessionTapped,
@@ -50,6 +52,10 @@ extension AppFeature {
             state.settings.startShortcut = hotkeys.startShortcut
             state.settings.captureShortcut = hotkeys.captureShortcut
             state.settings.captureNextPriorityShortcut = hotkeys.captureNextPriorityShortcut
+
+            let appearance = appearanceSettingsClient.load()
+            state.appearance = appearance
+            state.settings.appearanceDraft = appearance
 
             return .merge(
                 .send(.registerHotkeys(hotkeys)),
@@ -69,13 +75,14 @@ extension AppFeature {
             )
 
         case .appWillTerminate:
-            guard let activeSession = state.activeSession else { return .none }
-            try? focusRepository.endSessionSync(
-                activeSession.id,
-                nil,
-                .appClosed,
-                now
-            )
+            if let activeSession = state.activeSession {
+                try? focusRepository.endSessionSync(
+                    activeSession.id,
+                    nil,
+                    .appClosed,
+                    now
+                )
+            }
             state.activeSession = nil
             state.taskDrafts = []
             state.windowDestinations.removeAll()

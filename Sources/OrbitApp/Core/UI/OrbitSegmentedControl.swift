@@ -67,7 +67,7 @@ struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
             selection = option
         } label: {
             Text(label(option))
-                .font(.subheadline.weight(.semibold))
+                .orbitFont(.subheadline, weight: .semibold)
                 .foregroundStyle(option == selection ? Color.primary : Color.primary.opacity(0.76))
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)

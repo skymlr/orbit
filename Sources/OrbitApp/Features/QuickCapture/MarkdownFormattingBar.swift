@@ -22,7 +22,7 @@ struct MarkdownFormattingBar: View {
                     onAction(action)
                 } label: {
                     Image(systemName: action.iconName)
-                        .font(.caption.weight(.semibold))
+                        .orbitFont(.caption, weight: .semibold)
                         .frame(width: 28, height: 24)
                 }
                 .buttonStyle(.plain)

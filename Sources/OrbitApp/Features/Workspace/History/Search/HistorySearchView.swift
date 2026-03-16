@@ -27,10 +27,10 @@ struct HistorySearchView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Search History")
-                .font(.title3.weight(.bold))
+                .orbitFont(.title3, weight: .bold)
 
             Text("Find archived tasks by session name or task text using the toolbar search field.")
-                .font(.caption)
+                .orbitFont(.caption)
                 .foregroundStyle(.secondary)
         }
     }
@@ -89,11 +89,11 @@ struct HistorySearchView: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(SessionHistoryBrowserSupport.dayLabel(dayGroup.day))
-                        .font(.headline.weight(.semibold))
+                        .orbitFont(.headline, weight: .semibold)
                         .foregroundStyle(OrbitTheme.Palette.orbitLine)
 
                     Text(dayCountLabel(for: dayGroup))
-                        .font(.caption)
+                        .orbitFont(.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -127,10 +127,10 @@ struct HistorySearchView: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(sessionGroup.session.name)
-                        .font(.subheadline.weight(.semibold))
+                        .orbitFont(.subheadline, weight: .semibold)
 
                     Text(sessionMetadata(for: sessionGroup))
-                        .font(.caption)
+                        .orbitFont(.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -144,7 +144,7 @@ struct HistorySearchView: View {
 
             if sessionGroup.tasks.isEmpty {
                 Text("No tasks in the current filter for this matching session.")
-                    .font(.caption)
+                    .orbitFont(.caption)
                     .foregroundStyle(.secondary)
             } else {
                 VStack(spacing: 12) {
@@ -168,10 +168,10 @@ struct HistorySearchView: View {
     private func emptyState(title: String, message: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.title3.weight(.semibold))
+                .orbitFont(.title3, weight: .semibold)
 
             Text(message)
-                .font(.caption)
+                .orbitFont(.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

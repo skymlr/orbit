@@ -17,6 +17,7 @@ struct OrbitApp: App {
             AppFeature()
         }
 
+        OrbitFontRegistry.registerBundledFonts()
         NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
     }
@@ -24,6 +25,7 @@ struct OrbitApp: App {
     var body: some Scene {
         MenuBarExtra {
             MenuBarView(store: store)
+                .orbitAppearance(store.appearance)
                 .preferredColorScheme(.dark)
         } label: {
             MenuBarLabelView(store: store)
@@ -34,6 +36,7 @@ struct OrbitApp: App {
             Group {
                 if store.windowDestinations.contains(.workspaceWindow) {
                     WorkspaceView(store: store)
+                        .orbitAppearance(store.appearance)
                         .onDisappear {
                             store.send(.workspaceWindowClosed)
                         }
@@ -48,6 +51,7 @@ struct OrbitApp: App {
 
         Settings {
             PreferencesView(store: store)
+                .orbitAppearance(store.appearance)
                 .preferredColorScheme(.dark)
         }
         .defaultSize(width: 920, height: 680)

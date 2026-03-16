@@ -1,26 +1,144 @@
+import AppKit
 import SwiftUI
 
 struct OrbitSpaceBackground: View {
+    @Environment(\.orbitAppearance) private var appearance
+    var style: OrbitBackgroundOption?
+
+    private var resolvedStyle: OrbitBackgroundOption {
+        style ?? appearance.background
+    }
+
     var body: some View {
         GeometryReader { proxy in
-            ZStack {
-                OrbitTheme.Gradients.spaceCanvas
-
-                RadialGradient(
-                    colors: [
-                        OrbitTheme.Palette.nebula.opacity(0.28),
-                        .clear
-                    ],
-                    center: .init(x: 1, y: 1),
-                    startRadius: 10,
-                    endRadius: max(proxy.size.width, proxy.size.height) * 2.10
+            switch resolvedStyle {
+            case .orbit:
+                OrbitDefaultBackground()
+            case .blue:
+                OrbitTintBackground(
+                    gradient: LinearGradient(
+                        colors: [
+                            Color(red: 0.03, green: 0.13, blue: 0.28),
+                            Color(red: 0.06, green: 0.24, blue: 0.50)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    glow: Color(red: 0.42, green: 0.76, blue: 0.98)
                 )
-
-                OrbitStarField()
-                OrbitMotif()
+            case .purple:
+                OrbitTintBackground(
+                    gradient: LinearGradient(
+                        colors: [
+                            Color(red: 0.09, green: 0.10, blue: 0.26),
+                            Color(red: 0.19, green: 0.13, blue: 0.41)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    glow: Color(red: 0.63, green: 0.48, blue: 0.92)
+                )
+            case .glass:
+                OrbitGlassBackground(size: proxy.size)
             }
         }
         .ignoresSafeArea()
+    }
+}
+
+private struct OrbitDefaultBackground: View {
+    var body: some View {
+        ZStack {
+            OrbitTheme.Gradients.spaceCanvas
+
+            RadialGradient(
+                colors: [
+                    OrbitTheme.Palette.nebula.opacity(0.28),
+                    .clear
+                ],
+                center: .init(x: 1, y: 1),
+                startRadius: 10,
+                endRadius: 2_000
+            )
+
+            OrbitStarField()
+            OrbitMotif()
+        }
+    }
+}
+
+private struct OrbitTintBackground: View {
+    let gradient: LinearGradient
+    let glow: Color
+
+    var body: some View {
+        ZStack {
+            gradient
+
+            RadialGradient(
+                colors: [
+                    glow.opacity(0.36),
+                    .clear
+                ],
+                center: .topTrailing,
+                startRadius: 10,
+                endRadius: 720
+            )
+
+            RadialGradient(
+                colors: [
+                    glow.opacity(0.18),
+                    .clear
+                ],
+                center: .bottomLeading,
+                startRadius: 10,
+                endRadius: 560
+            )
+        }
+    }
+}
+
+private struct OrbitGlassBackground: View {
+    let size: CGSize
+
+    var body: some View {
+        ZStack {
+            OrbitWindowMaterialView(
+                material: .hudWindow,
+                blendingMode: .behindWindow
+            )
+
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.05),
+                    Color(red: 0.07, green: 0.12, blue: 0.20).opacity(0.14),
+                    Color.black.opacity(0.10)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+}
+
+private struct OrbitWindowMaterialView: NSViewRepresentable {
+    let material: NSVisualEffectView.Material
+    let blendingMode: NSVisualEffectView.BlendingMode
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = .active
+        view.isEmphasized = true
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
+        nsView.state = .active
+        nsView.isEmphasized = true
     }
 }
 

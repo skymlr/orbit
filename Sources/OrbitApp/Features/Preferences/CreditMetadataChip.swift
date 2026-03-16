@@ -8,7 +8,7 @@ struct CreditMetadataChip: View {
 
     var body: some View {
         Text(title)
-            .font(usesMonospacedDigits ? .caption.monospacedDigit().weight(.semibold) : .caption.weight(.semibold))
+            .orbitFont(.caption, weight: .semibold, monospacedDigits: usesMonospacedDigits)
             .foregroundStyle(textColor)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)

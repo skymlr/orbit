@@ -65,6 +65,23 @@ actor MarkdownExportTracker {
     }
 }
 
+final class AppearanceSettingsTracker: @unchecked Sendable {
+    private let lock = NSLock()
+    private var savedSettings: [AppearanceSettings] = []
+
+    func record(_ settings: AppearanceSettings) {
+        lock.lock()
+        defer { lock.unlock() }
+        savedSettings.append(settings)
+    }
+
+    func values() -> [AppearanceSettings] {
+        lock.lock()
+        defer { lock.unlock() }
+        return savedSettings
+    }
+}
+
 actor SessionWindowTransitionTracker {
     private(set) var endReasonValues: [SessionEndReason] = []
     private(set) var startTimes: [Date] = []

@@ -34,7 +34,7 @@ struct HistoryCalendarPickerView: View {
                 Spacer()
 
                 Text(displayedMonthStart.formatted(.dateTime.month(.wide).year()))
-                    .font(.subheadline.weight(.semibold))
+                    .orbitFont(.subheadline, weight: .semibold)
 
                 Spacer()
 
@@ -49,7 +49,7 @@ struct HistoryCalendarPickerView: View {
             LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(weekdaySymbols, id: \.self) { symbol in
                     Text(symbol)
-                        .font(.caption2.weight(.semibold))
+                        .orbitFont(.caption2, weight: .semibold)
                         .foregroundStyle(.secondary)
                         .frame(width: 30)
                 }
@@ -114,7 +114,7 @@ struct HistoryCalendarPickerView: View {
             onSelectDay(normalizedDay)
         } label: {
             Text("\(dayNumber)")
-                .font(.caption.weight(.semibold))
+                .orbitFont(.caption, weight: .semibold)
                 .frame(maxWidth: .infinity, minHeight: 26)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)

@@ -5,6 +5,7 @@ struct MarkdownSourceTextView: NSViewRepresentable {
     @Binding var text: String
     @Binding var selectionRange: NSRange
     @Binding var isFocused: Bool
+    let appearance: AppearanceSettings
 
     var onSubmit: (() -> Void)?
     var onCancel: (() -> Void)?
@@ -38,7 +39,7 @@ struct MarkdownSourceTextView: NSViewRepresentable {
         textView.minSize = NSSize(width: 0, height: 80)
         textView.textContainerInset = NSSize(width: 8, height: 8)
         textView.backgroundColor = .clear
-        textView.font = .preferredFont(forTextStyle: .body)
+        textView.font = OrbitTypography.appKitFont(.body, appearance: appearance)
         textView.delegate = context.coordinator
         textView.string = text
         textView.setSelectedRange(selectionRange)
@@ -72,6 +73,11 @@ struct MarkdownSourceTextView: NSViewRepresentable {
 
         if textView.string != text {
             textView.string = text
+        }
+
+        let expectedFont = OrbitTypography.appKitFont(.body, appearance: appearance)
+        if textView.font?.fontName != expectedFont.fontName || textView.font?.pointSize != expectedFont.pointSize {
+            textView.font = expectedFont
         }
 
         let currentSelection = textView.selectedRange()

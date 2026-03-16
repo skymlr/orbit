@@ -10,6 +10,7 @@ struct QuickCaptureView: View {
     }
 
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Environment(\.orbitAppearance) private var appearance
     @State private var editorState = MarkdownEditorState()
     @State private var isEditorFocused = false
     @FocusState private var focusedField: FocusField?
@@ -19,14 +20,14 @@ struct QuickCaptureView: View {
             HStack {
                 if let activeSession = store.activeSession {
                     Text(activeSession.name)
-                        .font(.caption)
+                        .orbitFont(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
 
                 if store.captureDraft.editingTaskID != nil {
                     Text("Editing task")
-                        .font(.caption2.weight(.semibold))
+                        .orbitFont(.caption2, weight: .semibold)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
@@ -78,7 +79,7 @@ struct QuickCaptureView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
                     Text("Categories")
-                        .font(.caption.weight(.semibold))
+                        .orbitFont(.caption, weight: .semibold)
                         .foregroundStyle(.secondary)
                     
                     Spacer()
@@ -106,7 +107,7 @@ struct QuickCaptureView: View {
             HStack {
                 HStack(spacing: 6) {
                     Text("Priority")
-                        .font(.caption.weight(.semibold))
+                        .orbitFont(.caption, weight: .semibold)
                         .foregroundStyle(.secondary)
                     shortcutSubtitle(store.hotkeys.captureNextPriorityShortcut)
                 }
@@ -212,6 +213,7 @@ struct QuickCaptureView: View {
                 text: $editorState.text,
                 selectionRange: $editorState.selectionRange,
                 isFocused: $isEditorFocused,
+                appearance: appearance,
                 onSubmit: {
                     saveButtonTapped()
                 },
@@ -241,7 +243,7 @@ struct QuickCaptureView: View {
         ScrollView {
             if editorState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text("Nothing to preview yet.")
-                    .font(.caption)
+                    .orbitFont(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 12)
@@ -266,7 +268,7 @@ struct QuickCaptureView: View {
     @ViewBuilder
     private func shortcutSubtitle(_ shortcut: String) -> some View {
         Text(HotkeyHintFormatter.hint(from: shortcut))
-            .font(.caption2)
+            .orbitFont(.caption2)
             .foregroundStyle(.tertiary)
             .opacity(0.9)
     }

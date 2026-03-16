@@ -102,6 +102,21 @@ extension AppFeature {
                 .send(.showToast(tone: .success, message: "Hotkeys reset to defaults"))
             )
 
+        case .settingsSaveAppearanceTapped:
+            let appearance = state.settings.appearanceDraft
+            state.appearance = appearance
+            appearanceSettingsClient.save(appearance)
+
+            return .send(.showToast(tone: .success, message: "Appearance saved"))
+
+        case .settingsResetAppearanceTapped:
+            let defaults = AppearanceSettings.default
+            state.appearance = defaults
+            state.settings.appearanceDraft = defaults
+            appearanceSettingsClient.save(defaults)
+
+            return .send(.showToast(tone: .success, message: "Appearance reset to defaults"))
+
         case let .settingsAddCategoryTapped(name, colorHex):
             return .run { send in
                 do {

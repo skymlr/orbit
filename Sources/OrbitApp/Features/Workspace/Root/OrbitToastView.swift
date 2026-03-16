@@ -7,17 +7,17 @@ struct OrbitToastView: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: iconName)
-                .font(.subheadline.weight(.bold))
+                .orbitFont(.subheadline, weight: .bold)
                 .foregroundStyle(accentColor)
 
             Text(toast.message)
-                .font(.callout.weight(.semibold))
+                .orbitFont(.callout, weight: .semibold)
                 .foregroundStyle(.primary)
                 .lineLimit(2)
 
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.caption.weight(.bold))
+                    .orbitFont(.caption, weight: .bold)
                     .foregroundStyle(.secondary)
                     .padding(5)
                     .background(
