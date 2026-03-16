@@ -46,9 +46,12 @@ swift test
 ```
 
 ## Project Layout
-- [Sources/OrbitApp](Sources/OrbitApp): App features, dependencies, shared UI components.
+- [Sources/OrbitApp/App](Sources/OrbitApp/App): App entrypoints, lifecycle coordinators, and the root reducer.
+- [Sources/OrbitApp/Features](Sources/OrbitApp/Features): Feature folders for menu bar, quick capture, preferences, and workspace flows.
+- [Sources/OrbitApp/Core](Sources/OrbitApp/Core): Shared domain models, markdown logic, and reusable UI primitives.
+- [Sources/OrbitApp/Infrastructure](Sources/OrbitApp/Infrastructure): Dependencies, persistence, and repository implementations.
 - [Resources/Assets.xcassets](Resources/Assets.xcassets): App icon and asset catalog.
-- [Tests/OrbitAppTests](Tests/OrbitAppTests): Reducer and markdown editing tests.
+- [Tests/OrbitAppTests](Tests/OrbitAppTests): Tests mirrored to the app structure for reducers, markdown, history, preferences, and persistence.
 
 ## Data Storage
 Orbit stores data in a local SQLite database at:
