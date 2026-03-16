@@ -33,31 +33,37 @@ struct OrbitApp: App {
         }
 
         NSApplication.shared.setActivationPolicy(.regular)
+        NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
     }
 
     var body: some Scene {
         MenuBarExtra {
             MenuBarView(store: store)
+                .preferredColorScheme(.dark)
         } label: {
             MenuBarLabelView(store: store)
         }
         .menuBarExtraStyle(.window)
 
         Window("Orbit: A Focus Manager", id: OrbitWindowID.workspace) {
-            if store.windowDestinations.contains(.workspaceWindow) {
-                WorkspaceView(store: store)
-                    .onDisappear {
-                        store.send(.workspaceWindowClosed)
-                    }
-            } else {
-                Color.clear
-                    .frame(width: 1, height: 1)
+            Group {
+                if store.windowDestinations.contains(.workspaceWindow) {
+                    WorkspaceView(store: store)
+                        .onDisappear {
+                            store.send(.workspaceWindowClosed)
+                        }
+                } else {
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                }
             }
+            .preferredColorScheme(.dark)
         }
         .defaultSize(width: 920, height: 680)
 
         Settings {
             PreferencesView(store: store)
+                .preferredColorScheme(.dark)
         }
         .defaultSize(width: 920, height: 680)
     }

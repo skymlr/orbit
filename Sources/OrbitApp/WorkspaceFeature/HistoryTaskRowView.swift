@@ -113,3 +113,72 @@ struct HistoryTaskRowView: View {
         }
     }
 }
+
+#if DEBUG
+private enum HistoryTaskRowPreviewFixtures {
+    static let previewSessionID = UUID(uuidString: "0EDDB08F-D92D-4959-A925-329E8BB68483")!
+    static let previewCreatedAt = Date(timeIntervalSinceReferenceDate: 764_553_600)
+    static let previewCompletedAt = previewCreatedAt.addingTimeInterval(1_020)
+
+    static let designCategory = NoteCategoryRecord(
+        id: UUID(uuidString: "A153D331-5CB8-493E-B2B2-9D6669149675")!,
+        name: "Design",
+        colorHex: "#FF9F1C"
+    )
+
+    static let launchCategory = NoteCategoryRecord(
+        id: UUID(uuidString: "E1103727-B2FD-465A-8904-D42733090058")!,
+        name: "Launch",
+        colorHex: "#00B5FF"
+    )
+
+    static let openTask = FocusTaskRecord(
+        id: UUID(uuidString: "6D5D0356-304D-4A74-B43E-E763E454E2FD")!,
+        sessionID: previewSessionID,
+        categories: [designCategory, launchCategory],
+        markdown: "Review the archived task card spacing before shipping.",
+        priority: .medium,
+        completedAt: nil,
+        carriedFromTaskID: nil,
+        carriedFromSessionName: nil,
+        createdAt: previewCreatedAt,
+        updatedAt: previewCreatedAt.addingTimeInterval(180)
+    )
+
+    static let completedTask = FocusTaskRecord(
+        id: UUID(uuidString: "095C4432-AF45-452F-ACAF-043D02FB31C9")!,
+        sessionID: previewSessionID,
+        categories: [launchCategory],
+        markdown: "Publish the preview screenshots for QA review.",
+        priority: .high,
+        completedAt: previewCompletedAt,
+        carriedFromTaskID: UUID(uuidString: "156D1668-7D2C-4194-842F-72F93B3DD408"),
+        carriedFromSessionName: "Yesterday Wrap-Up",
+        createdAt: previewCreatedAt.addingTimeInterval(-1_200),
+        updatedAt: previewCompletedAt
+    )
+}
+
+private struct HistoryTaskRowPreviewGallery: View {
+    var body: some View {
+        ZStack {
+            OrbitSpaceBackground()
+
+            VStack(alignment: .leading, spacing: 16) {
+                HistoryTaskRowView(task: HistoryTaskRowPreviewFixtures.openTask)
+                HistoryTaskRowView(task: HistoryTaskRowPreviewFixtures.completedTask)
+            }
+            .padding(24)
+            .frame(width: 620, alignment: .leading)
+        }
+        .frame(width: 680, height: 300)
+    }
+}
+
+struct HistoryTaskRowView_Previews: PreviewProvider {
+    static var previews: some View {
+        HistoryTaskRowPreviewGallery()
+            .preferredColorScheme(.dark)
+    }
+}
+#endif

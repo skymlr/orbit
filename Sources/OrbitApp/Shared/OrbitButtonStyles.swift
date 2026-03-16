@@ -430,13 +430,8 @@ private struct OrbitButtonStylesPreviewGallery: View {
 
 struct OrbitButtonStyles_Previews: PreviewProvider {
     static var previews: some View {
-        Group {
-            OrbitButtonStylesPreviewGallery()
-                .preferredColorScheme(.dark)
-
-            OrbitButtonStylesPreviewGallery()
-                .preferredColorScheme(.light)
-        }
+        OrbitButtonStylesPreviewGallery()
+            .preferredColorScheme(.dark)
     }
 }
 #endif

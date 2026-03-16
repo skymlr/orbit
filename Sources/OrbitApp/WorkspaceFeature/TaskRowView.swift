@@ -841,3 +841,127 @@ struct MarkdownRenderedTaskView: View {
         pattern: #"^([ \t]*)(\d+)([.)])\s+(.*)$"#
     )
 }
+
+#if DEBUG
+private enum TaskRowPreviewFixtures {
+    static let previewCreatedAt = Date(timeIntervalSinceReferenceDate: 764_550_000)
+    static let previewCompletedAt = previewCreatedAt.addingTimeInterval(900)
+
+    static let designCategory = NoteCategoryRecord(
+        id: UUID(uuidString: "2AE18657-B2CA-430E-BFE6-0166B2912E27")!,
+        name: "Design",
+        colorHex: "#FF9F1C"
+    )
+
+    static let engineeringCategory = NoteCategoryRecord(
+        id: UUID(uuidString: "C2666C39-E853-414F-BB77-454DA6F0CA5E")!,
+        name: "Engineering",
+        colorHex: "#00B5FF"
+    )
+
+    static let openDraft = AppFeature.State.TaskDraft(
+        id: UUID(uuidString: "1C1C3B71-3695-4D45-B4EE-A26972DF7099")!,
+        categories: [designCategory, engineeringCategory],
+        markdown: """
+        ## Preview the task states
+        - [ ] Add a live task-row preview
+        - [x] Add a history task-row preview
+        Tighten the spacing around the segmented control label.
+        """,
+        priority: .medium,
+        completedAt: nil,
+        carriedFromTaskID: nil,
+        carriedFromSessionName: nil,
+        createdAt: previewCreatedAt
+    )
+
+    static let completedDraft = AppFeature.State.TaskDraft(
+        id: UUID(uuidString: "0DE66CF7-F663-4051-BE35-B59A3EB7F627")!,
+        categories: [engineeringCategory],
+        markdown: """
+        Publish the preview fixtures for the task rows.
+        1. Verify the completed state
+        2. Verify the keyboard highlight
+        """,
+        priority: .high,
+        completedAt: previewCompletedAt,
+        carriedFromTaskID: UUID(uuidString: "6C530111-8E02-4E29-8D29-39AF7494B4F2"),
+        carriedFromSessionName: "Preview Cleanup",
+        createdAt: previewCreatedAt.addingTimeInterval(-1_500)
+    )
+
+    static func toggledChecklistMarkdown(in markdown: String, lineIndex: Int) -> String {
+        var lines = markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        guard lines.indices.contains(lineIndex) else { return markdown }
+
+        if let uncheckedRange = lines[lineIndex].range(of: "[ ]") {
+            lines[lineIndex].replaceSubrange(uncheckedRange, with: "[x]")
+        } else if let checkedRange = lines[lineIndex].range(of: "[x]")
+            ?? lines[lineIndex].range(of: "[X]") {
+            lines[lineIndex].replaceSubrange(checkedRange, with: "[ ]")
+        }
+
+        return lines.joined(separator: "\n")
+    }
+}
+
+private struct TaskRowPreviewCard: View {
+    @State private var draft: AppFeature.State.TaskDraft
+    let isKeyboardHighlighted: Bool
+
+    init(draft: AppFeature.State.TaskDraft, isKeyboardHighlighted: Bool = false) {
+        self._draft = State(initialValue: draft)
+        self.isKeyboardHighlighted = isKeyboardHighlighted
+    }
+
+    var body: some View {
+        TaskRow(
+            draft: draft,
+            isKeyboardHighlighted: isKeyboardHighlighted,
+            onPrioritySet: { draft.priority = $0 },
+            onToggleCompletion: toggleCompletion,
+            onToggleChecklistLine: toggleChecklistLine(at:)
+        )
+    }
+
+    private func toggleCompletion() {
+        draft.completedAt = draft.completedAt == nil
+            ? TaskRowPreviewFixtures.previewCompletedAt
+            : nil
+    }
+
+    private func toggleChecklistLine(at lineIndex: Int) {
+        draft.markdown = TaskRowPreviewFixtures.toggledChecklistMarkdown(
+            in: draft.markdown,
+            lineIndex: lineIndex
+        )
+    }
+}
+
+private struct TaskRowPreviewGallery: View {
+    var body: some View {
+        ZStack {
+            OrbitSpaceBackground()
+
+            VStack(alignment: .leading, spacing: 18) {
+                TaskRowPreviewCard(
+                    draft: TaskRowPreviewFixtures.openDraft,
+                    isKeyboardHighlighted: true
+                )
+
+                TaskRowPreviewCard(draft: TaskRowPreviewFixtures.completedDraft)
+            }
+            .padding(24)
+            .frame(width: 620, alignment: .leading)
+        }
+        .frame(width: 680, height: 360)
+    }
+}
+
+struct TaskRow_Previews: PreviewProvider {
+    static var previews: some View {
+        TaskRowPreviewGallery()
+            .preferredColorScheme(.dark)
+    }
+}
+#endif

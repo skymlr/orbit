@@ -120,6 +120,7 @@ private struct QuickCapturePanelRootView: View {
     var body: some View {
         QuickCaptureView(store: store)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .preferredColorScheme(.dark)
             .onExitCommand {
                 store.send(.captureWindowClosed)
             }
