@@ -2,13 +2,6 @@ import ComposableArchitecture
 import SwiftUI
 
 struct PreferencesView: View {
-    private enum PreferencesSidebarGroup: String, CaseIterable, Identifiable {
-        case workspace = "Workspace"
-        case orbit = "Orbit"
-
-        var id: Self { self }
-    }
-
     private enum PreferencesSection: String, CaseIterable, Identifiable {
         case categories = "Categories"
         case hotkeys = "Hotkeys"
@@ -49,15 +42,6 @@ struct PreferencesView: View {
                 return "shippingbox"
             }
         }
-
-        var group: PreferencesSidebarGroup {
-            switch self {
-            case .categories, .hotkeys:
-                return .workspace
-            case .appearance, .about, .credits:
-                return .orbit
-            }
-        }
     }
 
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
@@ -71,38 +55,29 @@ struct PreferencesView: View {
     }
 
     var body: some View {
-        splitView
-            .task {
-                store.send(.settingsRefreshTapped)
-            }
-            .background {
-                OrbitSpaceBackground()
-            }
-            .onExitCommand {
-                dismiss()
-            }
-    }
-
-    private var splitView: some View {
-        NavigationSplitView(columnVisibility: .constant(.all)) {
+        NavigationSplitView {
             sidebar
         } detail: {
             detailContent
+        }
+        .task {
+            store.send(.settingsRefreshTapped)
+        }
+        .background {
+            OrbitSpaceBackground()
+        }
+        .onExitCommand {
+            dismiss()
         }
     }
 
     private var sidebar: some View {
         List(selection: $selectedSection) {
-            ForEach(PreferencesSidebarGroup.allCases) { group in
-                Section(group.rawValue) {
-                    ForEach(sections(in: group)) { section in
-                        sidebarRow(for: section)
-                            .tag(section)
-                    }
-                }
+            ForEach(PreferencesSection.allCases) { section in
+                sidebarRow(for: section)
+                    .tag(section)
             }
         }
-        .listStyle(.sidebar)
         .toolbar(removing: .sidebarToggle)
     }
 
@@ -325,10 +300,6 @@ struct PreferencesView: View {
                 }
             }
         }
-    }
-
-    private func sections(in group: PreferencesSidebarGroup) -> [PreferencesSection] {
-        PreferencesSection.allCases.filter { $0.group == group }
     }
 
     private func addCategoryButtonTapped() {

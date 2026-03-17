@@ -56,9 +56,8 @@ struct OrbitApp: App {
                 .orbitAppearance(store.appearance)
                 .preferredColorScheme(.dark)
         }
-        .windowStyle(.titleBar)
         .windowBackgroundDragBehavior(.enabled)
-        .defaultSize(width: 920, height: 680)
+        .defaultSize(width: 600, height: 400)
     }
 }
 
