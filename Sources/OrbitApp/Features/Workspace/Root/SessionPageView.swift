@@ -92,7 +92,6 @@ struct SessionPageView: View {
                 .help("Open Settings")
             }
         }
-        .toolbarBackground(.hidden, for: .windowToolbar)
         .confirmationDialog(
             "Export All Sessions?",
             isPresented: $isExportAllConfirmationPresented

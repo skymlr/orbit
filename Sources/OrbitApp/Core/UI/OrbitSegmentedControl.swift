@@ -26,28 +26,10 @@ struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
     }
 
     var body: some View {
-        Group {
-            if #available(macOS 26.0, *) {
-                glassControl
-            } else {
-                standardControl
-            }
-        }
-        .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: selection)
+        glassControl
+            .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: selection)
     }
 
-    private var standardControl: some View {
-        Picker(title, selection: $selection) {
-            ForEach(options, id: \.self) { option in
-                Text(label(option))
-                    .tag(option)
-            }
-        }
-        .labelsHidden()
-        .pickerStyle(.segmented)
-    }
-
-    @available(macOS 26.0, *)
     private var glassControl: some View {
         GlassEffectContainer(spacing: OrbitSegmentedControlLayout.spacing) {
             HStack(spacing: OrbitSegmentedControlLayout.spacing) {
@@ -61,7 +43,6 @@ struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
         }
     }
 
-    @available(macOS 26.0, *)
     private func segmentButton(for option: SelectionValue) -> some View {
         Button {
             selection = option
@@ -86,7 +67,6 @@ struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
     }
 }
 
-@available(macOS 26.0, *)
 private struct OrbitGlassSegmentSelectionModifier: ViewModifier {
     let isSelected: Bool
 

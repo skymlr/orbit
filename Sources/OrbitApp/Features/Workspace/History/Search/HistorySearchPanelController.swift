@@ -161,7 +161,6 @@ final class HistorySearchPanelController: NSObject, NSWindowDelegate, NSToolbarD
         toolbar.delegate = self
         toolbar.displayMode = .iconOnly
         toolbar.allowsUserCustomization = false
-        toolbar.showsBaselineSeparator = false
         return toolbar
     }
 

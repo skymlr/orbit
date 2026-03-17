@@ -76,7 +76,7 @@ struct PreferencesView: View {
                 store.send(.settingsRefreshTapped)
             }
             .background {
-                preferencesBackground
+                OrbitSpaceBackground()
             }
             .onExitCommand {
                 dismiss()
@@ -88,16 +88,6 @@ struct PreferencesView: View {
             sidebar
         } detail: {
             detailContent
-        }
-    }
-
-    @ViewBuilder
-    private var preferencesBackground: some View {
-        if #available(macOS 26.0, *) {
-            OrbitSpaceBackground()
-                .backgroundExtensionEffect()
-        } else {
-            OrbitSpaceBackground()
         }
     }
 
