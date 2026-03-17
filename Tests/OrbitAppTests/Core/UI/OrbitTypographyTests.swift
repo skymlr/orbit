@@ -20,7 +20,8 @@ struct OrbitTypographyTests {
             weight: .semibold,
             appearance: AppearanceSettings(
                 font: .geist,
-                background: .orbit
+                background: .spaceBlue,
+                showsOrbitalLayer: true
             ),
             fontLookup: { _, _ in nil }
         )

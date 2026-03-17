@@ -4,49 +4,65 @@ import SwiftUI
 struct OrbitSpaceBackground: View {
     @Environment(\.orbitAppearance) private var appearance
     var style: OrbitBackgroundOption?
+    var showsOrbitalLayer: Bool?
 
     private var resolvedStyle: OrbitBackgroundOption {
         style ?? appearance.background
     }
 
+    private var resolvedShowsOrbitalLayer: Bool {
+        showsOrbitalLayer ?? appearance.showsOrbitalLayer
+    }
+
     var body: some View {
         GeometryReader { proxy in
-            switch resolvedStyle {
-            case .orbit:
-                OrbitDefaultBackground()
-            case .blue:
-                OrbitTintBackground(
-                    gradient: LinearGradient(
-                        colors: [
-                            Color(red: 0.03, green: 0.13, blue: 0.28),
-                            Color(red: 0.06, green: 0.24, blue: 0.50)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    glow: Color(red: 0.42, green: 0.76, blue: 0.98)
-                )
-            case .purple:
-                OrbitTintBackground(
-                    gradient: LinearGradient(
-                        colors: [
-                            Color(red: 0.09, green: 0.10, blue: 0.26),
-                            Color(red: 0.19, green: 0.13, blue: 0.41)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    glow: Color(red: 0.63, green: 0.48, blue: 0.92)
-                )
-            case .glass:
-                OrbitGlassBackground(size: proxy.size)
+            ZStack {
+                baseBackground(size: proxy.size)
+
+                if resolvedShowsOrbitalLayer {
+                    OrbitOrbitalLayer()
+                }
             }
         }
         .ignoresSafeArea()
     }
+
+    @ViewBuilder
+    private func baseBackground(size: CGSize) -> some View {
+        switch resolvedStyle {
+        case .spaceBlue:
+            OrbitSpaceBlueBackground()
+        case .skyBlue:
+            OrbitTintBackground(
+                gradient: LinearGradient(
+                    colors: [
+                        Color(red: 0.08, green: 0.28, blue: 0.56),
+                        Color(red: 0.30, green: 0.61, blue: 0.92)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                glow: Color(red: 0.80, green: 0.92, blue: 1.00)
+            )
+        case .purple:
+            OrbitTintBackground(
+                gradient: LinearGradient(
+                    colors: [
+                        Color(red: 0.09, green: 0.10, blue: 0.26),
+                        Color(red: 0.19, green: 0.13, blue: 0.41)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                glow: Color(red: 0.63, green: 0.48, blue: 0.92)
+            )
+        case .glass:
+            OrbitGlassBackground(size: size)
+        }
+    }
 }
 
-private struct OrbitDefaultBackground: View {
+private struct OrbitSpaceBlueBackground: View {
     var body: some View {
         ZStack {
             OrbitTheme.Gradients.spaceCanvas
@@ -60,9 +76,6 @@ private struct OrbitDefaultBackground: View {
                 startRadius: 10,
                 endRadius: 2_000
             )
-
-            OrbitStarField()
-            OrbitMotif()
         }
     }
 }
@@ -94,6 +107,15 @@ private struct OrbitTintBackground: View {
                 startRadius: 10,
                 endRadius: 560
             )
+        }
+    }
+}
+
+private struct OrbitOrbitalLayer: View {
+    var body: some View {
+        ZStack {
+            OrbitStarField()
+            OrbitMotif()
         }
     }
 }

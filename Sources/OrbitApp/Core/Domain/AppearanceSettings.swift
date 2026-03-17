@@ -3,6 +3,7 @@ import Foundation
 enum OrbitFontOption: String, CaseIterable, Codable, Equatable, Sendable, Identifiable {
     case system
     case geist
+    case robotoMonoNerd
     case sourceSerif4
 
     var id: Self { self }
@@ -13,6 +14,8 @@ enum OrbitFontOption: String, CaseIterable, Codable, Equatable, Sendable, Identi
             return "System Default"
         case .geist:
             return "Geist"
+        case .robotoMonoNerd:
+            return "Roboto Mono Nerd"
         case .sourceSerif4:
             return "Source Serif 4"
         }
@@ -24,6 +27,8 @@ enum OrbitFontOption: String, CaseIterable, Codable, Equatable, Sendable, Identi
             return "Current Orbit default"
         case .geist:
             return "Geist"
+        case .robotoMonoNerd:
+            return "Roboto Mono Nerd Mono"
         case .sourceSerif4:
             return "Source Serif 4"
         }
@@ -31,8 +36,8 @@ enum OrbitFontOption: String, CaseIterable, Codable, Equatable, Sendable, Identi
 }
 
 enum OrbitBackgroundOption: String, CaseIterable, Codable, Equatable, Sendable, Identifiable {
-    case orbit
-    case blue
+    case spaceBlue = "orbit"
+    case skyBlue = "blue"
     case purple
     case glass
 
@@ -40,10 +45,10 @@ enum OrbitBackgroundOption: String, CaseIterable, Codable, Equatable, Sendable, 
 
     var title: String {
         switch self {
-        case .orbit:
-            return "Orbit Default"
-        case .blue:
-            return "Blue"
+        case .spaceBlue:
+            return "Space Blue"
+        case .skyBlue:
+            return "Sky Blue"
         case .purple:
             return "Purple"
         case .glass:
@@ -55,9 +60,11 @@ enum OrbitBackgroundOption: String, CaseIterable, Codable, Equatable, Sendable, 
 struct AppearanceSettings: Equatable, Sendable {
     var font: OrbitFontOption
     var background: OrbitBackgroundOption
+    var showsOrbitalLayer: Bool
 
     static let `default` = AppearanceSettings(
         font: .system,
-        background: .orbit
+        background: .spaceBlue,
+        showsOrbitalLayer: true
     )
 }

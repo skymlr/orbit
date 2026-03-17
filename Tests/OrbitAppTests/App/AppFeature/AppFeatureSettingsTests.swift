@@ -13,7 +13,8 @@ struct AppFeatureSettingsTests {
     func onLaunchLoadsPersistedAppearanceIntoAppliedAndDraftState() async {
         let persistedAppearance = AppearanceSettings(
             font: .sourceSerif4,
-            background: .glass
+            background: .glass,
+            showsOrbitalLayer: true
         )
 
         var appearanceClient = AppearanceSettingsClient.testValue
@@ -178,7 +179,8 @@ struct AppFeatureSettingsTests {
         let tracker = AppearanceSettingsTracker()
         let customAppearance = AppearanceSettings(
             font: .geist,
-            background: .purple
+            background: .purple,
+            showsOrbitalLayer: true
         )
 
         var initial = AppFeature.State()
@@ -223,11 +225,13 @@ struct AppFeatureSettingsTests {
         var initial = AppFeature.State()
         initial.appearance = AppearanceSettings(
             font: .geist,
-            background: .glass
+            background: .glass,
+            showsOrbitalLayer: true
         )
         initial.settings.appearanceDraft = AppearanceSettings(
             font: .sourceSerif4,
-            background: .purple
+            background: .purple,
+            showsOrbitalLayer: false
         )
 
         var appearanceClient = AppearanceSettingsClient.testValue

@@ -101,7 +101,11 @@ enum OrbitTypography {
         swiftUIFont(
             style,
             weight: weight,
-            appearance: AppearanceSettings(font: option, background: .orbit)
+            appearance: AppearanceSettings(
+                font: option,
+                background: .spaceBlue,
+                showsOrbitalLayer: true
+            )
         )
     }
 
@@ -133,6 +137,8 @@ enum OrbitTypography {
             case .bold:
                 return "Geist-Bold"
             }
+        case .robotoMonoNerd:
+            return "RobotoMonoNFM-Rg"
         case .sourceSerif4:
             switch weightBucket(for: weight) {
             case .regular:

@@ -288,7 +288,7 @@ struct PreferencesView: View {
 
             preferencesSectionCard(
                 title: "Background",
-                subtitle: "Choose a background treatment that stays in Orbit's visual language."
+                subtitle: "Choose the base canvas color, then optionally layer in Orbit's stars and solar system."
             ) {
                 Picker("Background", selection: $store.settings.appearanceDraft.background) {
                     ForEach(OrbitBackgroundOption.allCases) { option in
@@ -298,6 +298,25 @@ struct PreferencesView: View {
                 }
                 .pickerStyle(.radioGroup)
                 .labelsHidden()
+            }
+
+            preferencesSectionCard(
+                title: "Orbital Layer",
+                subtitle: "Toggle the stars, orbits, planets, and sun independently from the base background."
+            ) {
+                Toggle(
+                    "Show stars, orbits, planets, and sun",
+                    isOn: $store.settings.appearanceDraft.showsOrbitalLayer
+                )
+                .toggleStyle(.switch)
+
+                Text(
+                    store.settings.appearanceDraft.showsOrbitalLayer
+                    ? "The orbital artwork will sit on top of the selected background."
+                    : "Only the selected background color or material will be shown."
+                )
+                .orbitFont(.caption)
+                .foregroundStyle(.secondary)
             }
 
             preferencesSectionCard(title: "Apply Appearance") {
@@ -450,7 +469,10 @@ struct PreferencesView: View {
 
     private func backgroundOptionRow(for option: OrbitBackgroundOption) -> some View {
         HStack(spacing: 12) {
-            OrbitSpaceBackground(style: option)
+            OrbitSpaceBackground(
+                style: option,
+                showsOrbitalLayer: store.settings.appearanceDraft.showsOrbitalLayer
+            )
                 .frame(width: 96, height: 58)
                 .clipShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.medium, style: .continuous))
                 .overlay(
@@ -461,7 +483,12 @@ struct PreferencesView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(option.title)
                     .orbitFont(.body, weight: .semibold)
-                Text(backgroundPreviewSubtitle(for: option))
+                Text(
+                    backgroundPreviewSubtitle(
+                        for: option,
+                        showsOrbitalLayer: store.settings.appearanceDraft.showsOrbitalLayer
+                    )
+                )
                     .orbitFont(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -469,16 +496,23 @@ struct PreferencesView: View {
         .padding(.vertical, 2)
     }
 
-    private func backgroundPreviewSubtitle(for option: OrbitBackgroundOption) -> String {
+    private func backgroundPreviewSubtitle(
+        for option: OrbitBackgroundOption,
+        showsOrbitalLayer: Bool
+    ) -> String {
+        let suffix = showsOrbitalLayer
+            ? " Orbital layer enabled."
+            : " Orbital layer hidden."
+
         switch option {
-        case .orbit:
-            return "Current orbital canvas with stars and the solar motif."
-        case .blue:
-            return "Plain blue gradient with a calmer, cleaner backdrop."
+        case .spaceBlue:
+            return "Deep space-blue canvas with Orbit's darker nebula wash.\(suffix)"
+        case .skyBlue:
+            return "Brighter blue gradient with a lighter atmospheric feel.\(suffix)"
         case .purple:
-            return "Blue-violet gradient that stays restrained and nocturnal."
+            return "Blue-violet gradient that stays restrained and nocturnal.\(suffix)"
         case .glass:
-            return "Dark translucent glass with a softer liquid treatment."
+            return "Translucent blur that lets the desktop behind the window come through.\(suffix)"
         }
     }
 }

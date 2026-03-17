@@ -7,6 +7,8 @@ enum OrbitFontRegistry {
         "Geist-Regular",
         "Geist-SemiBold",
         "Geist-Bold",
+        "RobotoMonoNerdFontMono-Regular",
+        "RobotoMonoNerdFontMono-Italic",
         "SourceSerif4-Regular",
         "SourceSerif4-Semibold",
         "SourceSerif4-Bold",
