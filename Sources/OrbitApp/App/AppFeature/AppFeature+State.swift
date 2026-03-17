@@ -3,14 +3,35 @@ import ComposableArchitecture
 import Foundation
 
 extension AppFeature {
-    @CasePathable
-    enum WindowDestination: Hashable, Sendable {
-        case workspaceWindow
-        case captureWindow
-    }
-
     @ObservableState
     struct State: Equatable {
+        struct PlatformFeatures: Equatable, Sendable {
+            var supportsGlobalHotkeys = false
+            var supportsIdleMonitoring = false
+            var supportsMenuBar = false
+            var supportsPointerInteractions = false
+            var usesShareExport = false
+        }
+
+        struct PresentationState: Equatable {
+            struct DirectoryExportRequest: Equatable, Identifiable {
+                var id: Int
+                var sessionIDs: [UUID]
+            }
+
+            struct SharedExport: Equatable, Identifiable {
+                var id: UUID
+                var urls: [URL]
+            }
+
+            var isWorkspacePresented = false
+            var workspacePresentationRequest = 0
+            var isCapturePresented = false
+            var capturePresentationRequest = 0
+            var pendingDirectoryExport: DirectoryExportRequest?
+            var sharedExport: SharedExport?
+        }
+
         enum SessionBootstrapState: Equatable {
             case idle
             case loading
@@ -55,6 +76,7 @@ extension AppFeature {
         struct SettingsState: Equatable {
             var sessions: [FocusSessionRecord] = []
             var categories: [SessionCategoryRecord] = []
+            var showsHotkeySettings = false
             var startShortcut = HotkeySettings.default.startShortcut
             var captureShortcut = HotkeySettings.default.captureShortcut
             var captureNextPriorityShortcut = HotkeySettings.default.captureNextPriorityShortcut
@@ -74,12 +96,11 @@ extension AppFeature {
         var selectedTaskCategoryFilterIDs: Set<UUID> = []
         var selectedTaskPriorityFilters: Set<NotePriority> = []
 
+        var platform = PlatformFeatures()
+        var presentation = PresentationState()
         var settings = SettingsState()
         var toast: Toast?
 
-        var windowDestinations: Set<WindowDestination> = []
-        var workspaceWindowFocusRequest = 0
-        var captureWindowFocusRequest = 0
         var sessionBootstrapState: SessionBootstrapState = .idle
         var hasLaunched = false
 
@@ -102,5 +123,17 @@ extension AppFeature {
                 return categoryMatch && priorityMatch
             }
         }
+    }
+}
+
+extension AppFeature.State.PlatformFeatures {
+    init(_ capabilities: PlatformCapabilities) {
+        self.init(
+            supportsGlobalHotkeys: capabilities.supportsGlobalHotkeys,
+            supportsIdleMonitoring: capabilities.supportsIdleMonitoring,
+            supportsMenuBar: capabilities.supportsMenuBar,
+            supportsPointerInteractions: capabilities.supportsPointerInteractions,
+            usesShareExport: capabilities.usesShareExport
+        )
     }
 }

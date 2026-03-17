@@ -148,7 +148,7 @@ struct QuickCaptureView: View {
         .onChange(of: store.captureDraft.editingTaskID) { _, _ in
             requestEditorFocus()
         }
-        .onChange(of: store.captureWindowFocusRequest) { _, _ in
+        .onChange(of: store.presentation.capturePresentationRequest) { _, _ in
             requestEditorFocus()
         }
         .onChange(of: editorState.isPreviewVisible) { _, newValue in
@@ -177,7 +177,7 @@ struct QuickCaptureView: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous))
         )
-        .onExitCommand {
+        .orbitOnExitCommand {
             dismissCapture()
         }
         .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: editorState.isPreviewVisible)

@@ -1,6 +1,9 @@
-import AppKit
 import ComposableArchitecture
 import SwiftUI
+
+#if os(macOS)
+import AppKit
+#endif
 
 struct AppLifecycleCoordinator: View {
     let store: StoreOf<AppFeature>
@@ -8,11 +11,13 @@ struct AppLifecycleCoordinator: View {
     var body: some View {
         Color.clear
             .frame(width: 0, height: 0)
+#if os(macOS)
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                 store.send(.appWillTerminate)
             }
             .onReceive(NotificationCenter.default.publisher(for: .orbitReopenRequested)) { _ in
                 store.send(.openWorkspaceTapped)
             }
+#endif
     }
 }

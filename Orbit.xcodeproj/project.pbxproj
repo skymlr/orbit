@@ -27,6 +27,18 @@
 		8555587D3F4BEDE136D3B3D2 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = C1F90FC1C0C31122E35D4F73 /* Dependencies */; };
 		A7C12E4B9D6F4300B1C2D3E4 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = A7C12E4B9D6F4300B1C2D3E5 /* Fonts */; };
 		AB6C444405882E05AADED0C9 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */; };
+		E1A1B1C1D1E1F10111213151 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9589E10F327CF6C7BCA98486 /* Assets.xcassets */; };
+		E1A1B1C1D1E1F10111213152 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = A7C12E4B9D6F4300B1C2D3E5 /* Fonts */; };
+		E1A1B1C1D1E1F10111213153 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 44492BB61285D2CADF1D3884 /* ComposableArchitecture */; };
+		E1A1B1C1D1E1F10111213154 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */; };
+		E1A1B1C1D1E1F10111213155 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = C1F90FC1C0C31122E35D4F73 /* Dependencies */; };
+		E1A1B1C1D1E1F10111213156 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B41E /* GRDB */; };
+		E1A1B1C1D1E1F10111213157 /* IdentifiedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B41F /* IdentifiedCollections */; };
+		E1A1B1C1D1E1F10111213158 /* Perception in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B420 /* Perception */; };
+		E1A1B1C1D1E1F10111213159 /* PerceptionCore in Frameworks */ = {isa = PBXBuildFile; productRef = 1A2B3C4D5E6F708192A3B42A /* PerceptionCore */; };
+		E1A1B1C1D1E1F1011121315A /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 3AAF415269A2878FE0A31517 /* SQLiteData */; };
+		E1A1B1C1D1E1F1011121315B /* StructuredQueries in Frameworks */ = {isa = PBXBuildFile; productRef = D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */; };
+		E1A1B1C1D1E1F1011121315C /* Flow in Frameworks */ = {isa = PBXBuildFile; productRef = F0A1B2C3D4E5F60718293A4C /* Flow */; };
 		F0A1B2C3D4E5F60718293A4B /* Flow in Frameworks */ = {isa = PBXBuildFile; productRef = F0A1B2C3D4E5F60718293A4C /* Flow */; };
 /* End PBXBuildFile section */
 
@@ -36,7 +48,7 @@
 			containerPortal = 644B92E60FA57CF80CFD80D7 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = D5AFD5ECD954E79D19FE5594;
-			remoteInfo = Orbit;
+			remoteInfo = OrbitMacApp;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -46,7 +58,8 @@
 		9589E10F327CF6C7BCA98486 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5E /* MASTER.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; path = MASTER.md; sourceTree = "<group>"; };
 		A7C12E4B9D6F4300B1C2D3E5 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fonts; sourceTree = "<group>"; };
-		DC70B03F528B2C69AA9ED812 /* Orbit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Orbit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC70B03F528B2C69AA9ED812 /* OrbitMacApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OrbitMacApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1A1B1C1D1E1F10111213150 /* OrbitIOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OrbitIOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -92,6 +105,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E1A1B1C1D1E1F1011121315D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1A1B1C1D1E1F10111213154 /* CasePaths in Frameworks */,
+				E1A1B1C1D1E1F10111213153 /* ComposableArchitecture in Frameworks */,
+				E1A1B1C1D1E1F10111213155 /* Dependencies in Frameworks */,
+				E1A1B1C1D1E1F1011121315C /* Flow in Frameworks */,
+				E1A1B1C1D1E1F10111213156 /* GRDB in Frameworks */,
+				E1A1B1C1D1E1F10111213157 /* IdentifiedCollections in Frameworks */,
+				E1A1B1C1D1E1F10111213158 /* Perception in Frameworks */,
+				E1A1B1C1D1E1F10111213159 /* PerceptionCore in Frameworks */,
+				E1A1B1C1D1E1F1011121315A /* SQLiteData in Frameworks */,
+				E1A1B1C1D1E1F1011121315B /* StructuredQueries in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -115,7 +145,8 @@
 		514FFC5756A823413452FB24 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DC70B03F528B2C69AA9ED812 /* Orbit.app */,
+				DC70B03F528B2C69AA9ED812 /* OrbitMacApp.app */,
+				E1A1B1C1D1E1F10111213150 /* OrbitIOSApp.app */,
 				1A2B3C4D5E6F708192A3B406 /* OrbitAppTests.xctest */,
 			);
 			name = Products;
@@ -227,9 +258,9 @@
 			productReference = 1A2B3C4D5E6F708192A3B406 /* OrbitAppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		D5AFD5ECD954E79D19FE5594 /* Orbit */ = {
+		D5AFD5ECD954E79D19FE5594 /* OrbitMacApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 333A124AC48A2F82B8899AA7 /* Build configuration list for PBXNativeTarget "Orbit" */;
+			buildConfigurationList = 333A124AC48A2F82B8899AA7 /* Build configuration list for PBXNativeTarget "OrbitMacApp" */;
 			buildPhases = (
 				0F3CFBEA201BA52A9347A351 /* Sources */,
 				343EF250862A705649ED23BB /* Frameworks */,
@@ -255,7 +286,7 @@
 				C83D2FC61A7E199793B2880E /* Features */,
 				F9AA0DBB2391D047BB8070EC /* Infrastructure */,
 			);
-			name = Orbit;
+			name = OrbitMacApp;
 			packageProductDependencies = (
 				44492BB61285D2CADF1D3884 /* ComposableArchitecture */,
 				B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */,
@@ -268,8 +299,53 @@
 				D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */,
 				F0A1B2C3D4E5F60718293A4C /* Flow */,
 			);
-			productName = Orbit;
-			productReference = DC70B03F528B2C69AA9ED812 /* Orbit.app */;
+			productName = OrbitMacApp;
+			productReference = DC70B03F528B2C69AA9ED812 /* OrbitMacApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E1A1B1C1D1E1F10111213160 /* OrbitIOSApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1A1B1C1D1E1F10111213163 /* Build configuration list for PBXNativeTarget "OrbitIOSApp" */;
+			buildPhases = (
+				E1A1B1C1D1E1F1011121315F /* Sources */,
+				E1A1B1C1D1E1F1011121315D /* Frameworks */,
+				E1A1B1C1D1E1F1011121315E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E1A1B1C1D1E1F10111213164 /* PBXTargetDependency */,
+				E1A1B1C1D1E1F10111213165 /* PBXTargetDependency */,
+				E1A1B1C1D1E1F10111213166 /* PBXTargetDependency */,
+				E1A1B1C1D1E1F10111213167 /* PBXTargetDependency */,
+				E1A1B1C1D1E1F10111213168 /* PBXTargetDependency */,
+				E1A1B1C1D1E1F10111213169 /* PBXTargetDependency */,
+				E1A1B1C1D1E1F1011121316A /* PBXTargetDependency */,
+				E1A1B1C1D1E1F1011121316B /* PBXTargetDependency */,
+				E1A1B1C1D1E1F1011121316C /* PBXTargetDependency */,
+				E1A1B1C1D1E1F1011121316D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4E7306FD5537C1CE4A3EA528 /* App */,
+				81FDE7F96248D28C065316A7 /* Core */,
+				C83D2FC61A7E199793B2880E /* Features */,
+				F9AA0DBB2391D047BB8070EC /* Infrastructure */,
+			);
+			name = OrbitIOSApp;
+			packageProductDependencies = (
+				44492BB61285D2CADF1D3884 /* ComposableArchitecture */,
+				B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */,
+				C1F90FC1C0C31122E35D4F73 /* Dependencies */,
+				1A2B3C4D5E6F708192A3B41E /* GRDB */,
+				1A2B3C4D5E6F708192A3B41F /* IdentifiedCollections */,
+				1A2B3C4D5E6F708192A3B420 /* Perception */,
+				1A2B3C4D5E6F708192A3B42A /* PerceptionCore */,
+				3AAF415269A2878FE0A31517 /* SQLiteData */,
+				D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */,
+				F0A1B2C3D4E5F60718293A4C /* Flow */,
+			);
+			productName = OrbitIOSApp;
+			productReference = E1A1B1C1D1E1F10111213150 /* OrbitIOSApp.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -285,6 +361,9 @@
 					1A2B3C4D5E6F708192A3B408 = {
 						CreatedOnToolsVersion = 26.3;
 						TestTargetID = D5AFD5ECD954E79D19FE5594;
+					};
+					E1A1B1C1D1E1F10111213160 = {
+						CreatedOnToolsVersion = 26.3;
 					};
 				};
 			};
@@ -313,7 +392,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D5AFD5ECD954E79D19FE5594 /* Orbit */,
+				D5AFD5ECD954E79D19FE5594 /* OrbitMacApp */,
+				E1A1B1C1D1E1F10111213160 /* OrbitIOSApp */,
 				1A2B3C4D5E6F708192A3B408 /* OrbitAppTests */,
 			);
 		};
@@ -336,6 +416,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E1A1B1C1D1E1F1011121315E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1A1B1C1D1E1F10111213151 /* Assets.xcassets in Resources */,
+				E1A1B1C1D1E1F10111213152 /* Fonts in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -347,6 +436,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		1A2B3C4D5E6F708192A3B40A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1A1B1C1D1E1F1011121315F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -366,7 +462,7 @@
 		};
 		1A2B3C4D5E6F708192A3B40B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D5AFD5ECD954E79D19FE5594 /* Orbit */;
+			target = D5AFD5ECD954E79D19FE5594 /* OrbitMacApp */;
 			targetProxy = 1A2B3C4D5E6F708192A3B405 /* PBXContainerItemProxy */;
 		};
 		1A2B3C4D5E6F708192A3B40C /* PBXTargetDependency */ = {
@@ -429,6 +525,46 @@
 			isa = PBXTargetDependency;
 			productRef = D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */;
 		};
+		E1A1B1C1D1E1F10111213164 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 44492BB61285D2CADF1D3884 /* ComposableArchitecture */;
+		};
+		E1A1B1C1D1E1F10111213165 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */;
+		};
+		E1A1B1C1D1E1F10111213166 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = C1F90FC1C0C31122E35D4F73 /* Dependencies */;
+		};
+		E1A1B1C1D1E1F10111213167 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 1A2B3C4D5E6F708192A3B41E /* GRDB */;
+		};
+		E1A1B1C1D1E1F10111213168 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 1A2B3C4D5E6F708192A3B41F /* IdentifiedCollections */;
+		};
+		E1A1B1C1D1E1F10111213169 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 1A2B3C4D5E6F708192A3B420 /* Perception */;
+		};
+		E1A1B1C1D1E1F1011121316A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 1A2B3C4D5E6F708192A3B42A /* PerceptionCore */;
+		};
+		E1A1B1C1D1E1F1011121316B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 3AAF415269A2878FE0A31517 /* SQLiteData */;
+		};
+		E1A1B1C1D1E1F1011121316C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */;
+		};
+		E1A1B1C1D1E1F1011121316D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = F0A1B2C3D4E5F60718293A4C /* Flow */;
+		};
 		F0A1B2C3D4E5F60718293A4D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = F0A1B2C3D4E5F60718293A4C /* Flow */;
@@ -453,7 +589,7 @@
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Orbit.app/Contents/MacOS/Orbit";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OrbitMacApp.app/Contents/MacOS/OrbitMacApp";
 			};
 			name = Debug;
 		};
@@ -473,7 +609,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Orbit.app/Contents/MacOS/Orbit";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OrbitMacApp.app/Contents/MacOS/OrbitMacApp";
 			};
 			name = Release;
 		};
@@ -565,7 +701,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
-				PRODUCT_NAME = Orbit;
+				PRODUCT_NAME = OrbitMacApp;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -594,7 +730,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit;
-				PRODUCT_NAME = Orbit;
+				PRODUCT_NAME = OrbitMacApp;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -660,6 +796,61 @@
 			};
 			name = Release;
 		};
+		E1A1B1C1D1E1F10111213161 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit.ios;
+				PRODUCT_NAME = OrbitIOSApp;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		E1A1B1C1D1E1F10111213162 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Orbit;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.smiller.orbit.ios;
+				PRODUCT_NAME = OrbitIOSApp;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -672,7 +863,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		333A124AC48A2F82B8899AA7 /* Build configuration list for PBXNativeTarget "Orbit" */ = {
+		333A124AC48A2F82B8899AA7 /* Build configuration list for PBXNativeTarget "OrbitMacApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6E81EF3A8016BF01B836BCA9 /* Release */,
@@ -686,6 +877,15 @@
 			buildConfigurations = (
 				27D2E14370796CE178D5D9F2 /* Debug */,
 				CE7A894EE1D1C71B330CDD7C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E1A1B1C1D1E1F10111213163 /* Build configuration list for PBXNativeTarget "OrbitIOSApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1A1B1C1D1E1F10111213162 /* Release */,
+				E1A1B1C1D1E1F10111213161 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

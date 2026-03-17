@@ -1,7 +1,55 @@
-import AppKit
 import Foundation
 
-final class CommandTextView: NSTextView {
+struct MarkdownTextCommandResult: Equatable {
+    var text: String
+    var selection: NSRange
+}
+
+enum MarkdownTextCommandHandler {
+    static func handleReturn(
+        in text: String,
+        selection: NSRange
+    ) -> MarkdownTextCommandResult? {
+        guard selection.length == 0 else { return nil }
+
+        let source = text as NSString
+        guard selection.location <= source.length else { return nil }
+
+        let lineRange = source.lineRange(for: NSRange(location: selection.location, length: 0))
+        let lineString = source.substring(with: lineRange)
+        let contentLength = lineStringLengthWithoutTrailingNewlines(lineString)
+        let lineContentRange = NSRange(location: lineRange.location, length: contentLength)
+
+        guard selection.location == lineContentRange.location + lineContentRange.length else {
+            return nil
+        }
+
+        let lineContent = source.substring(with: lineContentRange)
+        guard let continuation = parseListContinuation(
+            lineContentRange: lineContentRange,
+            lineContent: lineContent
+        ) else {
+            return nil
+        }
+
+        let mutable = NSMutableString(string: text)
+        if continuation.hasContent {
+            let marker = continuationMarker(for: continuation)
+            mutable.insert("\n\(marker)", at: selection.location)
+            let nextLocation = selection.location + 1 + (marker as NSString).length
+            return MarkdownTextCommandResult(
+                text: mutable as String,
+                selection: NSRange(location: nextLocation, length: 0)
+            )
+        }
+
+        mutable.replaceCharacters(in: continuation.lineContentRange, with: "")
+        return MarkdownTextCommandResult(
+            text: mutable as String,
+            selection: NSRange(location: continuation.lineContentRange.location, length: 0)
+        )
+    }
+
     private struct ListContinuation {
         enum Kind {
             case unordered(bullet: String)
@@ -15,84 +63,7 @@ final class CommandTextView: NSTextView {
         let hasContent: Bool
     }
 
-    var onSubmit: (() -> Void)?
-    var onCancel: (() -> Void)?
-    var onMoveToNextField: (() -> Void)?
-    var onMoveToPreviousField: (() -> Void)?
-
-    override func doCommand(by selector: Selector) {
-        if selector == #selector(insertNewline(_:)) {
-            if NSApp.currentEvent?.modifierFlags.contains(.shift) == true {
-                insertNewlineIgnoringFieldEditor(nil)
-            } else if handleListEnter() {
-            } else {
-                onSubmit?()
-            }
-            return
-        }
-
-        if selector == #selector(cancelOperation(_:)) {
-            onCancel?()
-            return
-        }
-
-        if selector == #selector(insertTab(_:)) {
-            if let onMoveToNextField {
-                onMoveToNextField()
-                return
-            }
-        }
-
-        if selector == #selector(insertBacktab(_:)) {
-            if let onMoveToPreviousField {
-                onMoveToPreviousField()
-                return
-            }
-        }
-
-        super.doCommand(by: selector)
-    }
-
-    private func handleListEnter() -> Bool {
-        let selection = selectedRange()
-        guard selection.length == 0 else { return false }
-
-        let source = string as NSString
-        guard selection.location <= source.length else { return false }
-
-        let lineRange = source.lineRange(for: NSRange(location: selection.location, length: 0))
-        let lineString = source.substring(with: lineRange)
-        let contentLength = lineStringLengthWithoutTrailingNewlines(lineString)
-        let lineContentRange = NSRange(location: lineRange.location, length: contentLength)
-
-        guard selection.location == lineContentRange.location + lineContentRange.length else {
-            return false
-        }
-
-        let lineContent = source.substring(with: lineContentRange)
-        guard let continuation = parseListContinuation(
-            lineContentRange: lineContentRange,
-            lineContent: lineContent
-        ) else {
-            return false
-        }
-
-        if continuation.hasContent {
-            let marker = continuationMarker(for: continuation)
-            insertText("\n\(marker)", replacementRange: selection)
-        } else {
-            guard shouldChangeText(in: continuation.lineContentRange, replacementString: "") else {
-                return true
-            }
-            textStorage?.replaceCharacters(in: continuation.lineContentRange, with: "")
-            didChangeText()
-            setSelectedRange(NSRange(location: continuation.lineContentRange.location, length: 0))
-        }
-
-        return true
-    }
-
-    private func parseListContinuation(
+    private static func parseListContinuation(
         lineContentRange: NSRange,
         lineContent: String
     ) -> ListContinuation? {
@@ -101,7 +72,8 @@ final class CommandTextView: NSTextView {
         if let match = taskRegex.firstMatch(in: lineContent, options: [], range: fullRange),
            let indentation = substring(in: lineContent, range: match.range(at: 1)),
            let bullet = substring(in: lineContent, range: match.range(at: 2)),
-           let content = substring(in: lineContent, range: match.range(at: 3)) {
+           let content = substring(in: lineContent, range: match.range(at: 3))
+        {
             return ListContinuation(
                 lineContentRange: lineContentRange,
                 kind: .task(bullet: bullet),
@@ -113,7 +85,8 @@ final class CommandTextView: NSTextView {
         if let match = unorderedRegex.firstMatch(in: lineContent, options: [], range: fullRange),
            let indentation = substring(in: lineContent, range: match.range(at: 1)),
            let bullet = substring(in: lineContent, range: match.range(at: 2)),
-           let content = substring(in: lineContent, range: match.range(at: 3)) {
+           let content = substring(in: lineContent, range: match.range(at: 3))
+        {
             return ListContinuation(
                 lineContentRange: lineContentRange,
                 kind: .unordered(bullet: bullet),
@@ -126,7 +99,8 @@ final class CommandTextView: NSTextView {
            let indentation = substring(in: lineContent, range: match.range(at: 1)),
            let numberText = substring(in: lineContent, range: match.range(at: 2)),
            let separator = substring(in: lineContent, range: match.range(at: 3)),
-           let content = substring(in: lineContent, range: match.range(at: 4)) {
+           let content = substring(in: lineContent, range: match.range(at: 4))
+        {
             let number = Int(numberText) ?? 1
             return ListContinuation(
                 lineContentRange: lineContentRange,
@@ -139,7 +113,7 @@ final class CommandTextView: NSTextView {
         return nil
     }
 
-    private func continuationMarker(for continuation: ListContinuation) -> String {
+    private static func continuationMarker(for continuation: ListContinuation) -> String {
         switch continuation.kind {
         case let .unordered(bullet):
             return "\(continuation.indentation)\(bullet) "
@@ -150,7 +124,7 @@ final class CommandTextView: NSTextView {
         }
     }
 
-    private func lineStringLengthWithoutTrailingNewlines(_ line: String) -> Int {
+    private static func lineStringLengthWithoutTrailingNewlines(_ line: String) -> Int {
         let string = line as NSString
         var length = string.length
         while length > 0 {
@@ -164,22 +138,10 @@ final class CommandTextView: NSTextView {
         return length
     }
 
-    private func substring(in source: String, range: NSRange) -> String? {
+    private static func substring(in source: String, range: NSRange) -> String? {
         guard range.location != NSNotFound else { return nil }
         guard let range = Range(range, in: source) else { return nil }
         return String(source[range])
-    }
-
-    private var unorderedRegex: NSRegularExpression {
-        Self.unorderedRegex
-    }
-
-    private var orderedRegex: NSRegularExpression {
-        Self.orderedRegex
-    }
-
-    private var taskRegex: NSRegularExpression {
-        Self.taskRegex
     }
 
     private static let unorderedRegex = try! NSRegularExpression(

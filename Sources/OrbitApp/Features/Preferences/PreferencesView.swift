@@ -50,8 +50,22 @@ struct PreferencesView: View {
     @State private var newCategoryName = ""
     @State private var newCategoryColorHex = FocusDefaults.defaultCategoryColorHex
 
+    private var sections: [PreferencesSection] {
+        PreferencesSection.allCases.filter { section in
+            switch section {
+            case .hotkeys:
+                return store.settings.showsHotkeySettings
+            default:
+                return true
+            }
+        }
+    }
+
     private var activeSection: PreferencesSection {
-        selectedSection ?? .categories
+        if let selectedSection, sections.contains(selectedSection) {
+            return selectedSection
+        }
+        return sections.first ?? .categories
     }
 
     var body: some View {
@@ -66,19 +80,19 @@ struct PreferencesView: View {
         .background {
             OrbitSpaceBackground()
         }
-        .onExitCommand {
+        .orbitOnExitCommand {
             dismiss()
         }
     }
 
     private var sidebar: some View {
         List(selection: $selectedSection) {
-            ForEach(PreferencesSection.allCases) { section in
+            ForEach(sections) { section in
                 sidebarRow(for: section)
                     .tag(section)
             }
         }
-        .toolbar(removing: .sidebarToggle)
+        .orbitHideSidebarToggle()
     }
 
     private var detailContent: some View {
@@ -205,7 +219,7 @@ struct PreferencesView: View {
 
             preferencesSectionCard(title: "Feature Snapshot") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Built for focused work on macOS.")
+                    Text(store.platform.supportsMenuBar ? "Built for focused work on macOS." : "Built for focused work across Orbit's iPad-first and macOS experience.")
                         .orbitFont(.body)
 
                     Text("Menu bar-first session management")
@@ -247,7 +261,7 @@ struct PreferencesView: View {
                             .tag(option)
                     }
                 }
-                .pickerStyle(.radioGroup)
+                .pickerStyle(appearancePickerStyle)
                 .labelsHidden()
             }
 
@@ -261,7 +275,7 @@ struct PreferencesView: View {
                             .tag(option)
                     }
                 }
-                .pickerStyle(.radioGroup)
+                .pickerStyle(appearancePickerStyle)
                 .labelsHidden()
             }
 
@@ -325,6 +339,14 @@ struct PreferencesView: View {
         default:
             return "Development"
         }
+    }
+
+    private var appearancePickerStyle: some PickerStyle {
+#if os(macOS)
+        .radioGroup
+#else
+        .inline
+#endif
     }
 
     private var bundleIdentifier: String {

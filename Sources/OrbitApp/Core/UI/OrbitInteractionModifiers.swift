@@ -1,5 +1,7 @@
-import AppKit
 import SwiftUI
+
+#if os(macOS)
+import AppKit
 
 private struct OrbitPointerCursorModifier: ViewModifier {
     @Environment(\.isEnabled) private var isEnabled
@@ -106,3 +108,28 @@ extension View {
         .orbitPointerCursor()
     }
 }
+#else
+extension View {
+    func orbitPointerCursor() -> some View {
+        self
+    }
+
+    func orbitHoverEffect(
+        scale: CGFloat = 1.02,
+        lift: CGFloat = -1.5,
+        shadowColor: Color = OrbitTheme.Palette.heroCyan.opacity(0.22),
+        shadowRadius: CGFloat = 10
+    ) -> some View {
+        self
+    }
+
+    func orbitInteractiveControl(
+        scale: CGFloat = 1.02,
+        lift: CGFloat = -1.5,
+        shadowColor: Color = OrbitTheme.Palette.heroCyan.opacity(0.22),
+        shadowRadius: CGFloat = 10
+    ) -> some View {
+        self
+    }
+}
+#endif

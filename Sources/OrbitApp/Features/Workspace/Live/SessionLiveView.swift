@@ -89,9 +89,13 @@ struct SessionLiveView: View {
 
             HStack(spacing: 6) {
                 if store.taskDrafts.isEmpty {
-                    Text("Use + or")
-                    HotkeyHintLabel(shortcut: store.hotkeys.captureShortcut)
-                    Text("to capture your first task for this session.")
+                    if store.platform.supportsGlobalHotkeys {
+                        Text("Use + or")
+                        HotkeyHintLabel(shortcut: store.hotkeys.captureShortcut)
+                        Text("to capture your first task for this session.")
+                    } else {
+                        Text("Use + to capture your first task for this session.")
+                    }
                 } else {
                     Text(emptyStateSubtitle)
                 }
@@ -116,7 +120,11 @@ struct SessionLiveView: View {
             }
             .buttonStyle(.orbitHero)
             .frame(maxWidth: 500)
-            .help("Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))")
+            .help(
+                store.platform.supportsGlobalHotkeys
+                ? "Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))"
+                : "Start Session"
+            )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .offset(y: -48)
@@ -474,8 +482,10 @@ struct SessionLiveView: View {
                 Text("Start Session")
                     .orbitFont(.title3, weight: .bold)
                 Spacer()
-                HotkeyHintLabel(shortcut: shortcut, tone: .inverted)
-                    .orbitFont(.caption, weight: .semibold, monospacedDigits: true)
+                if store.platform.supportsGlobalHotkeys {
+                    HotkeyHintLabel(shortcut: shortcut, tone: .inverted)
+                        .orbitFont(.caption, weight: .semibold, monospacedDigits: true)
+                }
             }
 
             Text("Ignite a new focus orbit")

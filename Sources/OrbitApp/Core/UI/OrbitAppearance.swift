@@ -1,5 +1,8 @@
-import AppKit
 import SwiftUI
+
+#if os(macOS)
+import AppKit
+#endif
 
 private struct OrbitAppearanceKey: EnvironmentKey {
     static let defaultValue = AppearanceSettings.default
@@ -31,7 +34,18 @@ private struct OrbitAppearanceModifier: ViewModifier {
     }
 }
 
-private struct OrbitWindowAppearanceConfigurator: NSViewRepresentable {
+private struct OrbitWindowAppearanceConfigurator: View {
+    var body: some View {
+#if os(macOS)
+        OrbitMacWindowAppearanceConfigurator()
+#else
+        Color.clear.frame(width: 0, height: 0)
+#endif
+    }
+}
+
+#if os(macOS)
+private struct OrbitMacWindowAppearanceConfigurator: NSViewRepresentable {
     func makeNSView(context: Context) -> OrbitWindowAppearanceView {
         OrbitWindowAppearanceView()
     }
@@ -60,3 +74,4 @@ private final class OrbitWindowAppearanceView: NSView {
         window.invalidateShadow()
     }
 }
+#endif

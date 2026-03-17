@@ -1,6 +1,9 @@
-import Carbon
 import Dependencies
 import Foundation
+
+#if os(macOS)
+import Carbon
+#endif
 
 struct HotkeyManager: Sendable {
     var register: @Sendable (_ shortcut: String, _ action: @escaping @Sendable () -> Void) -> Void
@@ -9,6 +12,7 @@ struct HotkeyManager: Sendable {
 
 extension HotkeyManager: DependencyKey {
     static var liveValue: HotkeyManager {
+#if os(macOS)
         HotkeyManager(
             register: { shortcut, action in
                 HotkeyCenter.shared.register(shortcut: shortcut, action: action)
@@ -17,6 +21,12 @@ extension HotkeyManager: DependencyKey {
                 HotkeyCenter.shared.unregister(shortcut: shortcut)
             }
         )
+#else
+        HotkeyManager(
+            register: { _, _ in },
+            unregister: { _ in }
+        )
+#endif
     }
 
     static var testValue: HotkeyManager {
@@ -34,6 +44,7 @@ extension DependencyValues {
     }
 }
 
+#if os(macOS)
 private final class HotkeyCenter: @unchecked Sendable {
     static let shared = HotkeyCenter()
 
@@ -183,6 +194,7 @@ private let keyCodeMap: [String: Int] = [
     "u": Int(kVK_ANSI_U), "v": Int(kVK_ANSI_V), "w": Int(kVK_ANSI_W), "x": Int(kVK_ANSI_X),
     "y": Int(kVK_ANSI_Y), "z": Int(kVK_ANSI_Z),
 ]
+#endif
 
 private extension NSLock {
     func withLock<T>(_ operation: () -> T) -> T {

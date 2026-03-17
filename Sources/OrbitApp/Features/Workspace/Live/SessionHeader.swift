@@ -24,7 +24,7 @@ struct SessionHeader: View {
                         .onSubmit {
                             saveRenaming()
                         }
-                        .onExitCommand {
+                        .orbitOnExitCommand {
                             cancelRenaming()
                         }
                 } else {

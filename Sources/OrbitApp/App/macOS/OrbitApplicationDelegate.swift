@@ -1,9 +1,11 @@
-import AppKit
 import Foundation
 
 extension Notification.Name {
     static let orbitReopenRequested = Notification.Name("OrbitApp.reopenRequested")
 }
+
+#if os(macOS)
+import AppKit
 
 final class OrbitApplicationDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -11,3 +13,4 @@ final class OrbitApplicationDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 }
+#endif

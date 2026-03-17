@@ -316,7 +316,7 @@ struct TaskRow: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(.thinMaterial)
         )
-        .onExitCommand {
+        .orbitOnExitCommand {
             isPriorityPopoverPresented = false
         }
     }

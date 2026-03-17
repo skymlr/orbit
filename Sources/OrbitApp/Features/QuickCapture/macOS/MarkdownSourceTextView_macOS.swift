@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import SwiftUI
 
@@ -67,9 +68,7 @@ struct MarkdownSourceTextView: NSViewRepresentable {
         textView.onMoveToPreviousField = onMoveToPreviousField
 
         context.coordinator.isSynchronizingFromSwiftUI = true
-        defer {
-            context.coordinator.isSynchronizingFromSwiftUI = false
-        }
+        defer { context.coordinator.isSynchronizingFromSwiftUI = false }
 
         if textView.string != text {
             textView.string = text
@@ -103,8 +102,7 @@ struct MarkdownSourceTextView: NSViewRepresentable {
             let updatedText = textView.string
             guard parent.text != updatedText else { return }
             DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                guard !self.isSynchronizingFromSwiftUI else { return }
+                guard let self, !self.isSynchronizingFromSwiftUI else { return }
                 guard self.parent.text != updatedText else { return }
                 self.parent.text = updatedText
             }
@@ -127,8 +125,7 @@ struct MarkdownSourceTextView: NSViewRepresentable {
             let newSelection = textView.selectedRange()
             guard parent.selectionRange != newSelection else { return }
             DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                guard !self.isSynchronizingFromSwiftUI else { return }
+                guard let self, !self.isSynchronizingFromSwiftUI else { return }
                 guard self.parent.selectionRange != newSelection else { return }
                 self.parent.selectionRange = newSelection
             }
@@ -173,3 +170,4 @@ struct MarkdownSourceTextView: NSViewRepresentable {
         }
     }
 }
+#endif

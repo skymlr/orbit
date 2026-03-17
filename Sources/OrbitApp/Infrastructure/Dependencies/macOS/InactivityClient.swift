@@ -1,6 +1,9 @@
 import Dependencies
 import Foundation
+
+#if os(macOS)
 import IOKit
+#endif
 
 struct InactivityClient: Sendable {
     var idleDuration: @Sendable () -> TimeInterval
@@ -30,6 +33,7 @@ extension DependencyValues {
 }
 
 private func systemIdleDuration() -> TimeInterval {
+#if os(macOS)
     let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOHIDSystem"))
     guard service != 0 else { return 0 }
     defer { IOObjectRelease(service) }
@@ -45,4 +49,7 @@ private func systemIdleDuration() -> TimeInterval {
     }
 
     return TimeInterval(idleTime.uint64Value) / 1_000_000_000
+#else
+    0
+#endif
 }

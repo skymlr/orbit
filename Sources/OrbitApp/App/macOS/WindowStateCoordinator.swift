@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import ComposableArchitecture
 import SwiftUI
@@ -16,43 +17,40 @@ struct WindowStateCoordinator: View {
         Color.clear
             .frame(width: 0, height: 0)
             .task {
-                syncWindows(from: [], to: store.windowDestinations)
+                syncWorkspacePresentation(isPresented: store.presentation.isWorkspacePresented)
+                syncCapturePresentation(isPresented: store.presentation.isCapturePresented)
             }
-            .onChange(of: store.windowDestinations) { oldValue, newValue in
-                syncWindows(from: oldValue, to: newValue)
+            .onChange(of: store.presentation.isWorkspacePresented) { _, isPresented in
+                syncWorkspacePresentation(isPresented: isPresented)
             }
-            .onChange(of: store.workspaceWindowFocusRequest) { _, _ in
-                guard store.windowDestinations.contains(.workspaceWindow) else {
-                    return
-                }
+            .onChange(of: store.presentation.isCapturePresented) { _, isPresented in
+                syncCapturePresentation(isPresented: isPresented)
+            }
+            .onChange(of: store.presentation.workspacePresentationRequest) { _, _ in
+                guard store.presentation.isWorkspacePresented else { return }
                 openWindow(id: OrbitWindowID.workspace)
                 bringWorkspaceWindowToFront()
             }
-            .onChange(of: store.captureWindowFocusRequest) { _, _ in
-                guard store.windowDestinations.contains(.captureWindow) else {
-                    return
-                }
+            .onChange(of: store.presentation.capturePresentationRequest) { _, _ in
+                guard store.presentation.isCapturePresented else { return }
                 QuickCapturePanelController.shared.present(store: store)
             }
     }
 
-    private func syncWindows(from oldValue: Set<AppFeature.WindowDestination>, to newValue: Set<AppFeature.WindowDestination>) {
-        let removed = oldValue.subtracting(newValue)
-        let added = newValue.subtracting(oldValue)
-
-        if removed.contains(.captureWindow) {
-            QuickCapturePanelController.shared.dismiss()
-        }
-        if removed.contains(.workspaceWindow) {
-            dismissWindow(id: OrbitWindowID.workspace)
-        }
-
-        if added.contains(.workspaceWindow) {
+    private func syncWorkspacePresentation(isPresented: Bool) {
+        if isPresented {
             openWindow(id: OrbitWindowID.workspace)
             bringWorkspaceWindowToFront()
+        } else {
+            dismissWindow(id: OrbitWindowID.workspace)
         }
-        if added.contains(.captureWindow) {
+    }
+
+    private func syncCapturePresentation(isPresented: Bool) {
+        if isPresented {
             QuickCapturePanelController.shared.present(store: store)
+        } else {
+            QuickCapturePanelController.shared.dismiss()
         }
     }
 
@@ -67,3 +65,4 @@ struct WindowStateCoordinator: View {
         }
     }
 }
+#endif

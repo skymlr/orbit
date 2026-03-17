@@ -1,4 +1,3 @@
-import AppKit
 import CoreText
 import Foundation
 
@@ -29,8 +28,8 @@ enum OrbitFontRegistry {
         }
     }
 
-    static func font(named postScriptName: String, size: CGFloat) -> NSFont? {
-        NSFont(name: postScriptName, size: size)
+    static func font(named postScriptName: String, size: CGFloat) -> OrbitPlatformFont? {
+        OrbitPlatformFont(name: postScriptName, size: size)
     }
 
     private static func bundledFontURLs(bundle: Bundle = orbitResourceBundle) -> [URL] {
@@ -42,9 +41,5 @@ enum OrbitFontRegistry {
 }
 
 private var orbitResourceBundle: Bundle {
-#if SWIFT_PACKAGE
-    Bundle.module
-#else
     Bundle.main
-#endif
 }

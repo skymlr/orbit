@@ -18,6 +18,10 @@ extension AppFeature {
         case captureTapped
         case openWorkspaceTapped
         case endSessionTapped
+        case exportAllButtonTapped
+        case exportSessionButtonTapped(UUID)
+        case exportDirectorySelected(URL)
+        case exportDirectorySelectionCancelled
 
         case workspaceWindowClosed
         case captureWindowClosed
@@ -50,8 +54,9 @@ extension AppFeature {
         case settingsDeleteCategoryTapped(UUID)
         case settingsRenameSessionTapped(UUID, String)
         case settingsDeleteSessionTapped(UUID)
-        case settingsExportAllTapped(URL)
-        case settingsExportSessionTapped(UUID, URL)
+        case sharedExportPrepared([URL])
+        case sharedExportFailed(String)
+        case sharedExportDismissed
         case showToast(tone: State.Toast.Tone, message: String)
         case toastAutoDismissFired(UUID)
         case toastDismissTapped

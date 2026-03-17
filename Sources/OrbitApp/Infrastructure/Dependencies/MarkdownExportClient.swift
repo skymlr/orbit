@@ -2,14 +2,24 @@ import Dependencies
 import Foundation
 
 struct MarkdownExportClient: Sendable {
-    var export: @Sendable (_ sessionIDs: [UUID], _ directoryURL: URL) async throws -> [URL]
+    var exportToDirectory: @Sendable (_ sessionIDs: [UUID], _ directoryURL: URL) async throws -> [URL]
+    var exportForSharing: @Sendable (_ sessionIDs: [UUID]) async throws -> [URL]
 }
 
 extension MarkdownExportClient: DependencyKey {
     static var liveValue: MarkdownExportClient {
         MarkdownExportClient(
-            export: { sessionIDs, directoryURL in
+            exportToDirectory: { sessionIDs, directoryURL in
                 @Dependency(\.focusRepository) var repository
+                return try await repository.exportSessionsMarkdown(sessionIDs, directoryURL)
+            },
+            exportForSharing: { sessionIDs in
+                @Dependency(\.focusRepository) var repository
+
+                let directoryURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("OrbitExports", isDirectory: true)
+                    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+                try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
                 return try await repository.exportSessionsMarkdown(sessionIDs, directoryURL)
             }
         )
@@ -17,7 +27,8 @@ extension MarkdownExportClient: DependencyKey {
 
     static var testValue: MarkdownExportClient {
         MarkdownExportClient(
-            export: { _, _ in [] }
+            exportToDirectory: { _, _ in [] },
+            exportForSharing: { _ in [] }
         )
     }
 }

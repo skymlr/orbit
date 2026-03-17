@@ -1,7 +1,10 @@
-import AppKit
 import ComposableArchitecture
 import Foundation
 import SwiftUI
+
+#if os(macOS)
+import AppKit
+#endif
 
 struct SessionPageView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
@@ -12,7 +15,10 @@ struct SessionPageView: View {
     @State private var isHistoryCalendarPresented = false
     @State private var isExportAllConfirmationPresented = false
     @State private var isHistorySearchPresented = false
+    @StateObject private var historySearchModel = HistorySearchPanelModel()
+#if os(macOS)
     @State private var historySearchPanelController = HistorySearchPanelController()
+#endif
 
     var body: some View {
         Group {
@@ -32,7 +38,9 @@ struct SessionPageView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(18)
+#if os(macOS)
         .frame(minWidth: 880, minHeight: 640)
+#endif
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
@@ -75,7 +83,7 @@ struct SessionPageView: View {
                     } label: {
                         Label("Search History", systemImage: "magnifyingglass")
                     }
-                    .help("Open floating history search")
+                    .help(historySearchButtonHelpText)
 
                     Button {
                         exportAllSessionsToolbarButtonTapped()
@@ -86,10 +94,12 @@ struct SessionPageView: View {
                     .help("Export markdown files for all completed sessions")
                 }
 
+#if os(macOS)
                 SettingsLink {
                     Label("Preferences", systemImage: "gearshape")
                 }
                 .help("Open Settings")
+#endif
             }
         }
         .confirmationDialog(
@@ -117,6 +127,10 @@ struct SessionPageView: View {
         .onChange(of: store.appearance) { _, _ in
             refreshHistorySearchPanelIfNeeded()
         }
+        .onChange(of: store.presentation.pendingDirectoryExport?.id) { _, requestID in
+            guard requestID != nil else { return }
+            presentPendingDirectoryExportIfNeeded()
+        }
         .onChange(of: selectedHistoryDay) { _, newDay in
             let normalized = SessionHistoryBrowserSupport.normalizedDay(for: newDay)
             if selectedHistoryDay != normalized {
@@ -137,6 +151,30 @@ struct SessionPageView: View {
         }
         .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
         .animation(.easeInOut(duration: 0.16), value: isHistoryMode)
+#if os(iOS)
+        .sheet(isPresented: $isHistorySearchPresented) {
+            NavigationStack {
+                ZStack {
+                    OrbitSpaceBackground()
+
+                    HistorySearchView(model: historySearchModel)
+                        .padding(18)
+                }
+                .navigationTitle("Search History")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") {
+                            dismissHistorySearchPanel()
+                        }
+                    }
+                }
+                .orbitAppearance(store.appearance)
+                .preferredColorScheme(.dark)
+            }
+            .presentationDetents([.large])
+        }
+#endif
     }
 
     private var historyCalendarPopover: some View {
@@ -196,17 +234,14 @@ struct SessionPageView: View {
 
     private func exportAllSessionsConfirmationAccepted() {
         guard !completedHistorySessionIDs.isEmpty else { return }
-        chooseExportDirectory { url in
-            store.send(.settingsExportAllTapped(url))
-        }
+        store.send(.exportAllButtonTapped)
     }
 
     private func exportSessionButtonTapped(sessionID: UUID) {
-        chooseExportDirectory { url in
-            store.send(.settingsExportSessionTapped(sessionID, url))
-        }
+        store.send(.exportSessionButtonTapped(sessionID))
     }
 
+#if os(macOS)
     private func chooseExportDirectory(_ onURLSelected: (URL) -> Void) {
         let panel = NSOpenPanel()
         panel.title = "Choose Export Folder"
@@ -219,6 +254,7 @@ struct SessionPageView: View {
             onURLSelected(url)
         }
     }
+#endif
 
     private func enterHistoryMode(on day: Date) {
         isHistoryMode = true
@@ -263,22 +299,30 @@ struct SessionPageView: View {
         guard isHistoryMode else { return }
 
         let shouldResetSearch = !isHistorySearchPresented
+        configureHistorySearchModel(resetSearch: shouldResetSearch)
         isHistorySearchPresented = true
+#if os(macOS)
         historySearchPanelController.present(
             configuration: historySearchPanelConfiguration(),
             resetSearch: shouldResetSearch
         )
+#endif
     }
 
     private func dismissHistorySearchPanel() {
         guard isHistorySearchPresented else { return }
         isHistorySearchPresented = false
+#if os(macOS)
         historySearchPanelController.dismiss()
+#endif
     }
 
     private func refreshHistorySearchPanelIfNeeded() {
         guard isHistorySearchPresented else { return }
+        configureHistorySearchModel(resetSearch: false)
+#if os(macOS)
         historySearchPanelController.refresh(configuration: historySearchPanelConfiguration())
+#endif
     }
 
     private func historySearchPanelConfiguration() -> HistorySearchPanelConfiguration {
@@ -292,6 +336,46 @@ struct SessionPageView: View {
                 isHistorySearchPresented = false
             }
         )
+    }
+
+    private var historySearchButtonHelpText: String {
+#if os(macOS)
+        "Open floating history search"
+#else
+        "Open history search"
+#endif
+    }
+
+    private func configureHistorySearchModel(resetSearch: Bool) {
+        let configuration = historySearchPanelConfiguration()
+        historySearchModel.sessions = configuration.sessions
+        historySearchModel.excludingActiveSessionID = configuration.excludingActiveSessionID
+        historySearchModel.appearance = configuration.appearance
+        historySearchModel.onGoToDayRequested = { day in
+            configuration.onGoToDay(day)
+        }
+        historySearchModel.onGoToSessionRequested = { session in
+            configuration.onGoToSession(session.startedAt, session.id)
+        }
+        historySearchModel.onCloseRequested = {
+            configuration.onClose()
+        }
+
+        if resetSearch {
+            historySearchModel.resetSearch()
+        }
+    }
+
+    private func presentPendingDirectoryExportIfNeeded() {
+#if os(macOS)
+        guard store.presentation.pendingDirectoryExport != nil else { return }
+        chooseExportDirectory { url in
+            store.send(.exportDirectorySelected(url))
+        }
+        if store.presentation.pendingDirectoryExport != nil {
+            store.send(.exportDirectorySelectionCancelled)
+        }
+#endif
     }
 
     private func navigateToHistoryDayFromSearch(_ day: Date) {

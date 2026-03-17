@@ -47,6 +47,7 @@ extension AppFeature {
             }
 
         case .settingsSaveHotkeysTapped:
+            guard state.platform.supportsGlobalHotkeys else { return .none }
             let previous = state.hotkeys
 
             var startShortcut = state.settings.startShortcut.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -85,6 +86,7 @@ extension AppFeature {
             )
 
         case .settingsResetHotkeysTapped:
+            guard state.platform.supportsGlobalHotkeys else { return .none }
             let previous = state.hotkeys
             let defaults = HotkeySettings.default
 
@@ -172,7 +174,7 @@ extension AppFeature {
                 }
             }
 
-        case let .settingsExportAllTapped(directoryURL):
+        case .exportAllButtonTapped:
             let sessionIDs = state.settings.sessions
                 .filter { $0.endedAt != nil }
                 .map(\.id)
@@ -180,30 +182,52 @@ extension AppFeature {
                 return .send(.showToast(tone: .failure, message: "No completed sessions to export"))
             }
 
+            return requestExport(for: &state, sessionIDs: sessionIDs)
+
+        case let .exportSessionButtonTapped(sessionID):
+            return requestExport(for: &state, sessionIDs: [sessionID])
+
+        case let .exportDirectorySelected(directoryURL):
+            guard let request = state.presentation.pendingDirectoryExport else { return .none }
+            state.presentation.pendingDirectoryExport = nil
+
             return .run { send in
                 do {
-                    let urls = try await markdownExportClient.export(sessionIDs, directoryURL)
+                    let urls = try await markdownExportClient.exportToDirectory(request.sessionIDs, directoryURL)
+                    guard !urls.isEmpty else {
+                        await send(.showToast(tone: .failure, message: "Export failed"))
+                        return
+                    }
+                    let message = urls.count == 1
+                        ? "Session exported"
+                        : "Exported \(urls.count) session file(s)."
                     await send(.settingsRefreshTapped)
-                    await send(.showToast(tone: .success, message: "Exported \(urls.count) session file(s)."))
+                    await send(.showToast(tone: .success, message: message))
                 } catch {
                     await send(.showToast(tone: .failure, message: "Export failed"))
                 }
             }
 
-        case let .settingsExportSessionTapped(sessionID, directoryURL):
-            return .run { send in
-                do {
-                    let urls = try await markdownExportClient.export([sessionID], directoryURL)
-                    guard !urls.isEmpty else {
-                        await send(.showToast(tone: .failure, message: "Export failed"))
-                        return
-                    }
-                    await send(.settingsRefreshTapped)
-                    await send(.showToast(tone: .success, message: "Session exported"))
-                } catch {
-                    await send(.showToast(tone: .failure, message: "Export failed"))
-                }
+        case .exportDirectorySelectionCancelled:
+            state.presentation.pendingDirectoryExport = nil
+            return .none
+
+        case let .sharedExportPrepared(urls):
+            guard !urls.isEmpty else {
+                return .send(.showToast(tone: .failure, message: "Export failed"))
             }
+            state.presentation.sharedExport = State.PresentationState.SharedExport(
+                id: uuid(),
+                urls: urls
+            )
+            return .none
+
+        case let .sharedExportFailed(message):
+            return .send(.showToast(tone: .failure, message: message))
+
+        case .sharedExportDismissed:
+            state.presentation.sharedExport = nil
+            return .none
 
         case let .showToast(tone, message):
             let toast = State.Toast(
@@ -230,5 +254,32 @@ extension AppFeature {
         case .settingsDataResponse:
             return .none
         }
+    }
+
+    private func requestExport(
+        for state: inout State,
+        sessionIDs: [UUID]
+    ) -> Effect<Action> {
+        guard !sessionIDs.isEmpty else {
+            return .send(.showToast(tone: .failure, message: "Export failed"))
+        }
+
+        if state.platform.usesShareExport {
+            return .run { send in
+                do {
+                    let urls = try await markdownExportClient.exportForSharing(sessionIDs)
+                    await send(.sharedExportPrepared(urls))
+                } catch {
+                    await send(.sharedExportFailed("Export failed"))
+                }
+            }
+        }
+
+        let nextID = (state.presentation.pendingDirectoryExport?.id ?? 0) &+ 1
+        state.presentation.pendingDirectoryExport = State.PresentationState.DirectoryExportRequest(
+            id: nextID,
+            sessionIDs: sessionIDs
+        )
+        return .none
     }
 }

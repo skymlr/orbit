@@ -5,10 +5,11 @@ import PackageDescription
 let package = Package(
     name: "Orbit",
     platforms: [
+        .iOS(.v26),
         .macOS(.v26),
     ],
     products: [
-        .executable(name: "OrbitApp", targets: ["OrbitApp"]),
+        .library(name: "OrbitApp", targets: ["OrbitApp"]),
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.16.0"),
@@ -19,7 +20,7 @@ let package = Package(
         .package(url: "https://github.com/tevelee/SwiftUI-Flow.git", from: "3.1.1"),
     ],
     targets: [
-        .executableTarget(
+        .target(
             name: "OrbitApp",
             dependencies: [
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
@@ -29,8 +30,9 @@ let package = Package(
                 .product(name: "StructuredQueries", package: "swift-structured-queries"),
                 .product(name: "Flow", package: "swiftui-flow"),
             ],
-            resources: [
-                .copy("../../Resources/Fonts"),
+            exclude: [
+                "App/macOS/OrbitMacApp.swift",
+                "App/iOS/OrbitIOSApp.swift",
             ]
         ),
         .testTarget(

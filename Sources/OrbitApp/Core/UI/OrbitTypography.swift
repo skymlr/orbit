@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 enum OrbitTypography {
@@ -12,7 +11,7 @@ enum OrbitTypography {
         Font(
             appKitFont(
                 style,
-                weight: weight.map(nsFontWeight(for:)),
+                weight: weight.map(platformFontWeight(for:)),
                 appearance: appearance,
                 monospaced: monospaced,
                 monospacedDigits: monospacedDigits
@@ -27,13 +26,13 @@ enum OrbitTypography {
         appearance: AppearanceSettings,
         monospaced: Bool = false,
         monospacedDigits: Bool = false,
-        fontLookup: (String, CGFloat) -> NSFont? = OrbitFontRegistry.font(named:size:)
+        fontLookup: (String, CGFloat) -> OrbitPlatformFont? = OrbitFontRegistry.font(named:size:)
     ) -> Font {
         Font(
             appKitFont(
                 size: size,
-                weight: weight.map(nsFontWeight(for:)) ?? .regular,
-                design: design.map(nsFontDesign(for:)),
+                weight: weight.map(platformFontWeight(for:)) ?? .regular,
+                design: design.map(platformFontDesign(for:)),
                 appearance: appearance,
                 monospaced: monospaced,
                 monospacedDigits: monospacedDigits,
@@ -44,14 +43,19 @@ enum OrbitTypography {
 
     static func appKitFont(
         _ style: Font.TextStyle,
-        weight: NSFont.Weight? = nil,
+        weight: OrbitPlatformFontWeight? = nil,
         appearance: AppearanceSettings,
         monospaced: Bool = false,
         monospacedDigits: Bool = false,
-        fontLookup: (String, CGFloat) -> NSFont? = OrbitFontRegistry.font(named:size:)
-    ) -> NSFont {
-        let textStyle = nsTextStyle(for: style)
-        let preferredFont = NSFont.preferredFont(forTextStyle: textStyle)
+        fontLookup: (String, CGFloat) -> OrbitPlatformFont? = OrbitFontRegistry.font(named:size:)
+    ) -> OrbitPlatformFont {
+        let textStyle = platformTextStyle(for: style)
+        let preferredFont: OrbitPlatformFont
+#if os(macOS)
+        preferredFont = NSFont.preferredFont(forTextStyle: textStyle)
+#else
+        preferredFont = UIFont.preferredFont(forTextStyle: textStyle)
+#endif
         return appKitFont(
             size: preferredFont.pointSize,
             weight: weight ?? .regular,
@@ -64,18 +68,18 @@ enum OrbitTypography {
 
     static func appKitFont(
         size: CGFloat,
-        weight: NSFont.Weight = .regular,
-        design: NSFontDescriptor.SystemDesign? = nil,
+        weight: OrbitPlatformFontWeight = .regular,
+        design: OrbitPlatformFontDescriptorDesign? = nil,
         appearance: AppearanceSettings,
         monospaced: Bool = false,
         monospacedDigits: Bool = false,
-        fontLookup: (String, CGFloat) -> NSFont? = OrbitFontRegistry.font(named:size:)
-    ) -> NSFont {
+        fontLookup: (String, CGFloat) -> OrbitPlatformFont? = OrbitFontRegistry.font(named:size:)
+    ) -> OrbitPlatformFont {
         if monospaced {
-            return NSFont.monospacedSystemFont(ofSize: size, weight: weight)
+            return OrbitPlatformFont.monospacedSystemFont(ofSize: size, weight: weight)
         }
         if monospacedDigits {
-            return NSFont.monospacedDigitSystemFont(ofSize: size, weight: weight)
+            return OrbitPlatformFont.monospacedDigitSystemFont(ofSize: size, weight: weight)
         }
 
         OrbitFontRegistry.registerBundledFonts()
@@ -111,20 +115,25 @@ enum OrbitTypography {
 
     private static func systemFont(
         size: CGFloat,
-        weight: NSFont.Weight,
-        design: NSFontDescriptor.SystemDesign? = nil
-    ) -> NSFont {
-        let baseFont = NSFont.systemFont(ofSize: size, weight: weight)
+        weight: OrbitPlatformFontWeight,
+        design: OrbitPlatformFontDescriptorDesign? = nil
+    ) -> OrbitPlatformFont {
+        let baseFont = OrbitPlatformFont.systemFont(ofSize: size, weight: weight)
         guard let design else { return baseFont }
-        guard let descriptor = baseFont.fontDescriptor.withDesign(design),
-              let designedFont = NSFont(descriptor: descriptor, size: size)
-        else {
+        guard let descriptor = baseFont.fontDescriptor.withDesign(design) else {
             return baseFont
         }
+#if os(macOS)
+        guard let designedFont = OrbitPlatformFont(descriptor: descriptor, size: size) else {
+            return baseFont
+        }
+#else
+        let designedFont = OrbitPlatformFont(descriptor: descriptor, size: size)
+#endif
         return designedFont
     }
 
-    private static func postScriptName(for option: OrbitFontOption, weight: NSFont.Weight) -> String? {
+    private static func postScriptName(for option: OrbitFontOption, weight: OrbitPlatformFontWeight) -> String? {
         switch option {
         case .system:
             return nil
@@ -151,18 +160,18 @@ enum OrbitTypography {
         }
     }
 
-    private static func weightBucket(for weight: NSFont.Weight) -> OrbitFontWeightBucket {
+    private static func weightBucket(for weight: OrbitPlatformFontWeight) -> OrbitFontWeightBucket {
         switch weight {
-        case ..<NSFont.Weight.semibold:
+        case ..<OrbitPlatformFontWeight.semibold:
             return .regular
-        case ..<NSFont.Weight.bold:
+        case ..<OrbitPlatformFontWeight.bold:
             return .semibold
         default:
             return .bold
         }
     }
 
-    private static func nsTextStyle(for style: Font.TextStyle) -> NSFont.TextStyle {
+    private static func platformTextStyle(for style: Font.TextStyle) -> OrbitPlatformTextStyle {
         switch style {
         case .largeTitle:
             return .largeTitle
@@ -181,7 +190,11 @@ enum OrbitTypography {
         case .callout:
             return .callout
         case .caption:
+#if os(macOS)
             return .caption1
+#else
+            return .caption1
+#endif
         case .caption2:
             return .caption2
         default:
@@ -189,7 +202,7 @@ enum OrbitTypography {
         }
     }
 
-    private static func nsFontWeight(for weight: Font.Weight) -> NSFont.Weight {
+    private static func platformFontWeight(for weight: Font.Weight) -> OrbitPlatformFontWeight {
         switch weight {
         case .ultraLight:
             return .ultraLight
@@ -214,7 +227,7 @@ enum OrbitTypography {
         }
     }
 
-    private static func nsFontDesign(for design: Font.Design) -> NSFontDescriptor.SystemDesign {
+    private static func platformFontDesign(for design: Font.Design) -> OrbitPlatformFontDescriptorDesign {
         switch design {
         case .default:
             return .default

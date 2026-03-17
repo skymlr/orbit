@@ -1,4 +1,3 @@
-import AppKit
 import Testing
 #if canImport(Orbit)
 @testable import Orbit
@@ -11,13 +10,13 @@ struct OrbitTypographyTests {
     func customFontFallsBackToSystemFontWhenLookupFails() {
         let expected = OrbitTypography.appKitFont(
             size: 14,
-            weight: .semibold,
+            weight: OrbitPlatformFontWeight.semibold,
             appearance: .default
         )
 
         let fallback = OrbitTypography.appKitFont(
             size: 14,
-            weight: .semibold,
+            weight: OrbitPlatformFontWeight.semibold,
             appearance: AppearanceSettings(
                 font: .geist,
                 background: .spaceBlue,

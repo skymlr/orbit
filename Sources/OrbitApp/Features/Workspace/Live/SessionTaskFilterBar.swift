@@ -149,7 +149,7 @@ struct SessionTaskFilterBar: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.thinMaterial)
         )
-        .onExitCommand {
+        .orbitOnExitCommand {
             isTaskFilterPopoverPresented = false
         }
     }

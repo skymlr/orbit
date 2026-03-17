@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import ComposableArchitecture
 import SwiftUI
@@ -130,8 +131,9 @@ private struct QuickCapturePanelRootView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .orbitAppearance(store.appearance)
             .preferredColorScheme(.dark)
-            .onExitCommand {
+            .orbitOnExitCommand {
                 store.send(.captureWindowClosed)
             }
     }
 }
+#endif

@@ -9,6 +9,10 @@ extension AppFeature {
                 .bootstrapActiveSessionFailed,
                 .bootstrapActiveSessionLoaded,
                 .captureWindowClosed,
+                .exportDirectorySelectionCancelled,
+                .exportDirectorySelected,
+                .exportAllButtonTapped,
+                .exportSessionButtonTapped,
                 .hotkeyTriggered,
                 .inactivityTick,
                 .loadActiveSessionResponse,
@@ -17,18 +21,19 @@ extension AppFeature {
                 .registerHotkeys,
                 .retryBootstrapActiveSessionButtonTapped,
                 .settingsAddCategoryTapped,
-                .settingsDataResponse,
                 .settingsDeleteCategoryTapped,
                 .settingsDeleteSessionTapped,
-                .settingsExportAllTapped,
-                .settingsExportSessionTapped,
+                .settingsDataResponse,
                 .settingsRefreshTapped,
-                .settingsResetAppearanceTapped,
                 .settingsRenameCategoryTapped,
                 .settingsRenameSessionTapped,
+                .settingsResetAppearanceTapped,
                 .settingsResetHotkeysTapped,
                 .settingsSaveAppearanceTapped,
                 .settingsSaveHotkeysTapped,
+                .sharedExportDismissed,
+                .sharedExportFailed,
+                .sharedExportPrepared,
                 .showToast,
                 .toastAutoDismissFired,
                 .toastDismissTapped,
@@ -39,7 +44,7 @@ extension AppFeature {
             if state.activeSession != nil {
                 return .send(.openWorkspaceTapped)
             }
-            state.windowDestinations.insert(.workspaceWindow)
+            state.presentation.isWorkspacePresented = true
 
             return .run { send in
                 do {
@@ -60,8 +65,8 @@ extension AppFeature {
 
         case .captureTapped:
             if state.activeSession != nil {
-                state.windowDestinations.insert(.captureWindow)
-                state.captureWindowFocusRequest &+= 1
+                state.presentation.isCapturePresented = true
+                state.presentation.capturePresentationRequest &+= 1
                 return .none
             }
 
@@ -82,8 +87,8 @@ extension AppFeature {
             }
 
         case .openWorkspaceTapped:
-            state.windowDestinations.insert(.workspaceWindow)
-            state.workspaceWindowFocusRequest &+= 1
+            state.presentation.isWorkspacePresented = true
+            state.presentation.workspacePresentationRequest &+= 1
             return .none
 
         case .endSessionTapped:
@@ -92,10 +97,10 @@ extension AppFeature {
                 id: uuid(),
                 name: active.name
             )
-            state.windowDestinations.remove(.captureWindow)
-            let didOpenWorkspace = state.windowDestinations.insert(.workspaceWindow).inserted
-            if didOpenWorkspace {
-                state.workspaceWindowFocusRequest &+= 1
+            state.presentation.isCapturePresented = false
+            if !state.presentation.isWorkspacePresented {
+                state.presentation.isWorkspacePresented = true
+                state.presentation.workspacePresentationRequest &+= 1
             }
             return .none
 
@@ -110,7 +115,7 @@ extension AppFeature {
             )
 
             state.captureDraft = State.CaptureDraft(selectedCategoryIDs: selectedCategoryIDs)
-            state.windowDestinations.remove(.captureWindow)
+            state.presentation.isCapturePresented = false
 
             return .run { send in
                 do {
@@ -158,8 +163,8 @@ extension AppFeature {
             state.captureDraft = State.CaptureDraft(
                 selectedCategoryIDs: persistedCaptureCategoryIDs(state)
             )
-            state.windowDestinations.insert(.captureWindow)
-            state.captureWindowFocusRequest &+= 1
+            state.presentation.isCapturePresented = true
+            state.presentation.capturePresentationRequest &+= 1
             return .none
 
         case let .sessionTaskEditTapped(taskID):
@@ -172,8 +177,8 @@ extension AppFeature {
                 categories: state.categories
             )
             state.captureDraft.editingTaskID = taskID
-            state.windowDestinations.insert(.captureWindow)
-            state.captureWindowFocusRequest &+= 1
+            state.presentation.isCapturePresented = true
+            state.presentation.capturePresentationRequest &+= 1
             return .none
 
         case let .sessionRenameTapped(name):
@@ -290,8 +295,8 @@ extension AppFeature {
             guard let activeSession = state.activeSession else { return .none }
 
             state.endSessionDraft = nil
-            state.windowDestinations.remove(.captureWindow)
-            state.windowDestinations.remove(.workspaceWindow)
+            state.presentation.isCapturePresented = false
+            state.presentation.isWorkspacePresented = false
 
             return .run { send in
                 do {
@@ -327,8 +332,8 @@ extension AppFeature {
         case .autoEndSession:
             guard let activeSession = state.activeSession else { return .none }
             state.endSessionDraft = nil
-            state.windowDestinations.remove(.captureWindow)
-            state.windowDestinations.remove(.workspaceWindow)
+            state.presentation.isCapturePresented = false
+            state.presentation.isWorkspacePresented = false
 
             return .run { send in
                 _ = try? await focusRepository.endSession(
@@ -349,7 +354,7 @@ extension AppFeature {
             let toPeriod = FocusDefaults.sessionPeriod(for: now)
             guard fromPeriod != toPeriod else { return .none }
             state.endSessionDraft = nil
-            state.windowDestinations.remove(.captureWindow)
+            state.presentation.isCapturePresented = false
 
             return .run { send in
                 _ = try? await focusRepository.endSession(

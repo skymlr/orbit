@@ -1,5 +1,10 @@
-import AppKit
 import SwiftUI
+
+#if os(macOS)
+import AppKit
+#elseif os(iOS)
+import UIKit
+#endif
 
 struct OrbitSpaceBackground: View {
     @Environment(\.orbitAppearance) private var appearance
@@ -125,10 +130,7 @@ private struct OrbitGlassBackground: View {
 
     var body: some View {
         ZStack {
-            OrbitWindowMaterialView(
-                material: .hudWindow,
-                blendingMode: .behindWindow
-            )
+            OrbitWindowMaterialView()
 
             LinearGradient(
                 colors: [
@@ -143,7 +145,21 @@ private struct OrbitGlassBackground: View {
     }
 }
 
-private struct OrbitWindowMaterialView: NSViewRepresentable {
+private struct OrbitWindowMaterialView: View {
+    var body: some View {
+#if os(macOS)
+        OrbitMacWindowMaterialView(
+            material: .hudWindow,
+            blendingMode: .behindWindow
+        )
+#else
+        OrbitIOSWindowMaterialView()
+#endif
+    }
+}
+
+#if os(macOS)
+private struct OrbitMacWindowMaterialView: NSViewRepresentable {
     let material: NSVisualEffectView.Material
     let blendingMode: NSVisualEffectView.BlendingMode
 
@@ -163,6 +179,17 @@ private struct OrbitWindowMaterialView: NSViewRepresentable {
         nsView.isEmphasized = true
     }
 }
+#elseif os(iOS)
+private struct OrbitIOSWindowMaterialView: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialDark))
+    }
+
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
+        uiView.effect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+    }
+}
+#endif
 
 private struct OrbitStarField: View {
     var body: some View {

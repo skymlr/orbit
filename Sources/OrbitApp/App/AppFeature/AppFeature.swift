@@ -19,6 +19,7 @@ struct AppFeature {
     @Dependency(\.hotkeySettingsClient) var hotkeySettingsClient
     @Dependency(\.inactivityClient) var inactivityClient
     @Dependency(\.markdownExportClient) var markdownExportClient
+    @Dependency(\.platformCapabilities) var platformCapabilities
     @Dependency(\.uuid) var uuid
 
     var body: some ReducerOf<Self> {
@@ -67,10 +68,15 @@ struct AppFeature {
                 return reduceSession(into: &state, action: action)
 
             case .settingsAddCategoryTapped,
+                    .exportDirectorySelected,
+                    .exportDirectorySelectionCancelled,
+                    .exportAllButtonTapped,
+                    .exportSessionButtonTapped,
                     .settingsDeleteCategoryTapped,
                     .settingsDeleteSessionTapped,
-                    .settingsExportAllTapped,
-                    .settingsExportSessionTapped,
+                    .sharedExportDismissed,
+                    .sharedExportFailed,
+                    .sharedExportPrepared,
                     .settingsRefreshTapped,
                     .settingsResetAppearanceTapped,
                     .settingsRenameCategoryTapped,

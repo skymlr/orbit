@@ -1,10 +1,11 @@
+#if os(macOS)
 import AppKit
 import ComposableArchitecture
 import Dependencies
 import SwiftUI
 
 @main
-struct OrbitApp: App {
+struct OrbitMacApp: App {
     @NSApplicationDelegateAdaptor(OrbitApplicationDelegate.self) private var appDelegate
     let store: StoreOf<AppFeature>
 
@@ -34,7 +35,7 @@ struct OrbitApp: App {
 
         Window("Orbit: A Focus Manager", id: OrbitWindowID.workspace) {
             Group {
-                if store.windowDestinations.contains(.workspaceWindow) {
+                if store.presentation.isWorkspacePresented {
                     WorkspaceView(store: store)
                         .orbitAppearance(store.appearance)
                         .onDisappear {
@@ -78,3 +79,4 @@ private struct MenuBarLabelView: View {
             }
     }
 }
+#endif

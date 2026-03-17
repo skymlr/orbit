@@ -19,7 +19,7 @@ struct HistorySearchView: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onExitCommand {
+        .orbitOnExitCommand {
             model.closeRequested()
         }
     }

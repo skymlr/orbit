@@ -27,8 +27,10 @@ extension AppFeature {
                 .settingsAddCategoryTapped,
                 .settingsDeleteCategoryTapped,
                 .settingsDeleteSessionTapped,
-                .settingsExportAllTapped,
-                .settingsExportSessionTapped,
+                .exportDirectorySelected,
+                .exportDirectorySelectionCancelled,
+                .exportAllButtonTapped,
+                .exportSessionButtonTapped,
                 .settingsRefreshTapped,
                 .settingsResetAppearanceTapped,
                 .settingsRenameCategoryTapped,
@@ -36,6 +38,9 @@ extension AppFeature {
                 .settingsResetHotkeysTapped,
                 .settingsSaveAppearanceTapped,
                 .settingsSaveHotkeysTapped,
+                .sharedExportDismissed,
+                .sharedExportFailed,
+                .sharedExportPrepared,
                 .showToast,
                 .startSessionTapped,
                 .toastAutoDismissFired,
@@ -46,6 +51,8 @@ extension AppFeature {
             guard !state.hasLaunched else { return .none }
             state.hasLaunched = true
             state.sessionBootstrapState = .loading
+            state.platform = State.PlatformFeatures(platformCapabilities)
+            state.settings.showsHotkeySettings = state.platform.supportsGlobalHotkeys
 
             let hotkeys = hotkeySettingsClient.load()
             state.hotkeys = hotkeys
@@ -57,8 +64,7 @@ extension AppFeature {
             state.appearance = appearance
             state.settings.appearanceDraft = appearance
 
-            return .merge(
-                .send(.registerHotkeys(hotkeys)),
+            var effects: [Effect<Action>] = [
                 .run { send in
                     do {
                         let activeSession = try await focusRepository.loadActiveSession()
@@ -72,7 +78,13 @@ extension AppFeature {
                     await send(.loadCategoriesResponse(categories))
                 },
                 .send(.settingsRefreshTapped)
-            )
+            ]
+
+            if state.platform.supportsGlobalHotkeys {
+                effects.insert(.send(.registerHotkeys(hotkeys)), at: 0)
+            }
+
+            return .merge(effects)
 
         case .appWillTerminate:
             if let activeSession = state.activeSession {
@@ -85,7 +97,7 @@ extension AppFeature {
             }
             state.activeSession = nil
             state.taskDrafts = []
-            state.windowDestinations.removeAll()
+            state.presentation = State.PresentationState()
             state.endSessionDraft = nil
             state.toast = nil
             return .merge(
@@ -96,6 +108,7 @@ extension AppFeature {
             )
 
         case .inactivityTick:
+            guard state.platform.supportsIdleMonitoring else { return .none }
             guard state.activeSession != nil else { return .none }
             let idleDuration = inactivityClient.idleDuration()
             if idleDuration >= 8 * 60 * 60 {
@@ -112,6 +125,7 @@ extension AppFeature {
             }
 
         case let .registerHotkeys(settings):
+            guard state.platform.supportsGlobalHotkeys else { return .none }
             return .run { send in
                 let stream = AsyncStream<HotkeyKind> { continuation in
                     hotkeyManager.register(settings.startShortcut) {
@@ -134,11 +148,11 @@ extension AppFeature {
             .cancellable(id: CancelID.hotkeyRegistration, cancelInFlight: true)
 
         case .workspaceWindowClosed:
-            state.windowDestinations.remove(.workspaceWindow)
+            state.presentation.isWorkspacePresented = false
             return .none
 
         case .captureWindowClosed:
-            state.windowDestinations.remove(.captureWindow)
+            state.presentation.isCapturePresented = false
             state.captureDraft = State.CaptureDraft(
                 selectedCategoryIDs: persistedCaptureCategoryIDs(state)
             )
@@ -165,7 +179,7 @@ extension AppFeature {
             state.activeSession = nil
             state.taskDrafts = []
             state.endSessionDraft = nil
-            state.windowDestinations.remove(.captureWindow)
+            state.presentation.isCapturePresented = false
             state.selectedTaskCategoryFilterIDs.removeAll()
             state.selectedTaskPriorityFilters.removeAll()
 
@@ -185,14 +199,21 @@ extension AppFeature {
                 )
                 ensureCategorySelections(&state)
 
-                return .merge(
-                    .run { send in
-                        while !Task.isCancelled {
-                            try await Task.sleep(nanoseconds: 60_000_000_000)
-                            await send(.inactivityTick)
+                var effects: [Effect<Action>] = []
+
+                if state.platform.supportsIdleMonitoring {
+                    effects.append(
+                        .run { send in
+                            while !Task.isCancelled {
+                                try await Task.sleep(nanoseconds: 60_000_000_000)
+                                await send(.inactivityTick)
+                            }
                         }
-                    }
-                    .cancellable(id: CancelID.inactivityMonitor, cancelInFlight: true),
+                        .cancellable(id: CancelID.inactivityMonitor, cancelInFlight: true)
+                    )
+                }
+
+                effects.append(
                     .run { [sessionStartedAt = session.startedAt] send in
                         let startedPeriod = FocusDefaults.sessionPeriod(for: sessionStartedAt)
                         let currentPeriod = FocusDefaults.sessionPeriod(for: now)
@@ -212,10 +233,12 @@ extension AppFeature {
                     }
                     .cancellable(id: CancelID.sessionWindowMonitor, cancelInFlight: true)
                 )
+
+                return .merge(effects)
             }
 
             state.endSessionDraft = nil
-            state.windowDestinations.remove(.captureWindow)
+            state.presentation.isCapturePresented = false
             state.captureDraft = State.CaptureDraft(
                 selectedCategoryIDs: []
             )
