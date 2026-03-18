@@ -12,6 +12,7 @@ extension AppFeature {
                 .endSessionConfirmTapped,
                 .endSessionTapped,
                 .openWorkspaceTapped,
+                .openPreferencesTapped,
                 .sessionAddTaskTapped,
                 .sessionRenameTapped,
                 .sessionTaskCategoryFilterToggled,
@@ -158,6 +159,10 @@ extension AppFeature {
             )
             return .none
 
+        case .preferencesWindowClosed:
+            state.presentation.isPreferencesPresented = false
+            return .none
+
         case .retryBootstrapActiveSessionButtonTapped:
             state.sessionBootstrapState = .loading
 
@@ -180,6 +185,7 @@ extension AppFeature {
             state.taskDrafts = []
             state.endSessionDraft = nil
             state.presentation.isCapturePresented = false
+            state.presentation.isPreferencesPresented = false
             state.selectedTaskCategoryFilterIDs.removeAll()
             state.selectedTaskPriorityFilters.removeAll()
 

@@ -20,19 +20,6 @@ enum OrbitFontOption: String, CaseIterable, Codable, Equatable, Sendable, Identi
             return "Source Serif 4"
         }
     }
-
-    var previewName: String {
-        switch self {
-        case .system:
-            return "Current Orbit default"
-        case .geist:
-            return "Geist"
-        case .robotoMonoNerd:
-            return "Roboto Mono Nerd Mono"
-        case .sourceSerif4:
-            return "Source Serif 4"
-        }
-    }
 }
 
 enum OrbitBackgroundOption: String, CaseIterable, Codable, Equatable, Sendable, Identifiable {

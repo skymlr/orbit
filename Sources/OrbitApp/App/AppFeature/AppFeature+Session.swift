@@ -18,6 +18,7 @@ extension AppFeature {
                 .loadActiveSessionResponse,
                 .loadCategoriesResponse,
                 .onLaunch,
+                .preferencesWindowClosed,
                 .registerHotkeys,
                 .retryBootstrapActiveSessionButtonTapped,
                 .settingsAddCategoryTapped,
@@ -89,6 +90,11 @@ extension AppFeature {
         case .openWorkspaceTapped:
             state.presentation.isWorkspacePresented = true
             state.presentation.workspacePresentationRequest &+= 1
+            return .none
+
+        case .openPreferencesTapped:
+            state.presentation.isPreferencesPresented = true
+            state.presentation.preferencesPresentationRequest &+= 1
             return .none
 
         case .endSessionTapped:

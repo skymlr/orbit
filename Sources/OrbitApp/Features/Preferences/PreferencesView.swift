@@ -2,48 +2,6 @@ import ComposableArchitecture
 import SwiftUI
 
 struct PreferencesView: View {
-    private enum PreferencesSection: String, CaseIterable, Identifiable {
-        case categories = "Categories"
-        case hotkeys = "Hotkeys"
-        case appearance = "Appearance"
-        case about = "About"
-        case credits = "Credits"
-
-        var id: Self { self }
-
-        var title: String { rawValue }
-
-        var subtitle: String {
-            switch self {
-            case .categories:
-                return "Organize quick capture and session notes with reusable category labels."
-            case .hotkeys:
-                return "Configure the global shortcuts Orbit registers with macOS."
-            case .appearance:
-                return "Choose the typography and background treatment Orbit uses across the app."
-            case .about:
-                return "Versioning, identifiers, and the product-level details for this build."
-            case .credits:
-                return "Browse the open-source packages bundled into the current Orbit build."
-            }
-        }
-
-        var symbolName: String {
-            switch self {
-            case .categories:
-                return "square.grid.2x2"
-            case .hotkeys:
-                return "command"
-            case .appearance:
-                return "paintpalette"
-            case .about:
-                return "info.circle"
-            case .credits:
-                return "shippingbox"
-            }
-        }
-    }
-
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
     @Environment(\.dismiss) private var dismiss
     @State private var selectedSection: PreferencesSection? = .categories
@@ -69,49 +27,52 @@ struct PreferencesView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
-            sidebar
-        } detail: {
-            detailContent
-        }
-        .task {
-            store.send(.settingsRefreshTapped)
-        }
-        .background {
-            OrbitSpaceBackground()
-        }
-        .orbitOnExitCommand {
-            dismiss()
-        }
+        navigationContent
+            .task {
+                store.send(.settingsRefreshTapped)
+            }
+            .background {
+                OrbitSpaceBackground()
+            }
+            .orbitOnExitCommand {
+                dismiss()
+            }
     }
 
-    private var sidebar: some View {
-        List(selection: $selectedSection) {
+    @ViewBuilder
+    private var navigationContent: some View {
+        TabView(selection: tabSelection) {
             ForEach(sections) { section in
-                sidebarRow(for: section)
+                sectionContent(for: section)
+                    .tabItem {
+                        Label(section.title, systemImage: section.symbolName)
+                    }
                     .tag(section)
             }
         }
-        .orbitHideSidebarToggle()
     }
 
-    private var detailContent: some View {
-        Group {
-            switch activeSection {
-            case .categories:
-                categoriesPage
-            case .hotkeys:
-                hotkeysPage
-            case .appearance:
-                appearancePage
-            case .about:
-                aboutPage
-            case .credits:
-                creditsPage
-            }
+    private var tabSelection: Binding<PreferencesSection> {
+        Binding(
+            get: { activeSection },
+            set: { selectedSection = $0 }
+        )
+    }
+
+    @ViewBuilder
+    private func sectionContent(for section: PreferencesSection) -> some View {
+        switch section {
+        case .categories:
+            categoriesPage
+        case .hotkeys:
+            hotkeysPage
+        case .appearance:
+            appearancePage
+        case .about:
+            aboutPage
+        case .credits:
+            creditsPage
         }
-        .id(activeSection)
-        .animation(.easeInOut(duration: 0.18), value: activeSection)
     }
 
     private var categoriesPage: some View {
@@ -363,13 +324,6 @@ struct PreferencesView: View {
         }
     }
 
-    private func sidebarRow(for section: PreferencesSection) -> some View {
-        Label(section.title, systemImage: section.symbolName)
-            .orbitFont(.body, weight: .medium)
-            .symbolRenderingMode(.hierarchical)
-            .padding(.vertical, 4)
-    }
-
     @ViewBuilder
     private func detailPage<Content: View>(
         for section: PreferencesSection,
@@ -443,9 +397,6 @@ struct PreferencesView: View {
         VStack(alignment: .leading, spacing: 3) {
             Text(option.title)
                 .font(OrbitTypography.previewFont(for: option, style: .body, weight: .semibold))
-            Text(option.previewName)
-                .font(OrbitTypography.previewFont(for: option, style: .caption))
-                .foregroundStyle(.secondary)
         }
         .padding(.vertical, 2)
     }
@@ -466,6 +417,7 @@ struct PreferencesView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(option.title)
                     .orbitFont(.body, weight: .semibold)
+#if os(macOS)
                 Text(
                     backgroundPreviewSubtitle(
                         for: option,
@@ -474,6 +426,7 @@ struct PreferencesView: View {
                 )
                     .orbitFont(.caption)
                     .foregroundStyle(.secondary)
+#endif
             }
         }
         .padding(.vertical, 2)

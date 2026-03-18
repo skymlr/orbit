@@ -62,6 +62,33 @@ struct AppFeatureLifecycleTests {
     }
 
     @Test
+    func openPreferencesTappedPresentsSettingsCover() async {
+        let store = TestStore(initialState: AppFeature.State()) {
+            AppFeature()
+        }
+
+        await store.send(.openPreferencesTapped) {
+            $0.presentation.isPreferencesPresented = true
+            $0.presentation.preferencesPresentationRequest = 1
+        }
+    }
+
+    @Test
+    func preferencesWindowClosedDismissesSettingsCover() async {
+        var initial = AppFeature.State()
+        initial.presentation.isPreferencesPresented = true
+        initial.presentation.preferencesPresentationRequest = 1
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        }
+
+        await store.send(.preferencesWindowClosed) {
+            $0.presentation.isPreferencesPresented = false
+        }
+    }
+
+    @Test
     func sessionWindowBoundaryReachedWorkspaceOpenEndsOnly() async {
         let tracker = SessionWindowTransitionTracker()
 

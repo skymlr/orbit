@@ -17,6 +17,7 @@ extension AppFeature {
         case startSessionTapped
         case captureTapped
         case openWorkspaceTapped
+        case openPreferencesTapped
         case endSessionTapped
         case exportAllButtonTapped
         case exportSessionButtonTapped(UUID)
@@ -25,6 +26,7 @@ extension AppFeature {
 
         case workspaceWindowClosed
         case captureWindowClosed
+        case preferencesWindowClosed
 
         case captureSubmitTapped
         case sessionAddTaskTapped

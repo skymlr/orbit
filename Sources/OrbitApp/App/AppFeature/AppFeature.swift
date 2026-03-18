@@ -41,6 +41,7 @@ struct AppFeature {
                     .onLaunch,
                     .registerHotkeys,
                     .retryBootstrapActiveSessionButtonTapped,
+                    .preferencesWindowClosed,
                     .settingsDataResponse,
                     .workspaceWindowClosed:
                 return reduceLifecycle(into: &state, action: action)
@@ -52,6 +53,7 @@ struct AppFeature {
                     .endSessionConfirmTapped,
                     .endSessionTapped,
                     .openWorkspaceTapped,
+                    .openPreferencesTapped,
                     .sessionAddTaskTapped,
                     .sessionRenameTapped,
                     .sessionTaskCategoryFilterToggled,

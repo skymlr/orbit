@@ -21,86 +21,18 @@ struct SessionPageView: View {
 #endif
 
     var body: some View {
-        Group {
-            if isHistoryMode {
-                SessionHistoryView(
-                    store: store,
-                    historyDayGroups: historyDayGroups,
-                    selectedHistoryDay: selectedHistoryDay,
-                    selectedHistorySessionID: selectedHistorySessionID,
-                    onExitHistoryMode: exitHistoryMode,
-                    onSelectHistorySession: selectHistorySession(_:),
-                    onExportSession: exportSessionButtonTapped(sessionID:)
-                )
-            } else {
-                SessionLiveView(store: store)
-            }
-        }
+        contentView
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(18)
 #if os(macOS)
         .frame(minWidth: 880, minHeight: 640)
 #endif
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                Button {
-                    store.send(.sessionAddTaskTapped)
-                } label: {
-                    Image(systemName: "plus")
-                }
-                .keyboardShortcut("n", modifiers: [.command])
-                .help("Capture Task \(HotkeyHintFormatter.hint(from: store.hotkeys.captureShortcut))")
-
-                Button {
-                    isHistoryCalendarPresented = true
-                } label: {
-                    Image(systemName: "calendar")
-                }
-                .help("Browse session history by day")
-                .popover(isPresented: $isHistoryCalendarPresented, arrowEdge: .bottom) {
-                    historyCalendarPopover
-                }
-
-                if isHistoryMode {
-                    Button {
-                        navigateHistoryDay(.previous)
-                    } label: {
-                        Image(systemName: "chevron.left")
-                    }
-                    .disabled(previousHistoryDay == nil)
-                    .help("Older session day")
-
-                    Button {
-                        navigateHistoryDay(.next)
-                    } label: {
-                        Image(systemName: "chevron.right")
-                    }
-                    .disabled(nextHistoryDay == nil)
-                    .help("Newer session day")
-
-                    Button {
-                        searchHistoryButtonTapped()
-                    } label: {
-                        Label("Search History", systemImage: "magnifyingglass")
-                    }
-                    .help(historySearchButtonHelpText)
-
-                    Button {
-                        exportAllSessionsToolbarButtonTapped()
-                    } label: {
-                        Label("Export All Sessions", systemImage: "square.and.arrow.up")
-                    }
-                    .disabled(completedHistorySessionIDs.isEmpty)
-                    .help("Export markdown files for all completed sessions")
-                }
-
-#if os(macOS)
-                SettingsLink {
-                    Label("Preferences", systemImage: "gearshape")
-                }
-                .help("Open Settings")
+#if os(iOS)
+        .navigationTitle(navigationTitle)
+        .navigationBarTitleDisplayMode(.inline)
 #endif
-            }
+        .toolbar {
+            sessionToolbarContent
         }
         .confirmationDialog(
             "Export All Sessions?",
@@ -151,28 +83,138 @@ struct SessionPageView: View {
         }
         .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
         .animation(.easeInOut(duration: 0.16), value: isHistoryMode)
-#if os(iOS)
-        .sheet(isPresented: $isHistorySearchPresented) {
-            NavigationStack {
-                ZStack {
-                    OrbitSpaceBackground()
+    }
 
-                    HistorySearchView(model: historySearchModel)
-                        .padding(18)
-                }
-                .navigationTitle("Search History")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") {
-                            dismissHistorySearchPanel()
-                        }
-                    }
-                }
-                .orbitAppearance(store.appearance)
-                .preferredColorScheme(.dark)
+    @ViewBuilder
+    private var contentView: some View {
+        if isHistoryMode {
+            historyModeContent
+        } else {
+            SessionLiveView(store: store)
+        }
+    }
+
+    @ViewBuilder
+    private var historyModeContent: some View {
+#if os(iOS)
+        if isShowingInlineHistorySearchResults {
+            HistorySearchView(model: historySearchModel)
+                .searchable(text: $historySearchModel.query, placement: .toolbar, prompt: "Search history")
+        } else {
+            sessionHistoryContent
+                .searchable(text: $historySearchModel.query, placement: .toolbar, prompt: "Search history")
+        }
+#else
+        sessionHistoryContent
+#endif
+    }
+
+    private var sessionHistoryContent: some View {
+        SessionHistoryView(
+            store: store,
+            historyDayGroups: historyDayGroups,
+            selectedHistoryDay: selectedHistoryDay,
+            selectedHistorySessionID: selectedHistorySessionID,
+            onExitHistoryMode: exitHistoryMode,
+            onSelectHistorySession: selectHistorySession(_:),
+            onExportSession: exportSessionButtonTapped(sessionID:)
+        )
+    }
+
+    @ToolbarContentBuilder
+    private var sessionToolbarContent: some ToolbarContent {
+#if os(macOS)
+        ToolbarItemGroup(placement: .primaryAction) {
+            Button {
+                store.send(.sessionAddTaskTapped)
+            } label: {
+                Image(systemName: "plus")
             }
-            .presentationDetents([.large])
+            .keyboardShortcut("n", modifiers: [.command])
+            .help("Capture Task \(HotkeyHintFormatter.hint(from: store.hotkeys.captureShortcut))")
+
+            Button {
+                openHistoryCalendarButtonTapped()
+            } label: {
+                Image(systemName: "calendar")
+            }
+            .help("Browse session history by day")
+            .popover(isPresented: $isHistoryCalendarPresented, arrowEdge: .bottom) {
+                historyCalendarPopover
+            }
+
+            if isHistoryMode {
+                Button {
+                    navigateToPreviousHistoryDayButtonTapped()
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .disabled(previousHistoryDay == nil)
+                .help("Older session day")
+
+                Button {
+                    navigateToNextHistoryDayButtonTapped()
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+                .disabled(nextHistoryDay == nil)
+                .help("Newer session day")
+
+                Button {
+                    searchHistoryButtonTapped()
+                } label: {
+                    Label("Search History", systemImage: "magnifyingglass")
+                }
+                .help(historySearchButtonHelpText)
+
+                Button {
+                    exportAllSessionsToolbarButtonTapped()
+                } label: {
+                    Label("Export All Sessions", systemImage: "square.and.arrow.up")
+                }
+                .disabled(completedHistorySessionIDs.isEmpty)
+                .help("Export markdown files for all completed sessions")
+            }
+
+            SettingsLink {
+                Label("Preferences", systemImage: "gearshape")
+            }
+            .help("Open Settings")
+        }
+#else
+        ToolbarItem(placement: .bottomBar) {
+            Button(action: quickCaptureButtonTapped) {
+                Label("Add Task", systemImage: "plus")
+            }
+        }
+
+        ToolbarItem(placement: .topBarLeading) {
+            Button(action: openHistoryCalendarButtonTapped) {
+                Image(systemName: "calendar")
+            }
+            .popover(isPresented: $isHistoryCalendarPresented, arrowEdge: .bottom) {
+                historyCalendarPopover
+            }
+        }
+
+        if isHistoryMode && !isShowingInlineHistorySearchResults {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Button(action: navigateToPreviousHistoryDayButtonTapped) {
+                    Image(systemName: "chevron.left")
+                }
+                .disabled(previousHistoryDay == nil)
+
+                Button(action: navigateToNextHistoryDayButtonTapped) {
+                    Image(systemName: "chevron.right")
+                }
+                .disabled(nextHistoryDay == nil)
+            }
+        }
+        
+        ToolbarItem(placement: .topBarTrailing) {
+            Button(action: openPreferencesButtonTapped) {
+                Label("Settings", systemImage: "gearshape")
+            }
         }
 #endif
     }
@@ -223,8 +265,44 @@ struct SessionPageView: View {
             .map(\.id)
     }
 
+#if os(iOS)
+    private var isShowingInlineHistorySearchResults: Bool {
+        !trimmedHistorySearchQuery.isEmpty
+    }
+
+    private var navigationTitle: String {
+        if isShowingInlineHistorySearchResults {
+            return "Search History"
+        }
+        if isHistoryMode {
+            return SessionHistoryBrowserSupport.dayLabel(selectedHistoryDay)
+        }
+        return "Workspace"
+    }
+
+    private var trimmedHistorySearchQuery: String {
+        historySearchModel.query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+#endif
+
     private func selectHistorySession(_ sessionID: UUID) {
         selectedHistorySessionID = sessionID
+    }
+
+    private func quickCaptureButtonTapped() {
+        if store.activeSession == nil {
+            store.send(.captureTapped)
+        } else {
+            store.send(.sessionAddTaskTapped)
+        }
+    }
+
+    private func openPreferencesButtonTapped() {
+        store.send(.openPreferencesTapped)
+    }
+
+    private func openHistoryCalendarButtonTapped() {
+        isHistoryCalendarPresented = true
     }
 
     private func exportAllSessionsToolbarButtonTapped() {
@@ -257,6 +335,7 @@ struct SessionPageView: View {
 #endif
 
     private func enterHistoryMode(on day: Date) {
+        clearHistorySearch()
         isHistoryMode = true
         selectedHistoryDay = SessionHistoryBrowserSupport.normalizedDay(for: day)
         selectedHistorySessionID = SessionHistoryBrowserSupport.defaultSessionID(
@@ -267,6 +346,7 @@ struct SessionPageView: View {
 
     private func exitHistoryMode() {
         dismissHistorySearchPanel()
+        clearHistorySearch()
         isHistoryMode = false
     }
 
@@ -284,6 +364,14 @@ struct SessionPageView: View {
             on: nextDay,
             groups: historyDayGroups
         )
+    }
+
+    private func navigateToPreviousHistoryDayButtonTapped() {
+        navigateHistoryDay(.previous)
+    }
+
+    private func navigateToNextHistoryDayButtonTapped() {
+        navigateHistoryDay(.next)
     }
 
     private func reconcileHistorySelection() {
@@ -318,9 +406,9 @@ struct SessionPageView: View {
     }
 
     private func refreshHistorySearchPanelIfNeeded() {
-        guard isHistorySearchPresented else { return }
         configureHistorySearchModel(resetSearch: false)
 #if os(macOS)
+        guard isHistorySearchPresented else { return }
         historySearchPanelController.refresh(configuration: historySearchPanelConfiguration())
 #endif
     }
@@ -384,10 +472,16 @@ struct SessionPageView: View {
             on: selectedHistoryDay,
             groups: historyDayGroups
         )
+        clearHistorySearch()
     }
 
     private func navigateToHistorySessionFromSearch(day: Date, sessionID: UUID) {
         selectedHistoryDay = SessionHistoryBrowserSupport.normalizedDay(for: day)
         selectedHistorySessionID = sessionID
+        clearHistorySearch()
+    }
+
+    private func clearHistorySearch() {
+        historySearchModel.resetSearch()
     }
 }

@@ -28,6 +28,8 @@ extension AppFeature {
             var workspacePresentationRequest = 0
             var isCapturePresented = false
             var capturePresentationRequest = 0
+            var isPreferencesPresented = false
+            var preferencesPresentationRequest = 0
             var pendingDirectoryExport: DirectoryExportRequest?
             var sharedExport: SharedExport?
         }

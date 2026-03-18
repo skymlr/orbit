@@ -9,13 +9,4 @@ extension View {
         self
 #endif
     }
-
-    @ViewBuilder
-    func orbitHideSidebarToggle() -> some View {
-#if os(macOS)
-        self.toolbar(removing: .sidebarToggle)
-#else
-        self
-#endif
-    }
 }

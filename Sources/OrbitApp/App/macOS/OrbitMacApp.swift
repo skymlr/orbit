@@ -58,7 +58,7 @@ struct OrbitMacApp: App {
                 .preferredColorScheme(.dark)
         }
         .windowBackgroundDragBehavior(.enabled)
-        .defaultSize(width: 600, height: 400)
+        .defaultSize(width: 650, height: 500)
     }
 }
 

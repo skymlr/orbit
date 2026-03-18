@@ -29,30 +29,26 @@ struct OrbitIOSApp: App {
 }
 
 private struct OrbitIOSRootView: View {
-    private enum Tab: Hashable {
-        case workspace
-        case settings
-    }
-
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
-    @State private var selectedTab: Tab = .workspace
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        NavigationStack {
             WorkspaceView(store: store)
-                .tabItem {
-                    Label("Workspace", systemImage: "square.grid.2x2.fill")
-                }
-                .tag(Tab.workspace)
-
-            PreferencesView(store: store)
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
-                }
-                .tag(Tab.settings)
         }
         .background {
             AppLaunchCoordinator(store: store)
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { store.presentation.isPreferencesPresented },
+                set: { isPresented in
+                    if !isPresented {
+                        store.send(.preferencesWindowClosed)
+                    }
+                }
+            )
+        ) {
+            preferences
         }
         .sheet(
             isPresented: Binding(
@@ -64,21 +60,7 @@ private struct OrbitIOSRootView: View {
                 }
             )
         ) {
-            NavigationStack {
-                QuickCaptureView(store: store)
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("Done") {
-                                store.send(.captureWindowClosed)
-                            }
-                        }
-                    }
-                    .orbitAppearance(store.appearance)
-                    .preferredColorScheme(.dark)
-            }
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
+            quickCapture
         }
         .sheet(
             item: Binding(
@@ -92,9 +74,26 @@ private struct OrbitIOSRootView: View {
         ) { sharedExport in
             OrbitShareSheet(activityItems: sharedExport.urls)
         }
-        .onChange(of: store.presentation.workspacePresentationRequest) { _, _ in
-            selectedTab = .workspace
+    }
+    
+    @ViewBuilder
+    private var preferences: some View {
+        NavigationStack {
+            PreferencesView(store: store)
         }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.hidden)
+    }
+    
+    @ViewBuilder
+    private var quickCapture: some View {
+        NavigationStack {
+            QuickCaptureView(store: store)
+                .orbitAppearance(store.appearance)
+                .preferredColorScheme(.dark)
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.hidden)
     }
 }
 #endif

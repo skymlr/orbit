@@ -5,6 +5,7 @@ import SwiftUI
 
 struct QuickCaptureView: View {
     private enum FocusField: Hashable {
+        case newCategoryName
         case categoryChip(UUID)
         case priority
     }
@@ -13,6 +14,10 @@ struct QuickCaptureView: View {
     @Environment(\.orbitAppearance) private var appearance
     @State private var editorState = MarkdownEditorState()
     @State private var isEditorFocused = false
+    @State private var isAddingFirstCategory = false
+    @State private var newCategoryName = ""
+    @State private var newCategoryColorHex = FocusDefaults.defaultCategoryColorHex
+    @State private var pendingCreatedCategoryNormalizedName: String?
     @FocusState private var focusedField: FocusField?
 
     var body: some View {
@@ -96,12 +101,7 @@ struct QuickCaptureView: View {
                     .keyboardShortcut("p", modifiers: [.command, .shift])
                 }
 
-                HFlow(itemSpacing: 6, rowSpacing: 6) {
-                    ForEach(store.categories) { category in
-                        categoryChipButton(for: category)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                categorySectionContent
             }
 
             HStack {
@@ -166,6 +166,9 @@ struct QuickCaptureView: View {
                 editorState.text = newValue
                 editorState.selectionRange = NSRange(location: (newValue as NSString).length, length: 0)
             }
+        }
+        .onChange(of: store.categories) { _, categories in
+            categoriesChanged(categories)
         }
         .background(
             ZStack {
@@ -261,8 +264,79 @@ struct QuickCaptureView: View {
         !editorState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    private var canSubmitNewCategory: Bool {
+        !trimmedNewCategoryName.isEmpty
+    }
+
     private var saveButtonTitle: String {
         store.captureDraft.editingTaskID == nil ? "Save Task" : "Save Task Changes"
+    }
+
+    private var trimmedNewCategoryName: String {
+        newCategoryName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    @ViewBuilder
+    private var categorySectionContent: some View {
+        if store.categories.isEmpty {
+            emptyCategoryState
+        } else {
+            HFlow(itemSpacing: 6, rowSpacing: 6) {
+                ForEach(store.categories) { category in
+                    categoryChipButton(for: category)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var emptyCategoryState: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("No categories yet. Add your first category to start organizing captured tasks.")
+                .orbitFont(.caption)
+                .foregroundStyle(.secondary)
+
+            if isAddingFirstCategory {
+                VStack(alignment: .leading, spacing: 10) {
+                    TextField("Category name", text: $newCategoryName)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($focusedField, equals: .newCategoryName)
+                        .onSubmit {
+                            submitNewCategoryButtonTapped()
+                        }
+
+                    CategoryColorPalettePicker(selectedHex: $newCategoryColorHex)
+
+                    HStack {
+                        Button("Cancel") {
+                            cancelNewCategoryButtonTapped()
+                        }
+                        .buttonStyle(.orbitSecondary)
+
+                        Spacer()
+
+                        Button("Add Category") {
+                            submitNewCategoryButtonTapped()
+                        }
+                        .buttonStyle(.orbitPrimary)
+                        .disabled(!canSubmitNewCategory)
+                    }
+                }
+            } else {
+                Button {
+                    addFirstCategoryButtonTapped()
+                } label: {
+                    Label("Add Category", systemImage: "plus.circle.fill")
+                }
+                .buttonStyle(.orbitPrimary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.small, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
     }
 
     @ViewBuilder
@@ -297,9 +371,28 @@ struct QuickCaptureView: View {
         isEditorFocused = false
         if let firstCategoryID = store.categories.first?.id {
             focusedField = .categoryChip(firstCategoryID)
+        } else if isAddingFirstCategory {
+            focusedField = .newCategoryName
         } else {
             focusedField = .priority
         }
+    }
+
+    private func addFirstCategoryButtonTapped() {
+        isAddingFirstCategory = true
+        DispatchQueue.main.async {
+            focusedField = .newCategoryName
+        }
+    }
+
+    private func cancelNewCategoryButtonTapped() {
+        resetInlineCategoryForm(clearPendingCategory: true)
+    }
+
+    private func submitNewCategoryButtonTapped() {
+        guard canSubmitNewCategory else { return }
+        pendingCreatedCategoryNormalizedName = FocusDefaults.normalizedCategoryName(trimmedNewCategoryName)
+        store.send(.settingsAddCategoryTapped(trimmedNewCategoryName, newCategoryColorHex))
     }
 
     private func cyclePriorityForward() {
@@ -347,6 +440,33 @@ struct QuickCaptureView: View {
         }
 
         store.captureDraft.selectedCategoryIDs = selected
+    }
+
+    private func categoriesChanged(_ categories: [SessionCategoryRecord]) {
+        if let pendingCreatedCategoryNormalizedName,
+           let createdCategory = categories.first(where: { $0.normalizedName == pendingCreatedCategoryNormalizedName })
+        {
+            if !store.captureDraft.selectedCategoryIDs.contains(createdCategory.id) {
+                store.captureDraft.selectedCategoryIDs.append(createdCategory.id)
+            }
+            resetInlineCategoryForm(clearPendingCategory: true)
+            return
+        }
+
+        guard !categories.isEmpty else { return }
+        resetInlineCategoryForm(clearPendingCategory: false)
+    }
+
+    private func resetInlineCategoryForm(clearPendingCategory: Bool) {
+        isAddingFirstCategory = false
+        newCategoryName = ""
+        newCategoryColorHex = FocusDefaults.defaultCategoryColorHex
+        if clearPendingCategory {
+            pendingCreatedCategoryNormalizedName = nil
+        }
+        if focusedField == .newCategoryName {
+            focusedField = nil
+        }
     }
 
     private func categoryChipButton(for category: SessionCategoryRecord) -> some View {
