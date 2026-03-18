@@ -187,6 +187,12 @@ struct SessionPageView: View {
                 Label("Add Task", systemImage: "plus")
             }
         }
+        
+        ToolbarItem(placement: .topBarLeading) {
+            Button(action: openPreferencesButtonTapped) {
+                Label("Settings", systemImage: "gearshape")
+            }
+        }
 
         ToolbarItem(placement: .topBarLeading) {
             Button(action: openHistoryCalendarButtonTapped) {
@@ -208,12 +214,6 @@ struct SessionPageView: View {
                     Image(systemName: "chevron.right")
                 }
                 .disabled(nextHistoryDay == nil)
-            }
-        }
-        
-        ToolbarItem(placement: .topBarTrailing) {
-            Button(action: openPreferencesButtonTapped) {
-                Label("Settings", systemImage: "gearshape")
             }
         }
 #endif

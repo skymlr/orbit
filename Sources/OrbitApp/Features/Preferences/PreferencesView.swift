@@ -3,6 +3,7 @@ import SwiftUI
 
 struct PreferencesView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     @State private var selectedSection: PreferencesSection? = .categories
     @State private var newCategoryName = ""
@@ -212,66 +213,61 @@ struct PreferencesView: View {
 
     private var appearancePage: some View {
         detailPage(for: .appearance) {
-            preferencesSectionCard(
-                title: "Typography",
-                subtitle: "Keep the default system font or switch Orbit to a bundled alternate family."
-            ) {
-                Picker("Font", selection: $store.settings.appearanceDraft.font) {
-                    ForEach(OrbitFontOption.allCases) { option in
-                        fontOptionRow(for: option)
-                            .tag(option)
+            preferencesPanel {
+                VStack(alignment: .leading, spacing: 16) {
+                    appearanceSaveCallout
+
+                    Divider()
+                        .padding(.vertical, 2)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Typography")
+                            .orbitFont(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Picker("Font", selection: $store.settings.appearanceDraft.font) {
+                            ForEach(OrbitFontOption.allCases) { option in
+                                fontOptionRow(for: option)
+                                    .tag(option)
+                            }
+                        }
+                        .pickerStyle(appearancePickerStyle)
+                        .labelsHidden()
                     }
-                }
-                .pickerStyle(appearancePickerStyle)
-                .labelsHidden()
-            }
 
-            preferencesSectionCard(
-                title: "Background",
-                subtitle: "Choose the base canvas color, then optionally layer in Orbit's stars and solar system."
-            ) {
-                Picker("Background", selection: $store.settings.appearanceDraft.background) {
-                    ForEach(OrbitBackgroundOption.allCases) { option in
-                        backgroundOptionRow(for: option)
-                            .tag(option)
+                    Divider()
+                        .padding(.vertical, 2)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Background")
+                            .orbitFont(.caption)
+                            .foregroundStyle(.secondary)
+
+                        backgroundSelectionControl
                     }
-                }
-                .pickerStyle(appearancePickerStyle)
-                .labelsHidden()
-            }
 
-            preferencesSectionCard(
-                title: "Orbital Layer",
-                subtitle: "Toggle the stars, orbits, planets, and sun independently from the base background."
-            ) {
-                Toggle(
-                    "Show stars, orbits, planets, and sun",
-                    isOn: $store.settings.appearanceDraft.showsOrbitalLayer
-                )
-                .toggleStyle(.switch)
+                    Divider()
+                        .padding(.vertical, 2)
 
-                Text(
-                    store.settings.appearanceDraft.showsOrbitalLayer
-                    ? "The orbital artwork will sit on top of the selected background."
-                    : "Only the selected background color or material will be shown."
-                )
-                .orbitFont(.caption)
-                .foregroundStyle(.secondary)
-            }
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Orbital Layer")
+                            .orbitFont(.caption)
+                            .foregroundStyle(.secondary)
 
-            preferencesSectionCard(title: "Apply Appearance") {
-                HStack {
-                    Button("Reset Appearance") {
-                        store.send(.settingsResetAppearanceTapped)
+                        Toggle(
+                            "Show stars, orbits, planets, and sun",
+                            isOn: $store.settings.appearanceDraft.showsOrbitalLayer
+                        )
+                        .toggleStyle(.switch)
+
+                        Text(
+                            store.settings.appearanceDraft.showsOrbitalLayer
+                            ? "The orbital artwork will sit on top of the selected background."
+                            : "Only the selected background color or material will be shown."
+                        )
+                        .orbitFont(.caption)
+                        .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.orbitSecondary)
-
-                    Spacer()
-
-                    Button("Save Appearance") {
-                        store.send(.settingsSaveAppearanceTapped)
-                    }
-                    .buttonStyle(.orbitPrimary)
                 }
             }
         }
@@ -308,6 +304,10 @@ struct PreferencesView: View {
 #else
         .inline
 #endif
+    }
+
+    private var hasUnsavedAppearanceChanges: Bool {
+        store.settings.appearanceDraft != store.appearance
     }
 
     private var bundleIdentifier: String {
@@ -393,6 +393,108 @@ struct PreferencesView: View {
         )
     }
 
+    private var appearanceSaveCallout: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 14) {
+                appearanceSaveSummary
+                Spacer(minLength: 12)
+                appearanceActionButtons
+            }
+
+            VStack(alignment: .leading, spacing: 14) {
+                appearanceSaveSummary
+                appearanceActionButtons
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
+                .fill(appearanceCalloutFill)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
+                .stroke(appearanceCalloutStroke, lineWidth: 1)
+        )
+    }
+
+    private var appearanceSaveSummary: some View {
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(appearanceCalloutIconBackground)
+
+                Image(systemName: hasUnsavedAppearanceChanges ? "square.and.arrow.down.fill" : "checkmark.circle.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(appearanceCalloutIconColor)
+            }
+            .frame(width: 34, height: 34)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(hasUnsavedAppearanceChanges ? "Unsaved appearance changes" : "Appearance is saved")
+                    .orbitFont(.callout, weight: .semibold)
+
+                Text(
+                    hasUnsavedAppearanceChanges
+                    ? "Save to apply this canvas across Orbit and keep it the next time the app opens."
+                    : "This canvas is already applied across Orbit and saved for future launches."
+                )
+                .orbitFont(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var appearanceActionButtons: some View {
+        HStack(spacing: 8) {
+            Button("Reset Appearance") {
+                store.send(.settingsResetAppearanceTapped)
+            }
+            .buttonStyle(.orbitSecondary)
+
+            Button {
+                store.send(.settingsSaveAppearanceTapped)
+            } label: {
+                Label(
+                    hasUnsavedAppearanceChanges ? "Save Appearance" : "Appearance Saved",
+                    systemImage: hasUnsavedAppearanceChanges ? "square.and.arrow.down" : "checkmark.circle"
+                )
+            }
+            .buttonStyle(.orbitPrimary)
+            .disabled(!hasUnsavedAppearanceChanges)
+            .opacity(hasUnsavedAppearanceChanges ? 1 : 0.72)
+        }
+    }
+
+    private var appearanceCalloutFill: Color {
+        colorScheme == .dark
+            ? OrbitTheme.Palette.heroCyan.opacity(0.18)
+            : OrbitTheme.Palette.lightPanelSoft.opacity(0.94)
+    }
+
+    private var appearanceCalloutStroke: Color {
+        if hasUnsavedAppearanceChanges {
+            return colorScheme == .dark
+                ? OrbitTheme.Palette.orbitLine.opacity(0.58)
+                : OrbitTheme.Palette.lightStroke.opacity(0.58)
+        } else {
+            return colorScheme == .dark
+                ? OrbitTheme.Palette.glassBorderStrong.opacity(0.9)
+                : OrbitTheme.Palette.lightStrokeSoft.opacity(0.42)
+        }
+    }
+
+    private var appearanceCalloutIconBackground: Color {
+        hasUnsavedAppearanceChanges
+            ? OrbitTheme.Palette.sunHalo.opacity(colorScheme == .dark ? 0.24 : 0.30)
+            : OrbitTheme.Palette.toastSuccess.opacity(colorScheme == .dark ? 0.22 : 0.26)
+    }
+
+    private var appearanceCalloutIconColor: Color {
+        hasUnsavedAppearanceChanges
+            ? OrbitTheme.Palette.sunCore
+            : OrbitTheme.Palette.toastSuccess
+    }
+
     private func fontOptionRow(for option: OrbitFontOption) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(option.title)
@@ -431,6 +533,120 @@ struct PreferencesView: View {
         }
         .padding(.vertical, 2)
     }
+
+    @ViewBuilder
+    private var backgroundSelectionControl: some View {
+#if os(macOS)
+        Picker("Background", selection: $store.settings.appearanceDraft.background) {
+            ForEach(OrbitBackgroundOption.allCases) { option in
+                backgroundOptionRow(for: option)
+                    .tag(option)
+            }
+        }
+        .pickerStyle(appearancePickerStyle)
+        .labelsHidden()
+#else
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(OrbitBackgroundOption.allCases) { option in
+                backgroundOptionCard(for: option)
+            }
+        }
+#endif
+    }
+
+#if os(iOS)
+    private func backgroundOptionCard(for option: OrbitBackgroundOption) -> some View {
+        let isSelected = store.settings.appearanceDraft.background == option
+
+        return Button {
+            store.settings.appearanceDraft.background = option
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                OrbitSpaceBackground(
+                    style: option,
+                    showsOrbitalLayer: store.settings.appearanceDraft.showsOrbitalLayer
+                )
+                .frame(maxWidth: .infinity)
+                .frame(height: 88)
+                .clipShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.medium, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: OrbitTheme.Radius.medium, style: .continuous)
+                        .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
+                )
+
+                HStack(alignment: .top, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(option.title)
+                            .orbitFont(.body, weight: .semibold)
+
+                        Text(
+                            backgroundPreviewSubtitle(
+                                for: option,
+                                showsOrbitalLayer: store.settings.appearanceDraft.showsOrbitalLayer
+                            )
+                        )
+                        .orbitFont(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+
+                    Spacer(minLength: 12)
+
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(backgroundOptionIndicatorColor(isSelected: isSelected))
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
+                    .fill(backgroundOptionCardFill(isSelected: isSelected))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
+                    .stroke(backgroundOptionCardStroke(isSelected: isSelected), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous))
+    }
+
+    private func backgroundOptionCardFill(isSelected: Bool) -> Color {
+        if isSelected {
+            return colorScheme == .dark
+                ? OrbitTheme.Palette.heroCyan.opacity(0.24)
+                : OrbitTheme.Palette.lightPanel.opacity(0.96)
+        } else {
+            return colorScheme == .dark
+                ? OrbitTheme.Palette.glassFillSubtle
+                : OrbitTheme.Palette.lightPanelSoft.opacity(0.88)
+        }
+    }
+
+    private func backgroundOptionCardStroke(isSelected: Bool) -> Color {
+        if isSelected {
+            return colorScheme == .dark
+                ? OrbitTheme.Palette.orbitLine.opacity(0.62)
+                : OrbitTheme.Palette.lightStroke.opacity(0.58)
+        } else {
+            return colorScheme == .dark
+                ? OrbitTheme.Palette.glassBorderStrong.opacity(0.82)
+                : OrbitTheme.Palette.lightStrokeSoft.opacity(0.36)
+        }
+    }
+
+    private func backgroundOptionIndicatorColor(isSelected: Bool) -> Color {
+        if isSelected {
+            return colorScheme == .dark
+                ? OrbitTheme.Palette.orbitLine
+                : OrbitTheme.Palette.lightStroke
+        } else {
+            return colorScheme == .dark
+                ? OrbitTheme.Palette.priorityNone.opacity(0.82)
+                : OrbitTheme.Palette.lightTextSecondary.opacity(0.72)
+        }
+    }
+#endif
 
     private func backgroundPreviewSubtitle(
         for option: OrbitBackgroundOption,
