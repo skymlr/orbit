@@ -185,7 +185,7 @@ private struct ActiveSessionMenuCard: View {
             }
         }
         .padding(14)
-        .background(cardBackground)
+        .background(.ultraThinMaterial)
         .overlay {
             cardShape
                 .stroke(OrbitTheme.Palette.glassBorderStrong.opacity(0.92), lineWidth: 1.1)
@@ -256,22 +256,6 @@ private extension ActiveSessionMenuCard {
         .foregroundStyle(OrbitTheme.Palette.starlight.opacity(0.84))
         .lineLimit(1)
         .minimumScaleFactor(0.88)
-    }
-
-    var cardBackground: some View {
-        ZStack {
-            cardShape
-                .fill(.ultraThinMaterial)
-
-            cardShape
-                .fill(OrbitTheme.Gradients.taskInfoPanel.opacity(0.86))
-
-            Circle()
-                .fill(Color.white.opacity(0.08))
-                .frame(width: 96, height: 96)
-                .offset(x: 86, y: -68)
-                .blur(radius: 16)
-        }
     }
 
     var completedTaskCount: Int {

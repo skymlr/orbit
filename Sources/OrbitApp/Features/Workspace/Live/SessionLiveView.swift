@@ -4,7 +4,15 @@ import SwiftUI
 
 struct SessionLiveView: View {
     private enum Layout {
+#if os(macOS)
+        static let contentMaxWidth: CGFloat = 1_180
+        static let sessionInfoWidth: CGFloat = 320
+        static let splitSpacing: CGFloat = 20
+        static let collapseThreshold: CGFloat = 980
+#else
         static let contentMaxWidth: CGFloat = 700
+#endif
+        static let taskSpacing: CGFloat = 12
     }
 
     private enum TaskNavigationDirection {
@@ -12,9 +20,22 @@ struct SessionLiveView: View {
         case next
     }
 
+#if os(iOS)
+    private enum SessionInfoTransitionID {
+        static let toolbarButton = "session-info-toolbar-button"
+    }
+#endif
+
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
     @State private var focusedTaskID: UUID?
     @State private var searchText = ""
+    @State private var isSessionInfoPresented = false
+#if os(macOS)
+    @State private var isMacSessionInfoCollapsed = false
+#endif
+#if os(iOS)
+    @Namespace private var sessionInfoTransitionNamespace
+#endif
 
     var body: some View {
         liveContent
@@ -25,10 +46,18 @@ struct SessionLiveView: View {
             .onChange(of: sortedFilteredTaskIDs) { _, newTaskIDs in
                 syncFocusedTask(with: newTaskIDs)
             }
+            .onChange(of: store.activeSession?.id) { oldValue, newValue in
+                if oldValue != newValue {
+                    isSessionInfoPresented = false
+                }
+            }
             .background {
                 if store.activeSession != nil {
                     keyboardShortcutBindings
                 }
+            }
+            .toolbar {
+                sessionInfoToolbarContent
             }
             .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
             .animation(.easeInOut(duration: 0.16), value: store.taskDrafts.count)
@@ -47,21 +76,34 @@ struct SessionLiveView: View {
     @ViewBuilder
     private var activeSessionContent: some View {
         if let activeSession = store.activeSession {
-            VStack(alignment: .leading, spacing: 16) {
-                SessionHeader(
-                    session: activeSession,
-                    endSessionDraft: store.endSessionDraft,
-                    onRename: renameSession(_:),
-                    onEndSessionTapped: endSessionButtonTapped,
-                    onEndSessionConfirm: confirmEndSession(name:),
-                    onEndSessionCancel: cancelEndSession
-                )
+#if os(macOS)
+            GeometryReader { proxy in
+                let isCollapsed = shouldCollapseMacSessionInfo(for: proxy.size.width)
 
-                SessionTaskFilterBar(store: store)
-
-                tasksContent
+                Group {
+                    if isCollapsed {
+                        taskScrollView
+                    } else {
+                        HStack(alignment: .top, spacing: Layout.splitSpacing) {
+                            sessionInfoSidebar(for: activeSession)
+                            taskScrollView
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .onAppear {
+                    updateMacSessionInfoCollapse(width: proxy.size.width)
+                }
+                .onChange(of: proxy.size.width) { _, newWidth in
+                    updateMacSessionInfoCollapse(width: newWidth)
+                }
             }
             .transition(.orbitMicro)
+#else
+            taskScrollView
+                .transition(.orbitMicro)
+#endif
         }
     }
 
@@ -168,29 +210,137 @@ struct SessionLiveView: View {
     }
 
     @ViewBuilder
-    private var tasksContent: some View {
+    private var taskSectionContent: some View {
         if sortedFilteredTasks.isEmpty {
             emptyState
+                .padding(.top, 4)
                 .transition(.orbitMicro)
         } else {
-            ScrollViewReader { scrollProxy in
-                ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(sortedFilteredTasks) { draft in
-                            taskRow(for: draft)
-                                .id(draft.id)
-                        }
-                    }
-                    .padding(.trailing, 8)
-                }
-                .scrollIndicators(.visible)
-                .onChange(of: focusedTaskID) { _, _ in
-                    scrollFocusedTaskIfNeeded(using: scrollProxy)
+            VStack(spacing: Layout.taskSpacing) {
+                ForEach(sortedFilteredTasks) { draft in
+                    taskRow(for: draft)
+                        .id(draft.id)
                 }
             }
+            .padding(.top, 4)
             .transition(.orbitMicro)
         }
     }
+
+    private var stickyFilterBar: some View {
+        SessionTaskFilterBar(store: store)
+    }
+
+    private var taskScrollView: some View {
+        ScrollViewReader { scrollProxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 14, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        taskSectionContent
+                    } header: {
+                        stickyFilterBar
+                    }
+                }
+                .padding(.top, scrollContentTopPadding)
+                .padding(.trailing, 8)
+            }
+            .scrollIndicators(.visible)
+            .onChange(of: focusedTaskID) { _, _ in
+                scrollFocusedTaskIfNeeded(using: scrollProxy)
+            }
+        }
+    }
+
+    private var scrollContentTopPadding: CGFloat {
+#if os(iOS)
+        return 6
+#else
+        return 0
+#endif
+    }
+
+    @ToolbarContentBuilder
+    private var sessionInfoToolbarContent: some ToolbarContent {
+        if let activeSession = store.activeSession {
+#if os(macOS)
+            if isMacSessionInfoCollapsed {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isSessionInfoPresented.toggle()
+                    } label: {
+                        Label("Session Info", systemImage: "info.circle")
+                    }
+                    .help("Session Info")
+                    .popover(isPresented: $isSessionInfoPresented, arrowEdge: .bottom) {
+                        sessionInfoPresentation(for: activeSession)
+                    }
+                }
+            }
+#else
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    isSessionInfoPresented.toggle()
+                } label: {
+                    Label("Session Info", systemImage: "info.circle")
+                }
+                .accessibilityLabel("Session Info")
+                .accessibilityHint("Open current session information")
+                .popover(isPresented: $isSessionInfoPresented, arrowEdge: .top) {
+                    sessionInfoPresentation(for: activeSession)
+                }
+            }
+            .matchedTransitionSource(id: SessionInfoTransitionID.toolbarButton, in: sessionInfoTransitionNamespace)
+#endif
+        }
+    }
+
+    private func sessionInfoPresentation(for session: FocusSessionRecord) -> some View {
+        SessionInfoSurface(
+            session: session,
+            endSessionDraft: store.endSessionDraft,
+            taskDrafts: Array(store.taskDrafts),
+            style: .presentation,
+            onRename: renameSession(_:),
+            onEndSessionTapped: endSessionButtonTapped,
+            onEndSessionConfirm: confirmEndSession(name:),
+            onEndSessionCancel: cancelEndSession
+        )
+        .presentationCompactAdaptation(.sheet)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationSizing(.fitted)
+    }
+
+#if os(macOS)
+    private func sessionInfoSidebar(for session: FocusSessionRecord) -> some View {
+        SessionInfoSurface(
+            session: session,
+            endSessionDraft: store.endSessionDraft,
+            taskDrafts: Array(store.taskDrafts),
+            style: .card,
+            onRename: renameSession(_:),
+            onEndSessionTapped: endSessionButtonTapped,
+            onEndSessionConfirm: confirmEndSession(name:),
+            onEndSessionCancel: cancelEndSession
+        )
+        .frame(width: Layout.sessionInfoWidth, alignment: .leading)
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private func shouldCollapseMacSessionInfo(for width: CGFloat) -> Bool {
+        width < Layout.collapseThreshold
+    }
+
+    private func updateMacSessionInfoCollapse(width: CGFloat) {
+        let isCollapsed = shouldCollapseMacSessionInfo(for: width)
+        if isMacSessionInfoCollapsed != isCollapsed {
+            isMacSessionInfoCollapsed = isCollapsed
+        }
+        if !isCollapsed {
+            isSessionInfoPresented = false
+        }
+    }
+#endif
 
     private func taskRow(for draft: AppFeature.State.TaskDraft) -> some View {
         ZStack(alignment: .topTrailing) {

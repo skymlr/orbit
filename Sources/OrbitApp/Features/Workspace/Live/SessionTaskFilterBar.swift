@@ -15,11 +15,14 @@ struct SessionTaskFilterBar: View {
                         activeFilterChips
                     }
                 }
-                .scrollIndicators(.hidden)
+                .scrollIndicators(.never)
             }
 
             Spacer(minLength: 0)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var filterToggleButton: some View {
@@ -59,7 +62,7 @@ struct SessionTaskFilterBar: View {
     private var activeFilterChips: some View {
         ForEach(Self.priorityFilterOrder.filter(isPrioritySelected(_:)), id: \.self) { priority in
             activeFilterChip(
-                title: "Priority: \(priority.title)",
+                title: "\(priority.title)",
                 tint: priorityFilterTint(for: priority),
                 icon: priorityFilterIcon(for: priority),
                 accessibilityLabel: "Priority filter \(priority.title), active"
@@ -70,7 +73,7 @@ struct SessionTaskFilterBar: View {
 
         ForEach(selectedFilteredCategories) { category in
             activeFilterChip(
-                title: "Category: \(category.name)",
+                title: "\(category.name)",
                 tint: Color(orbitHex: category.colorHex),
                 icon: "tag.fill",
                 accessibilityLabel: "Category filter \(category.name), active"
@@ -178,6 +181,7 @@ struct SessionTaskFilterBar: View {
             .background(
                 Capsule()
                     .fill(tint.opacity(0.28))
+                    .fill(.ultraThinMaterial)
             )
             .overlay(
                 Capsule()

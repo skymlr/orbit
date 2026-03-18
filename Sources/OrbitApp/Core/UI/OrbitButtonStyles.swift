@@ -263,7 +263,7 @@ private struct OrbitButtonStylesPreviewGallery: View {
             }
         }
         .padding(20)
-        .frame(width: 430, alignment: .leading)
+        .frame(width: 350, alignment: .leading)
         .background {
             OrbitSpaceBackground()
         }

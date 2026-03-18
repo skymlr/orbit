@@ -23,9 +23,11 @@ struct SessionPageView: View {
     var body: some View {
         contentView
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(18)
+        .padding(.horizontal, 18)
+        .padding(.bottom, 18)
+        .padding(.top, contentTopPadding)
 #if os(macOS)
-        .frame(minWidth: 880, minHeight: 640)
+        .frame(minWidth: 760, idealWidth: 1_180, minHeight: 680, idealHeight: 760)
 #endif
 #if os(iOS)
         .navigationTitle(navigationTitle)
@@ -83,6 +85,17 @@ struct SessionPageView: View {
         }
         .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
         .animation(.easeInOut(duration: 0.16), value: isHistoryMode)
+    }
+
+    private var contentTopPadding: CGFloat {
+#if os(iOS)
+        if isHistoryMode || store.activeSession == nil {
+            return 18
+        }
+        return 0
+#else
+        return 18
+#endif
     }
 
     @ViewBuilder
