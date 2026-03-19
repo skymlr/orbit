@@ -68,7 +68,9 @@ private final class OrbitWindowAppearanceView: NSView {
         window.hasShadow = true
 
         if window.styleMask.contains(.titled) {
+            window.styleMask.insert(.fullSizeContentView)
             window.titlebarAppearsTransparent = true
+            window.toolbarStyle = .unified
         }
 
         window.invalidateShadow()

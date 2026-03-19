@@ -94,7 +94,10 @@ struct SessionPageView: View {
         }
         return 0
 #else
-        return 18
+        if isHistoryMode || store.activeSession == nil {
+            return 18
+        }
+        return 0
 #endif
     }
 
@@ -207,6 +210,8 @@ struct SessionPageView: View {
             }
         }
 
+        ToolbarSpacer(.fixed, placement: .topBarLeading)
+
         ToolbarItem(placement: .topBarLeading) {
             Button(action: openHistoryCalendarButtonTapped) {
                 Image(systemName: "calendar")
@@ -284,13 +289,10 @@ struct SessionPageView: View {
     }
 
     private var navigationTitle: String {
-        if isShowingInlineHistorySearchResults {
-            return "Search History"
-        }
         if isHistoryMode {
             return SessionHistoryBrowserSupport.dayLabel(selectedHistoryDay)
         }
-        return "Workspace"
+        return ""
     }
 
     private var trimmedHistorySearchQuery: String {

@@ -344,6 +344,9 @@ struct PreferencesView: View {
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
+#if os(macOS)
+        .scrollEdgeEffectStyle(.hard, for: .top)
+#endif
     }
 
     @ViewBuilder

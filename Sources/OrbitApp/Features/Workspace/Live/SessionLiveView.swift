@@ -29,6 +29,7 @@ struct SessionLiveView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
     @State private var focusedTaskID: UUID?
     @State private var searchText = ""
+    @State private var isTaskFilterPopoverPresented = false
     @State private var isSessionInfoPresented = false
 #if os(macOS)
     @State private var isMacSessionInfoCollapsed = false
@@ -48,6 +49,7 @@ struct SessionLiveView: View {
             }
             .onChange(of: store.activeSession?.id) { oldValue, newValue in
                 if oldValue != newValue {
+                    isTaskFilterPopoverPresented = false
                     isSessionInfoPresented = false
                 }
             }
@@ -234,11 +236,17 @@ struct SessionLiveView: View {
     private var taskScrollView: some View {
         ScrollViewReader { scrollProxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 14, pinnedViews: [.sectionHeaders]) {
+                LazyVStack(
+                    alignment: .leading,
+                    spacing: 14,
+                    pinnedViews: hasSelectedFilters ? [.sectionHeaders] : []
+                ) {
                     Section {
                         taskSectionContent
                     } header: {
-                        stickyFilterBar
+                        if hasSelectedFilters {
+                            stickyFilterBar
+                        }
                     }
                 }
                 .padding(.top, scrollContentTopPadding)
@@ -249,6 +257,9 @@ struct SessionLiveView: View {
                 scrollFocusedTaskIfNeeded(using: scrollProxy)
             }
         }
+#if os(macOS)
+        .scrollEdgeEffectStyle(.hard, for: .top)
+#endif
     }
 
     private var scrollContentTopPadding: CGFloat {
@@ -264,11 +275,12 @@ struct SessionLiveView: View {
         if let activeSession = store.activeSession {
 #if os(macOS)
             if isMacSessionInfoCollapsed {
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItem(placement: .automatic) {
                     Button {
                         isSessionInfoPresented.toggle()
                     } label: {
-                        Label("Session Info", systemImage: "info.circle")
+                        Text(activeSession.name)
+                            .orbitFont(.headline)
                     }
                     .help("Session Info")
                     .popover(isPresented: $isSessionInfoPresented, arrowEdge: .bottom) {
@@ -276,12 +288,18 @@ struct SessionLiveView: View {
                     }
                 }
             }
+
+            ToolbarItem(placement: .primaryAction) {
+                taskFilterToolbarButton
+            }
 #else
-            ToolbarItem(placement: .bottomBar) {
+            ToolbarSpacer(.fixed, placement: .topBarLeading)
+            ToolbarItem(placement: .topBarLeading) {
                 Button {
                     isSessionInfoPresented.toggle()
                 } label: {
-                    Label("Session Info", systemImage: "info.circle")
+                    Text(activeSession.name)
+                        .orbitFont(.headline)
                 }
                 .accessibilityLabel("Session Info")
                 .accessibilityHint("Open current session information")
@@ -289,9 +307,21 @@ struct SessionLiveView: View {
                     sessionInfoPresentation(for: activeSession)
                 }
             }
+            .sharedBackgroundVisibility(.visible)
             .matchedTransitionSource(id: SessionInfoTransitionID.toolbarButton, in: sessionInfoTransitionNamespace)
+
+            ToolbarItem(placement: .topBarTrailing) {
+                taskFilterToolbarButton
+            }
 #endif
         }
+    }
+
+    private var taskFilterToolbarButton: some View {
+        SessionTaskFilterToolbarButton(
+            store: store,
+            isTaskFilterPopoverPresented: $isTaskFilterPopoverPresented
+        )
     }
 
     private func sessionInfoPresentation(for session: FocusSessionRecord) -> some View {
@@ -409,6 +439,10 @@ struct SessionLiveView: View {
             return "Try a different search or clear the search field."
         }
         return "Adjust filters to view other tasks."
+    }
+
+    private var hasSelectedFilters: Bool {
+        !store.selectedTaskCategoryFilterIDs.isEmpty || !store.selectedTaskPriorityFilters.isEmpty
     }
 
     private var trimmedSearchText: String {

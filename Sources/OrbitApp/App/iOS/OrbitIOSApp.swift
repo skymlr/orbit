@@ -92,7 +92,7 @@ private struct OrbitIOSRootView: View {
                 .orbitAppearance(store.appearance)
                 .preferredColorScheme(.dark)
         }
-        .presentationDetents([.large])
+        .presentationDetents([.medium, .large])
         .presentationDragIndicator(.hidden)
     }
 }

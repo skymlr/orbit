@@ -1,22 +1,56 @@
 import ComposableArchitecture
 import SwiftUI
 
-struct SessionTaskFilterBar: View {
+struct SessionTaskFilterToolbarButton: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
-    @State private var isTaskFilterPopoverPresented = false
+    @Binding var isTaskFilterPopoverPresented: Bool
 
     var body: some View {
-        HStack(alignment: .center, spacing: 8) {
-            filterToggleButton
+        Button {
+            isTaskFilterPopoverPresented.toggle()
+        } label: {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+        }
+        .badge(activeFilterBadge)
+        .popover(isPresented: $isTaskFilterPopoverPresented, arrowEdge: popoverArrowEdge) {
+            SessionTaskFilterPickerPopover(
+                store: store,
+                isTaskFilterPopoverPresented: $isTaskFilterPopoverPresented
+            )
+        }
+        .accessibilityLabel("Filters")
+        .accessibilityValue("\(activeFilterCount) active filters")
+        .accessibilityHint("Open filter picker")
+        .keyboardShortcut("f")
+        .help(activeFilterCount == 0 ? "Filters" : "Filters (\(activeFilterCount) active)")
+    }
 
-            if activeFilterCount != 0 {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
-                        activeFilterChips
-                    }
+    private var activeFilterCount: Int {
+        SessionTaskFilterSupport.activeFilterCount(in: store)
+    }
+
+    private var activeFilterBadge: String? {
+        activeFilterCount == 0 ? nil : "\(activeFilterCount)"
+    }
+
+#if os(macOS)
+    private let popoverArrowEdge: Edge = .bottom
+#else
+    private let popoverArrowEdge: Edge = .top
+#endif
+}
+
+struct SessionTaskFilterBar: View {
+    @SwiftUI.Bindable var store: StoreOf<AppFeature>
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ScrollView(.horizontal) {
+                HStack(spacing: 8) {
+                    activeFilterChips
                 }
-                .scrollIndicators(.never)
             }
+            .scrollIndicators(.never)
 
             Spacer(minLength: 0)
         }
@@ -25,46 +59,13 @@ struct SessionTaskFilterBar: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var filterToggleButton: some View {
-        Button {
-            isTaskFilterPopoverPresented.toggle()
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "line.3.horizontal.decrease.circle")
-                Text("Filters")
-                    .lineLimit(1)
-
-                if activeFilterCount > 0 {
-                    Text("\(activeFilterCount)")
-                        .orbitFont(.caption2, monospacedDigits: true)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            Capsule()
-                                .fill(.black.opacity(0.15))
-                        )
-                }
-            }
-            .orbitFont(.caption, weight: .semibold)
-        }
-        .buttonStyle(.orbitQuiet)
-        .popover(isPresented: $isTaskFilterPopoverPresented, arrowEdge: .bottom) {
-            filterPickerPopover
-        }
-        .accessibilityLabel("Filters")
-        .accessibilityValue("\(activeFilterCount) active filters")
-        .accessibilityHint("Open filter picker")
-        .keyboardShortcut("f")
-        .help("Filters (\(activeFilterCount) active)")
-    }
-
     @ViewBuilder
     private var activeFilterChips: some View {
-        ForEach(Self.priorityFilterOrder.filter(isPrioritySelected(_:)), id: \.self) { priority in
+        ForEach(selectedPriorities, id: \.self) { priority in
             activeFilterChip(
-                title: "\(priority.title)",
-                tint: priorityFilterTint(for: priority),
-                icon: priorityFilterIcon(for: priority),
+                title: priority.title,
+                tint: SessionTaskFilterSupport.priorityFilterTint(for: priority),
+                icon: SessionTaskFilterSupport.priorityFilterIcon(for: priority),
                 accessibilityLabel: "Priority filter \(priority.title), active"
             ) {
                 store.send(.sessionTaskPriorityFilterToggled(priority))
@@ -73,7 +74,7 @@ struct SessionTaskFilterBar: View {
 
         ForEach(selectedFilteredCategories) { category in
             activeFilterChip(
-                title: "\(category.name)",
+                title: category.name,
                 tint: Color(orbitHex: category.colorHex),
                 icon: "tag.fill",
                 accessibilityLabel: "Category filter \(category.name), active"
@@ -83,78 +84,14 @@ struct SessionTaskFilterBar: View {
         }
     }
 
-    private var filterPickerPopover: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Filters")
-                    .orbitFont(.headline)
-
-                Spacer()
-
-                if activeFilterCount > 0 {
-                    Button("Clear all") {
-                        clearAllFilters()
-                    }
-                    .buttonStyle(.orbitQuiet)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Priorities")
-                    .orbitFont(.caption, weight: .semibold)
-                    .foregroundStyle(.secondary)
-
-                ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
-                        ForEach(Self.priorityFilterOrder, id: \.self) { priority in
-                            priorityFilterChip(
-                                title: priority.title,
-                                count: countForPriority(priority),
-                                isSelected: isPrioritySelected(priority),
-                                tint: priorityFilterTint(for: priority),
-                                icon: priorityFilterIcon(for: priority)
-                            ) {
-                                store.send(.sessionTaskPriorityFilterToggled(priority))
-                            }
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-                .scrollIndicators(.hidden)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Categories")
-                    .orbitFont(.caption, weight: .semibold)
-                    .foregroundStyle(.secondary)
-
-                ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
-                        ForEach(categoriesWithTasks) { category in
-                            filterChip(
-                                title: category.name,
-                                count: countForCategory(category.id),
-                                isSelected: isCategorySelected(category.id),
-                                tint: Color(orbitHex: category.colorHex)
-                            ) {
-                                store.send(.sessionTaskCategoryFilterToggled(category.id))
-                            }
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-                .scrollIndicators(.hidden)
-            }
+    private var selectedPriorities: [NotePriority] {
+        SessionTaskFilterSupport.priorityFilterOrder.filter {
+            SessionTaskFilterSupport.isPrioritySelected($0, in: store)
         }
-        .padding(14)
-        .frame(width: 430)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.thinMaterial)
-        )
-        .orbitOnExitCommand {
-            isTaskFilterPopoverPresented = false
-        }
+    }
+
+    private var selectedFilteredCategories: [SessionCategoryRecord] {
+        SessionTaskFilterSupport.selectedFilteredCategories(in: store)
     }
 
     private func activeFilterChip(
@@ -192,35 +129,110 @@ struct SessionTaskFilterBar: View {
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Remove filter")
     }
+}
 
-    private func isCategorySelected(_ categoryID: UUID) -> Bool {
-        store.selectedTaskCategoryFilterIDs.contains(categoryID)
+private struct SessionTaskFilterPickerPopover: View {
+    @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Binding var isTaskFilterPopoverPresented: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Filters")
+                    .orbitFont(.headline)
+
+                Spacer()
+
+                if activeFilterCount > 0 {
+                    Button("Clear all", action: clearAllFilters)
+                        .buttonStyle(.orbitQuiet)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Priorities")
+                    .orbitFont(.caption, weight: .semibold)
+                    .foregroundStyle(.secondary)
+
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) {
+                        ForEach(SessionTaskFilterSupport.priorityFilterOrder, id: \.self) { priority in
+                            priorityFilterChip(
+                                title: priority.title,
+                                count: SessionTaskFilterSupport.countForPriority(priority, in: store),
+                                isSelected: SessionTaskFilterSupport.isPrioritySelected(priority, in: store),
+                                tint: SessionTaskFilterSupport.priorityFilterTint(for: priority),
+                                icon: SessionTaskFilterSupport.priorityFilterIcon(for: priority)
+                            ) {
+                                store.send(.sessionTaskPriorityFilterToggled(priority))
+                            }
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+                .scrollIndicators(.hidden)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Categories")
+                    .orbitFont(.caption, weight: .semibold)
+                    .foregroundStyle(.secondary)
+
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) {
+                        ForEach(categoriesWithTasks) { category in
+                            filterChip(
+                                title: category.name,
+                                count: SessionTaskFilterSupport.countForCategory(category.id, in: store),
+                                isSelected: SessionTaskFilterSupport.isCategorySelected(category.id, in: store),
+                                tint: Color(orbitHex: category.colorHex)
+                            ) {
+                                store.send(.sessionTaskCategoryFilterToggled(category.id))
+                            }
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+                .scrollIndicators(.hidden)
+            }
+        }
+        .padding(popoverContentPadding)
+#if os(macOS)
+        .frame(width: 430)
+#else
+        .frame(maxWidth: .infinity, alignment: .leading)
+#endif
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.thinMaterial)
+        )
+        .padding(.horizontal, popoverOuterHorizontalPadding)
+        .padding(.vertical, popoverOuterVerticalPadding)
+        .orbitOnExitCommand {
+            isTaskFilterPopoverPresented = false
+        }
     }
 
-    private func countForCategory(_ categoryID: UUID) -> Int {
-        store.taskDrafts.filter { draft in
-            draft.categories.contains(where: { $0.id == categoryID })
-        }
-        .count
-    }
-
-    private func countForPriority(_ priority: NotePriority) -> Int {
-        store.taskDrafts.filter { draft in
-            draft.priority == priority
-        }
-        .count
+    private var activeFilterCount: Int {
+        SessionTaskFilterSupport.activeFilterCount(in: store)
     }
 
     private var categoriesWithTasks: [SessionCategoryRecord] {
-        store.categories.filter { countForCategory($0.id) > 0 }
+        SessionTaskFilterSupport.categoriesWithTasks(in: store)
     }
 
-    private func isPrioritySelected(_ priority: NotePriority) -> Bool {
-        store.selectedTaskPriorityFilters.contains(priority)
-    }
+#if os(macOS)
+    private let popoverContentPadding: CGFloat = 14
+    private let popoverOuterHorizontalPadding: CGFloat = 0
+    private let popoverOuterVerticalPadding: CGFloat = 0
+#else
+    private let popoverContentPadding: CGFloat = 18
+    private let popoverOuterHorizontalPadding: CGFloat = 16
+    private let popoverOuterVerticalPadding: CGFloat = 12
+#endif
 
-    private var selectedFilteredCategories: [SessionCategoryRecord] {
-        store.categories.filter { store.selectedTaskCategoryFilterIDs.contains($0.id) }
+    private func clearAllFilters() {
+        store.send(.sessionTaskFiltersCleared)
     }
 
     private func filterChip(
@@ -287,8 +299,52 @@ struct SessionTaskFilterBar: View {
         .accessibilityValue(isSelected ? "Selected" : "Not selected")
         .accessibilityHint("Shows \(count) tasks")
     }
+}
 
-    private func priorityFilterTint(for priority: NotePriority) -> Color {
+@MainActor
+private enum SessionTaskFilterSupport {
+    static let priorityFilterOrder: [NotePriority] = [
+        .high,
+        .medium,
+        .low,
+        .none,
+    ]
+
+    static func activeFilterCount(in store: StoreOf<AppFeature>) -> Int {
+        store.selectedTaskCategoryFilterIDs.count + store.selectedTaskPriorityFilters.count
+    }
+
+    static func isCategorySelected(_ categoryID: UUID, in store: StoreOf<AppFeature>) -> Bool {
+        store.selectedTaskCategoryFilterIDs.contains(categoryID)
+    }
+
+    static func countForCategory(_ categoryID: UUID, in store: StoreOf<AppFeature>) -> Int {
+        store.taskDrafts.filter { draft in
+            draft.categories.contains(where: { $0.id == categoryID })
+        }
+        .count
+    }
+
+    static func countForPriority(_ priority: NotePriority, in store: StoreOf<AppFeature>) -> Int {
+        store.taskDrafts.filter { draft in
+            draft.priority == priority
+        }
+        .count
+    }
+
+    static func categoriesWithTasks(in store: StoreOf<AppFeature>) -> [SessionCategoryRecord] {
+        store.categories.filter { countForCategory($0.id, in: store) > 0 }
+    }
+
+    static func isPrioritySelected(_ priority: NotePriority, in store: StoreOf<AppFeature>) -> Bool {
+        store.selectedTaskPriorityFilters.contains(priority)
+    }
+
+    static func selectedFilteredCategories(in store: StoreOf<AppFeature>) -> [SessionCategoryRecord] {
+        store.categories.filter { store.selectedTaskCategoryFilterIDs.contains($0.id) }
+    }
+
+    static func priorityFilterTint(for priority: NotePriority) -> Color {
         switch priority {
         case .none:
             return Color(red: 0.62, green: 0.70, blue: 0.84)
@@ -301,7 +357,7 @@ struct SessionTaskFilterBar: View {
         }
     }
 
-    private func priorityFilterIcon(for priority: NotePriority) -> String {
+    static func priorityFilterIcon(for priority: NotePriority) -> String {
         switch priority {
         case .none:
             return "minus.circle"
@@ -313,19 +369,4 @@ struct SessionTaskFilterBar: View {
             return "exclamationmark.circle.fill"
         }
     }
-
-    private var activeFilterCount: Int {
-        store.selectedTaskCategoryFilterIDs.count + store.selectedTaskPriorityFilters.count
-    }
-
-    private func clearAllFilters() {
-        store.send(.sessionTaskFiltersCleared)
-    }
-
-    private static let priorityFilterOrder: [NotePriority] = [
-        .high,
-        .medium,
-        .low,
-        .none,
-    ]
 }

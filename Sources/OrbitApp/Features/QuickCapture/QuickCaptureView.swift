@@ -230,7 +230,7 @@ struct QuickCaptureView: View {
                     focusedField = .priority
                 }
             )
-            .frame(minHeight: 96, maxHeight: 220)
+            .frame(minHeight: 96, idealHeight: 140, maxHeight: 220)
 
             if editorState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text("Capture your focus task...")
