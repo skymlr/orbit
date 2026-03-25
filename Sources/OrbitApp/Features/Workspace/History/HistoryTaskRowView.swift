@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 
 struct HistoryTaskRowView: View {
+    @Environment(\.orbitAdaptiveLayout) private var layout
     let task: FocusTaskRecord
 
     private var isCompleted: Bool {
@@ -35,19 +36,33 @@ struct HistoryTaskRowView: View {
                 }
             }
 
-            HStack(spacing: 8) {
-                if let completedAt = task.completedAt {
-                    Text("Completed \(completedAt, style: .time)")
-                    Text("•")
-                } else {
-                    Text("Open")
-                    Text("•")
-                }
+            if layout.isCompact {
+                VStack(alignment: .leading, spacing: 4) {
+                    if let completedAt = task.completedAt {
+                        Text("Completed \(completedAt, style: .time)")
+                    } else {
+                        Text("Open")
+                    }
 
-                Text("Created \(task.createdAt, style: .time)")
+                    Text("Created \(task.createdAt, style: .time)")
+                }
+                .orbitFont(.caption)
+                .foregroundStyle(.secondary)
+            } else {
+                HStack(spacing: 8) {
+                    if let completedAt = task.completedAt {
+                        Text("Completed \(completedAt, style: .time)")
+                        Text("•")
+                    } else {
+                        Text("Open")
+                        Text("•")
+                    }
+
+                    Text("Created \(task.createdAt, style: .time)")
+                }
+                .orbitFont(.caption)
+                .foregroundStyle(.secondary)
             }
-            .orbitFont(.caption)
-            .foregroundStyle(.secondary)
         }
         .padding(12)
         .background(
@@ -159,6 +174,9 @@ private enum HistoryTaskRowPreviewFixtures {
 }
 
 private struct HistoryTaskRowPreviewGallery: View {
+    let layout: OrbitAdaptiveLayoutValue
+    let galleryWidth: CGFloat
+
     var body: some View {
         ZStack {
             OrbitSpaceBackground()
@@ -168,16 +186,29 @@ private struct HistoryTaskRowPreviewGallery: View {
                 HistoryTaskRowView(task: HistoryTaskRowPreviewFixtures.completedTask)
             }
             .padding(24)
-            .frame(width: 620, alignment: .leading)
+            .frame(width: galleryWidth, alignment: .leading)
         }
-        .frame(width: 680, height: 300)
+        .frame(width: galleryWidth + 60, height: 300)
+        .environment(\.orbitAdaptiveLayout, layout)
     }
 }
 
 struct HistoryTaskRowView_Previews: PreviewProvider {
     static var previews: some View {
-        HistoryTaskRowPreviewGallery()
-            .preferredColorScheme(.dark)
+        Group {
+            HistoryTaskRowPreviewGallery(
+                layout: .init(style: .regular, availableWidth: 680),
+                galleryWidth: 620
+            )
+            .previewDisplayName("Regular")
+
+            HistoryTaskRowPreviewGallery(
+                layout: .init(style: .compact, availableWidth: 375),
+                galleryWidth: 315
+            )
+            .previewDisplayName("Compact")
+        }
+        .preferredColorScheme(.dark)
     }
 }
 #endif

@@ -6,6 +6,7 @@ enum SessionInfoSurfaceStyle: Equatable {
 }
 
 struct SessionInfoSurface: View {
+    @Environment(\.orbitAdaptiveLayout) private var layout
     let session: FocusSessionRecord
     let endSessionDraft: AppFeature.State.EndSessionDraft?
     let taskDrafts: [AppFeature.State.TaskDraft]
@@ -69,12 +70,19 @@ struct SessionInfoSurface: View {
         case .presentation:
             ScrollView {
                 panel
-                    .frame(maxWidth: 420, alignment: .leading)
+                    .frame(
+                        maxWidth: layout.isCompact ? .infinity : 420,
+                        alignment: .leading
+                    )
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(18)
+                    .padding(layout.isCompact ? 16 : 18)
             }
             .scrollIndicators(.hidden)
-            .frame(minWidth: 320, idealWidth: 420, minHeight: 280)
+            .frame(
+                minWidth: layout.isCompact ? nil : 320,
+                idealWidth: layout.isCompact ? nil : 420,
+                minHeight: 280
+            )
         }
     }
 
@@ -140,7 +148,17 @@ struct SessionInfoSurface: View {
 
     private var metricsGrid: some View {
         LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: style == .card ? 128 : 136), spacing: 10, alignment: .leading)],
+            columns: [
+                GridItem(
+                    .adaptive(
+                        minimum: style == .card
+                            ? 128
+                            : (layout.isCompact ? 120 : 136)
+                    ),
+                    spacing: 10,
+                    alignment: .leading
+                )
+            ],
             alignment: .leading,
             spacing: 10
         ) {

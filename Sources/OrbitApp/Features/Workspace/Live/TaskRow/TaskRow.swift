@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 
 struct TaskRow: View {
+    @Environment(\.orbitAdaptiveLayout) private var layout
     let draft: AppFeature.State.TaskDraft
     let isKeyboardHighlighted: Bool
     let onKeyboardPopoverDismissed: (() -> Void)?
@@ -36,9 +37,26 @@ struct TaskRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        Group {
+            if layout.isCompact {
+                taskCard
+            } else {
+                taskCard
+                    .popover(
+                        isPresented: $isKeyboardShortcutMenuPresented,
+                        attachmentAnchor: .rect(.bounds),
+                        arrowEdge: .trailing
+                    ) {
+                        TaskRowKeyboardShortcutMenu()
+                    }
+            }
+        }
+    }
+
+    private var taskCard: some View {
+        HStack(alignment: .top, spacing: layout.isCompact ? 12 : 14) {
             completionToggle
-                .padding(.leading, 12)
+                .padding(.leading, layout.isCompact ? 10 : 12)
 
             VStack(alignment: .leading, spacing: 12) {
                 MarkdownRenderedTaskView(
@@ -54,7 +72,7 @@ struct TaskRow: View {
             .padding(.trailing, 46)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(12)
+        .padding(layout.isCompact ? 10 : 12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.ultraThinMaterial)
@@ -104,13 +122,6 @@ struct TaskRow: View {
         .task(id: draft.id) {
             resetTransientUIState()
             isKeyboardShortcutMenuPresented = isKeyboardHighlighted
-        }
-        .popover(
-            isPresented: $isKeyboardShortcutMenuPresented,
-            attachmentAnchor: .rect(.bounds),
-            arrowEdge: .trailing
-        ) {
-            TaskRowKeyboardShortcutMenu()
         }
     }
 
@@ -183,41 +194,60 @@ struct TaskRow: View {
 
     @ViewBuilder
     private var taskMetadataSection: some View {
-        HStack(alignment: .center, spacing: 8) {
-            priorityBadge
+        if layout.isCompact {
+            VStack(alignment: .leading, spacing: 6) {
+                priorityBadge
 
-            if !draft.categories.isEmpty {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 6) {
-                        ForEach(draft.categories) { category in
-                            OrbitCategoryChip(
-                                title: category.name,
-                                tint: Color(orbitHex: category.colorHex),
-                                isSelected: true
-                            )
+                if !draft.categories.isEmpty {
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 6) {
+                            ForEach(draft.categories) { category in
+                                OrbitCategoryChip(
+                                    title: category.name,
+                                    tint: Color(orbitHex: category.colorHex),
+                                    isSelected: true
+                                )
+                            }
                         }
+                        .padding(.vertical, 2)
                     }
-                    .padding(.vertical, 2)
+                    .scrollIndicators(.hidden)
                 }
-                .scrollIndicators(.hidden)
+            }
+        } else {
+            HStack(alignment: .center, spacing: 8) {
+                priorityBadge
+
+                if !draft.categories.isEmpty {
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 6) {
+                            ForEach(draft.categories) { category in
+                                OrbitCategoryChip(
+                                    title: category.name,
+                                    tint: Color(orbitHex: category.colorHex),
+                                    isSelected: true
+                                )
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+                    .scrollIndicators(.hidden)
+                }
             }
         }
     }
 
     private var priorityBadge: some View {
+        priorityButton
+    }
+
+    private var priorityButton: some View {
         Button {
             isPriorityPopoverPresented = true
         } label: {
             priorityBadgeLabel
         }
         .buttonStyle(.plain)
-        .popover(
-            isPresented: $isPriorityPopoverPresented,
-            attachmentAnchor: .rect(.bounds),
-            arrowEdge: .bottom
-        ) {
-            priorityPickerPopover
-        }
         .orbitInteractiveControl(
             scale: 1.03,
             lift: -0.5,
@@ -228,6 +258,13 @@ struct TaskRow: View {
         .accessibilityValue(draft.priority.title)
         .accessibilityHint("Activate to choose a new priority.")
         .help("Priority: \(draft.priority.title). Click to choose.")
+        .modifier(PriorityPickerPresentationModifier(
+            isCompact: layout.isCompact,
+            isPresented: $isPriorityPopoverPresented,
+            popoverContent: priorityPickerPopover,
+            currentPriority: draft.priority,
+            onPrioritySet: onPrioritySet
+        ))
     }
 
     private var priorityBadgeLabel: some View {
@@ -430,6 +467,49 @@ struct TaskRow: View {
     ]
 }
 
+private struct PriorityPickerPresentationModifier<PopoverContent: View>: ViewModifier {
+    let isCompact: Bool
+    @Binding var isPresented: Bool
+    let popoverContent: PopoverContent
+    let currentPriority: NotePriority
+    let onPrioritySet: (NotePriority) -> Void
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isCompact {
+            content
+                .confirmationDialog(
+                    "Set Priority",
+                    isPresented: $isPresented,
+                    titleVisibility: .visible
+                ) {
+                    ForEach(NotePriority.allCases, id: \.self) { priority in
+                        Button(priorityActionTitle(for: priority)) {
+                            onPrioritySet(priority)
+                        }
+                    }
+                    Button("Cancel", role: .cancel) {}
+                }
+        } else {
+            content
+                .popover(
+                    isPresented: $isPresented,
+                    attachmentAnchor: .rect(.bounds),
+                    arrowEdge: .bottom
+                ) {
+                    popoverContent
+                }
+        }
+    }
+
+    private func priorityActionTitle(for priority: NotePriority) -> String {
+        if priority == currentPriority {
+            return "\(priority.title) Selected"
+        }
+        return priority.title
+    }
+}
+
 enum TaskRowPalette {
     static let heroNavy = OrbitTheme.Palette.heroNavy
     static let heroCyan = OrbitTheme.Palette.heroCyan
@@ -572,6 +652,9 @@ private struct TaskRowPreviewCard: View {
 }
 
 private struct TaskRowPreviewGallery: View {
+    let layout: OrbitAdaptiveLayoutValue
+    let galleryWidth: CGFloat
+
     var body: some View {
         ZStack {
             OrbitSpaceBackground()
@@ -585,16 +668,29 @@ private struct TaskRowPreviewGallery: View {
                 TaskRowPreviewCard(draft: TaskRowPreviewFixtures.completedDraft)
             }
             .padding(24)
-            .frame(width: 620, alignment: .leading)
+            .frame(width: galleryWidth, alignment: .leading)
         }
-        .frame(width: 680, height: 360)
+        .frame(width: galleryWidth + 60, height: 360)
+        .environment(\.orbitAdaptiveLayout, layout)
     }
 }
 
 struct TaskRow_Previews: PreviewProvider {
     static var previews: some View {
-        TaskRowPreviewGallery()
-            .preferredColorScheme(.dark)
+        Group {
+            TaskRowPreviewGallery(
+                layout: .init(style: .regular, availableWidth: 680),
+                galleryWidth: 620
+            )
+            .previewDisplayName("Regular")
+
+            TaskRowPreviewGallery(
+                layout: .init(style: .compact, availableWidth: 375),
+                galleryWidth: 315
+            )
+            .previewDisplayName("Compact")
+        }
+        .preferredColorScheme(.dark)
     }
 }
 #endif

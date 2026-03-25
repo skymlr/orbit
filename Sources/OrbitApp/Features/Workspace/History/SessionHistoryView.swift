@@ -8,6 +8,7 @@ struct SessionHistoryView: View {
     }
 
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Environment(\.orbitAdaptiveLayout) private var layout
     let historyDayGroups: [HistoryDayGroup]
     let selectedHistoryDay: Date
     let selectedHistorySessionID: UUID?
@@ -70,22 +71,38 @@ struct SessionHistoryView: View {
                 }
             }
         }
-        .frame(maxWidth: Layout.contentMaxWidth, alignment: .leading)
+        .frame(
+            maxWidth: layout.isCompact ? .infinity : Layout.contentMaxWidth,
+            alignment: .leading
+        )
         .transition(.orbitMicro)
     }
 
     private var noActiveSessionBanner: some View {
-        HStack(spacing: 10) {
-            Text("No active session. You are browsing archived history.")
-                .orbitFont(.caption)
-                .foregroundStyle(.secondary)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                Text("No active session. You are browsing archived history.")
+                    .orbitFont(.caption)
+                    .foregroundStyle(.secondary)
 
-            Spacer()
+                Spacer()
 
-            Button("Exit History") {
-                onExitHistoryMode()
+                Button("Exit History") {
+                    onExitHistoryMode()
+                }
+                .buttonStyle(.orbitSecondary)
             }
-            .buttonStyle(.orbitSecondary)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("No active session. You are browsing archived history.")
+                    .orbitFont(.caption)
+                    .foregroundStyle(.secondary)
+
+                Button("Exit History") {
+                    onExitHistoryMode()
+                }
+                .buttonStyle(.orbitSecondary)
+            }
         }
         .padding(12)
         .background(

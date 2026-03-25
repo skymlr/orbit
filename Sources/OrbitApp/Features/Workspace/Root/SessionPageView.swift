@@ -8,6 +8,7 @@ import AppKit
 
 struct SessionPageView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Environment(\.orbitAdaptiveLayout) private var layout
 
     @State private var isHistoryMode = false
     @State private var selectedHistoryDay = SessionHistoryBrowserSupport.normalizedDay(for: Date())
@@ -23,8 +24,8 @@ struct SessionPageView: View {
     var body: some View {
         contentView
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(.horizontal, 18)
-        .padding(.bottom, 18)
+        .padding(.horizontal, horizontalContentPadding)
+        .padding(.bottom, bottomContentPadding)
         .padding(.top, contentTopPadding)
 #if os(macOS)
         .frame(minWidth: 760, idealWidth: 1_180, minHeight: 680, idealHeight: 760)
@@ -87,8 +88,22 @@ struct SessionPageView: View {
         .animation(.easeInOut(duration: 0.16), value: isHistoryMode)
     }
 
+    private var horizontalContentPadding: CGFloat {
+        layout.isCompact ? 12 : 18
+    }
+
+    private var bottomContentPadding: CGFloat {
+        layout.isCompact ? 8 : 18
+    }
+
     private var contentTopPadding: CGFloat {
 #if os(iOS)
+        if layout.isCompact {
+            if isHistoryMode || store.activeSession == nil {
+                return 10
+            }
+            return 4
+        }
         if isHistoryMode || store.activeSession == nil {
             return 18
         }
@@ -222,20 +237,50 @@ struct SessionPageView: View {
         }
 
         if isHistoryMode && !isShowingInlineHistorySearchResults {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Button(action: navigateToPreviousHistoryDayButtonTapped) {
-                    Image(systemName: "chevron.left")
+            if layout.isCompact {
+                ToolbarItem(placement: .topBarTrailing) {
+                    historyActionsMenu
                 }
-                .disabled(previousHistoryDay == nil)
+            } else {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button(action: navigateToPreviousHistoryDayButtonTapped) {
+                        Image(systemName: "chevron.left")
+                    }
+                    .disabled(previousHistoryDay == nil)
 
-                Button(action: navigateToNextHistoryDayButtonTapped) {
-                    Image(systemName: "chevron.right")
+                    Button(action: navigateToNextHistoryDayButtonTapped) {
+                        Image(systemName: "chevron.right")
+                    }
+                    .disabled(nextHistoryDay == nil)
+
+                    historyActionsMenu
                 }
-                .disabled(nextHistoryDay == nil)
+            }
+        } else if isHistoryMode && layout.isCompact {
+            ToolbarItem(placement: .topBarTrailing) {
+                historyActionsMenu
             }
         }
 #endif
     }
+
+#if os(iOS)
+    private var historyActionsMenu: some View {
+        Menu {
+            Button("Previous Day", action: navigateToPreviousHistoryDayButtonTapped)
+                .disabled(previousHistoryDay == nil)
+
+            Button("Next Day", action: navigateToNextHistoryDayButtonTapped)
+                .disabled(nextHistoryDay == nil)
+
+            Button("Export All Sessions", action: exportAllSessionsToolbarButtonTapped)
+                .disabled(completedHistorySessionIDs.isEmpty)
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .accessibilityLabel("History actions")
+    }
+#endif
 
     private var historyCalendarPopover: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -445,7 +490,7 @@ struct SessionPageView: View {
 #if os(macOS)
         "Open floating history search"
 #else
-        "Open history search"
+        "Open history actions"
 #endif
     }
 

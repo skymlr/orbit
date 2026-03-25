@@ -14,7 +14,6 @@ struct HistorySearchView: View {
             ) { filter in
                 filter.title
             }
-            .frame(maxWidth: 440)
 
             content
         }
@@ -86,23 +85,26 @@ struct HistorySearchView: View {
 
     private func dayGroupView(_ dayGroup: HistorySearchDayGroup) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(SessionHistoryBrowserSupport.dayLabel(dayGroup.day))
-                        .orbitFont(.headline, weight: .semibold)
-                        .foregroundStyle(OrbitTheme.Palette.orbitLine)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 12) {
+                    dayGroupSummary(dayGroup)
 
-                    Text(dayCountLabel(for: dayGroup))
-                        .orbitFont(.caption)
-                        .foregroundStyle(.secondary)
+                    Spacer()
+
+                    Button("Go to Day") {
+                        model.goToDay(dayGroup.day)
+                    }
+                    .buttonStyle(.orbitSecondary)
                 }
 
-                Spacer()
+                VStack(alignment: .leading, spacing: 10) {
+                    dayGroupSummary(dayGroup)
 
-                Button("Go to Day") {
-                    model.goToDay(dayGroup.day)
+                    Button("Go to Day") {
+                        model.goToDay(dayGroup.day)
+                    }
+                    .buttonStyle(.orbitSecondary)
                 }
-                .buttonStyle(.orbitSecondary)
             }
 
             VStack(alignment: .leading, spacing: 12) {
@@ -124,22 +126,26 @@ struct HistorySearchView: View {
 
     private func sessionGroupView(_ sessionGroup: HistorySearchSessionGroup) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(sessionGroup.session.name)
-                        .orbitFont(.subheadline, weight: .semibold)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 12) {
+                    sessionGroupSummary(sessionGroup)
 
-                    Text(sessionMetadata(for: sessionGroup))
-                        .orbitFont(.caption)
-                        .foregroundStyle(.secondary)
+                    Spacer()
+
+                    Button("Go to Session") {
+                        model.goToSession(sessionGroup.session)
+                    }
+                    .buttonStyle(.orbitSecondary)
                 }
 
-                Spacer()
+                VStack(alignment: .leading, spacing: 10) {
+                    sessionGroupSummary(sessionGroup)
 
-                Button("Go to Session") {
-                    model.goToSession(sessionGroup.session)
+                    Button("Go to Session") {
+                        model.goToSession(sessionGroup.session)
+                    }
+                    .buttonStyle(.orbitSecondary)
                 }
-                .buttonStyle(.orbitSecondary)
             }
 
             if sessionGroup.tasks.isEmpty {
@@ -184,6 +190,29 @@ struct HistorySearchView: View {
             RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
                 .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
         )
+    }
+
+    private func dayGroupSummary(_ dayGroup: HistorySearchDayGroup) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(SessionHistoryBrowserSupport.dayLabel(dayGroup.day))
+                .orbitFont(.headline, weight: .semibold)
+                .foregroundStyle(OrbitTheme.Palette.orbitLine)
+
+            Text(dayCountLabel(for: dayGroup))
+                .orbitFont(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func sessionGroupSummary(_ sessionGroup: HistorySearchSessionGroup) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(sessionGroup.session.name)
+                .orbitFont(.subheadline, weight: .semibold)
+
+            Text(sessionMetadata(for: sessionGroup))
+                .orbitFont(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func dayCountLabel(for dayGroup: HistorySearchDayGroup) -> String {

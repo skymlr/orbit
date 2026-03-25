@@ -21,46 +21,150 @@ struct QuickCaptureView: View {
     @FocusState private var focusedField: FocusField?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                if let activeSession = store.activeSession {
-                    Text(activeSession.name)
-                        .orbitFont(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+        OrbitAdaptiveLayoutReader { layout in
+            captureContent(for: layout)
+                .task {
+                    editorState.text = store.captureDraft.markdown
+                    editorState.selectionRange = NSRange(location: (store.captureDraft.markdown as NSString).length, length: 0)
+                    requestEditorFocus()
                 }
-
-                if store.captureDraft.editingTaskID != nil {
-                    Text("Editing task")
-                        .orbitFont(.caption2, weight: .semibold)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(
-                            Capsule()
-                                .fill(.ultraThinMaterial)
-                        )
-                        .transition(.orbitMicro)
+                .onChange(of: store.captureDraft.editingTaskID) { _, _ in
+                    requestEditorFocus()
                 }
-
-                Spacer()
-
-                Button {
+                .onChange(of: store.presentation.capturePresentationRequest) { _, _ in
+                    requestEditorFocus()
+                }
+                .onChange(of: editorState.isPreviewVisible) { _, newValue in
+                    if !newValue {
+                        requestEditorFocus()
+                    } else {
+                        isEditorFocused = false
+                    }
+                }
+                .onChange(of: editorState.text) { _, newValue in
+                    store.captureDraft.markdown = newValue
+                }
+                .onChange(of: store.captureDraft.markdown) { _, newValue in
+                    if newValue != editorState.text {
+                        editorState.text = newValue
+                        editorState.selectionRange = NSRange(location: (newValue as NSString).length, length: 0)
+                    }
+                }
+                .onChange(of: store.categories) { _, categories in
+                    categoriesChanged(categories)
+                }
+                .background {
+                    captureBackground(for: layout)
+                }
+                .orbitOnExitCommand {
                     dismissCapture()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
                 }
-                .buttonStyle(.plain)
-                .keyboardShortcut(.escape, modifiers: [])
-                .orbitInteractiveControl(
-                    scale: 1.08,
-                    lift: -1.0,
-                    shadowColor: Color.white.opacity(0.14),
-                    shadowRadius: 5
-                )
-                .foregroundStyle(.secondary)
+                .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: editorState.isPreviewVisible)
+                .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: store.captureDraft.editingTaskID != nil)
+                .background {
+                    keyboardShortcutBindings
+                }
+        }
+    }
+
+    @ViewBuilder
+    private func captureContent(for layout: OrbitAdaptiveLayoutValue) -> some View {
+        if layout.isCompact {
+            compactCaptureContent(for: layout)
+        } else {
+            regularCaptureContent(for: layout)
+        }
+    }
+
+    private func regularCaptureContent(for layout: OrbitAdaptiveLayoutValue) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            captureHeader
+            editorSection
+            categorySection(for: layout)
+            actionArea(for: layout)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func compactCaptureContent(for layout: OrbitAdaptiveLayoutValue) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                captureHeader
+                editorSection
+                categorySection(for: layout)
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 14)
+            .padding(.bottom, 18)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .orbitInteractiveKeyboardDismiss()
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            compactActionBar
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    @ViewBuilder
+    private func captureBackground(for layout: OrbitAdaptiveLayoutValue) -> some View {
+        if layout.isCompact {
+            OrbitSpaceBackground()
+        } else {
+            ZStack {
+                OrbitSpaceBackground()
+
+                RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
+                    .fill(.ultraThinMaterial.opacity(0.32))
+                    .blur(radius: 8)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous))
+        }
+    }
+
+    private var captureHeader: some View {
+        HStack {
+            if let activeSession = store.activeSession {
+                Text(activeSession.name)
+                    .orbitFont(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
+            if store.captureDraft.editingTaskID != nil {
+                Text("Editing task")
+                    .orbitFont(.caption2, weight: .semibold)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                    )
+                    .transition(.orbitMicro)
+            }
+
+            Spacer()
+
+            Button {
+                dismissCapture()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.escape, modifiers: [])
+            .orbitInteractiveControl(
+                scale: 1.08,
+                lift: -1.0,
+                shadowColor: Color.white.opacity(0.14),
+                shadowRadius: 5
+            )
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private var editorSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
             if !editorState.isPreviewVisible {
                 MarkdownFormattingBar { action in
                     formatActionTapped(action)
@@ -80,114 +184,100 @@ struct QuickCaptureView: View {
                 RoundedRectangle(cornerRadius: OrbitTheme.Radius.small, style: .continuous)
                     .fill(.ultraThinMaterial)
             )
+        }
+    }
 
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    Text("Categories")
-                        .orbitFont(.caption, weight: .semibold)
-                        .foregroundStyle(.secondary)
-                    
-                    Spacer()
-                    
-                    Button {
-                        editorState.isPreviewVisible.toggle()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text(editorState.isPreviewVisible ? "Hide Preview" : "Show Preview")
-                            shortcutSubtitle("cmd+shift+p")
-                        }
-                    }
-                    .buttonStyle(.orbitQuiet)
-                    .keyboardShortcut("p", modifiers: [.command, .shift])
-                }
-
-                categorySectionContent
-            }
-
-            HStack {
-                HStack(spacing: 6) {
-                    Text("Priority")
-                        .orbitFont(.caption, weight: .semibold)
-                        .foregroundStyle(.secondary)
-                    shortcutSubtitle(store.hotkeys.captureNextPriorityShortcut)
-                }
-
-                Picker("Priority", selection: $store.captureDraft.priority) {
-                    ForEach(NotePriority.allCases, id: \.self) { priority in
-                        Text(priority.title).tag(priority)
-                    }
-                }
-                .pickerStyle(.menu)
-                .labelsHidden()
-                .focusable()
-                .focused($focusedField, equals: .priority)
-                .help("Next Priority \(HotkeyHintFormatter.hint(from: store.hotkeys.captureNextPriorityShortcut))")
+    private func categorySection(for layout: OrbitAdaptiveLayoutValue) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text("Categories")
+                    .orbitFont(.caption, weight: .semibold)
+                    .foregroundStyle(.secondary)
 
                 Spacer()
-                
+
                 Button {
-                    saveButtonTapped()
+                    editorState.isPreviewVisible.toggle()
                 } label: {
                     HStack(spacing: 6) {
-                        Text(saveButtonTitle)
-                        shortcutSubtitle("cmd+return")
+                        Text(editorState.isPreviewVisible ? "Hide Preview" : "Show Preview")
+                        shortcutSubtitle("cmd+shift+p", isVisible: !layout.isCompact)
                     }
                 }
-                .buttonStyle(.orbitPrimary)
-                .disabled(!canSave)
-                .keyboardShortcut(.return, modifiers: [.command])
+                .buttonStyle(.orbitQuiet)
+                .keyboardShortcut("p", modifiers: [.command, .shift])
             }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .task {
-            editorState.text = store.captureDraft.markdown
-            editorState.selectionRange = NSRange(location: (store.captureDraft.markdown as NSString).length, length: 0)
-            requestEditorFocus()
-        }
-        .onChange(of: store.captureDraft.editingTaskID) { _, _ in
-            requestEditorFocus()
-        }
-        .onChange(of: store.presentation.capturePresentationRequest) { _, _ in
-            requestEditorFocus()
-        }
-        .onChange(of: editorState.isPreviewVisible) { _, newValue in
-            if !newValue {
-                requestEditorFocus()
-            } else {
-                isEditorFocused = false
-            }
-        }
-        .onChange(of: editorState.text) { _, newValue in
-            store.captureDraft.markdown = newValue
-        }
-        .onChange(of: store.captureDraft.markdown) { _, newValue in
-            if newValue != editorState.text {
-                editorState.text = newValue
-                editorState.selectionRange = NSRange(location: (newValue as NSString).length, length: 0)
-            }
-        }
-        .onChange(of: store.categories) { _, categories in
-            categoriesChanged(categories)
-        }
-        .background(
-            ZStack {
-                OrbitSpaceBackground()
 
-                RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
-                    .fill(.ultraThinMaterial.opacity(0.32))
-                    .blur(radius: 8)
+            categorySectionContent
+        }
+    }
+
+    private func actionArea(for layout: OrbitAdaptiveLayoutValue) -> some View {
+        HStack {
+            HStack(spacing: 6) {
+                Text("Priority")
+                    .orbitFont(.caption, weight: .semibold)
+                    .foregroundStyle(.secondary)
+                shortcutSubtitle(store.hotkeys.captureNextPriorityShortcut, isVisible: !layout.isCompact)
             }
-            .clipShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous))
-        )
-        .orbitOnExitCommand {
-            dismissCapture()
+
+            priorityPicker
+
+            Spacer()
+
+            Button {
+                saveButtonTapped()
+            } label: {
+                HStack(spacing: 6) {
+                    Text(saveButtonTitle)
+                    shortcutSubtitle("cmd+return", isVisible: !layout.isCompact)
+                }
+            }
+            .buttonStyle(.orbitPrimary)
+            .disabled(!canSave)
+            .keyboardShortcut(.return, modifiers: [.command])
         }
-        .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: editorState.isPreviewVisible)
-        .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: store.captureDraft.editingTaskID != nil)
-        .background {
-            keyboardShortcutBindings
+    }
+
+    private var compactActionBar: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Text("Priority")
+                    .orbitFont(.caption, weight: .semibold)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                priorityPicker
+            }
+
+            Button {
+                saveButtonTapped()
+            } label: {
+                Text(saveButtonTitle)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.orbitPrimary)
+            .disabled(!canSave)
+            .keyboardShortcut(.return, modifiers: [.command])
         }
+        .padding(.horizontal, 14)
+        .padding(.top, 12)
+        .padding(.bottom, 14)
+        .background(.ultraThinMaterial)
+    }
+
+    private var priorityPicker: some View {
+        Picker("Priority", selection: $store.captureDraft.priority) {
+            ForEach(NotePriority.allCases, id: \.self) { priority in
+                Text(priority.title).tag(priority)
+            }
+        }
+        .pickerStyle(.menu)
+        .labelsHidden()
+        .focusable()
+        .focused($focusedField, equals: .priority)
+        .help("Next Priority \(HotkeyHintFormatter.hint(from: store.hotkeys.captureNextPriorityShortcut))")
     }
 
     private var keyboardShortcutBindings: some View {
@@ -340,11 +430,13 @@ struct QuickCaptureView: View {
     }
 
     @ViewBuilder
-    private func shortcutSubtitle(_ shortcut: String) -> some View {
-        Text(HotkeyHintFormatter.hint(from: shortcut))
-            .orbitFont(.caption2)
-            .foregroundStyle(.tertiary)
-            .opacity(0.9)
+    private func shortcutSubtitle(_ shortcut: String, isVisible: Bool = true) -> some View {
+        if isVisible {
+            Text(HotkeyHintFormatter.hint(from: shortcut))
+                .orbitFont(.caption2)
+                .foregroundStyle(.tertiary)
+                .opacity(0.9)
+        }
     }
 
     private func formatActionTapped(_ action: MarkdownFormatAction) {

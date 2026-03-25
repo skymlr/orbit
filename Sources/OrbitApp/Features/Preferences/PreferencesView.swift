@@ -28,29 +28,63 @@ struct PreferencesView: View {
     }
 
     var body: some View {
-        navigationContent
-            .task {
-                store.send(.settingsRefreshTapped)
-            }
-            .background {
-                OrbitSpaceBackground()
-            }
-            .orbitOnExitCommand {
-                dismiss()
-            }
+        OrbitAdaptiveLayoutReader { layout in
+            navigationContent(for: layout)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .task {
+                    store.send(.settingsRefreshTapped)
+                }
+                .background {
+                    OrbitSpaceBackground()
+                }
+                .orbitOnExitCommand {
+                    dismiss()
+                }
+        }
     }
 
     @ViewBuilder
-    private var navigationContent: some View {
-        TabView(selection: tabSelection) {
-            ForEach(sections) { section in
-                sectionContent(for: section)
-                    .tabItem {
-                        Label(section.title, systemImage: section.symbolName)
-                    }
-                    .tag(section)
+    private func navigationContent(for layout: OrbitAdaptiveLayoutValue) -> some View {
+        if layout.isCompact {
+            compactNavigationContent
+        } else {
+            TabView(selection: tabSelection) {
+                ForEach(sections) { section in
+                    sectionContent(for: section)
+                        .tabItem {
+                            Label(section.title, systemImage: section.symbolName)
+                        }
+                        .tag(section)
+                }
             }
         }
+    }
+
+    private var compactNavigationContent: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 14) {
+                ForEach(sections) { section in
+                    NavigationLink {
+                        sectionContent(for: section)
+                            .navigationTitle(section.title)
+                            .orbitInlineNavigationTitleDisplayMode()
+                    } label: {
+                        settingsIndexCard(for: section)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 20)
+            .padding(.bottom, 28)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+#if os(iOS)
+        .scrollIndicators(.hidden)
+#endif
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .navigationTitle("Settings")
+        .orbitInlineNavigationTitleDisplayMode()
     }
 
     private var tabSelection: Binding<PreferencesSection> {
@@ -74,6 +108,43 @@ struct PreferencesView: View {
         case .credits:
             creditsPage
         }
+    }
+
+    private func settingsIndexCard(for section: PreferencesSection) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: section.symbolName)
+                .font(.system(size: 21, weight: .medium))
+                .foregroundStyle(OrbitTheme.Palette.orbitLine)
+                .frame(width: 34, height: 34)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(section.title)
+                    .orbitFont(.headline, weight: .semibold)
+
+                Text(section.subtitle)
+                    .orbitFont(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 12)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(OrbitTheme.Palette.priorityNone.opacity(0.82))
+                .padding(.top, 4)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
+                .fill(Color.white.opacity(0.10))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
+                .stroke(OrbitTheme.Palette.glassBorderStrong, lineWidth: 1)
+        )
     }
 
     private var categoriesPage: some View {
@@ -181,7 +252,7 @@ struct PreferencesView: View {
 
             preferencesSectionCard(title: "Feature Snapshot") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(store.platform.supportsMenuBar ? "Built for focused work on macOS." : "Built for focused work across Orbit's iPad-first and macOS experience.")
+                    Text(store.platform.supportsMenuBar ? "Built for focused work on macOS." : "Built for focused work across Orbit's iPhone, iPad, and macOS experience.")
                         .orbitFont(.body)
 
                     Text("Menu bar-first session management")
@@ -343,6 +414,13 @@ struct PreferencesView: View {
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background {
+            OrbitSpaceBackground(
+                style: store.appearance.background,
+                showsOrbitalLayer: store.appearance.showsOrbitalLayer
+            )
         }
 #if os(macOS)
         .scrollEdgeEffectStyle(.hard, for: .top)

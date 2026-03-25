@@ -3,26 +3,32 @@ import SwiftUI
 
 struct SessionTaskFilterToolbarButton: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Environment(\.orbitAdaptiveLayout) private var layout
     @Binding var isTaskFilterPopoverPresented: Bool
 
     var body: some View {
+        pickerButton
+    }
+
+    private var pickerButton: some View {
         Button {
             isTaskFilterPopoverPresented.toggle()
         } label: {
             Image(systemName: "line.3.horizontal.decrease.circle")
         }
         .badge(activeFilterBadge)
-        .popover(isPresented: $isTaskFilterPopoverPresented, arrowEdge: popoverArrowEdge) {
-            SessionTaskFilterPickerPopover(
-                store: store,
-                isTaskFilterPopoverPresented: $isTaskFilterPopoverPresented
-            )
-        }
         .accessibilityLabel("Filters")
         .accessibilityValue("\(activeFilterCount) active filters")
         .accessibilityHint("Open filter picker")
         .keyboardShortcut("f")
         .help(activeFilterCount == 0 ? "Filters" : "Filters (\(activeFilterCount) active)")
+        .modifier(
+            FilterPickerPresentationModifier(
+                layout: layout,
+                store: store,
+                isPresented: $isTaskFilterPopoverPresented
+            )
+        )
     }
 
     private var activeFilterCount: Int {
@@ -32,16 +38,11 @@ struct SessionTaskFilterToolbarButton: View {
     private var activeFilterBadge: String? {
         activeFilterCount == 0 ? nil : "\(activeFilterCount)"
     }
-
-#if os(macOS)
-    private let popoverArrowEdge: Edge = .bottom
-#else
-    private let popoverArrowEdge: Edge = .top
-#endif
 }
 
 struct SessionTaskFilterBar: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Environment(\.orbitAdaptiveLayout) private var layout
 
     var body: some View {
         HStack(spacing: 0) {
@@ -54,7 +55,7 @@ struct SessionTaskFilterBar: View {
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, layout.isCompact ? 12 : 14)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -131,11 +132,95 @@ struct SessionTaskFilterBar: View {
     }
 }
 
+private struct FilterPickerPresentationModifier: ViewModifier {
+    let layout: OrbitAdaptiveLayoutValue
+    let store: StoreOf<AppFeature>
+    @Binding var isPresented: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if layout.isCompact {
+            content
+                .sheet(isPresented: $isPresented) {
+                    NavigationStack {
+                        SessionTaskFilterPickerPopover(
+                            store: store,
+                            isTaskFilterPopoverPresented: $isPresented,
+                            presentationStyle: .sheet
+                        )
+                        .navigationTitle("Filters")
+                        .orbitInlineNavigationTitleDisplayMode()
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") {
+                                    isPresented = false
+                                }
+                            }
+                        }
+                    }
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                }
+        } else {
+            content
+                .popover(isPresented: $isPresented, arrowEdge: popoverArrowEdge) {
+                    SessionTaskFilterPickerPopover(
+                        store: store,
+                        isTaskFilterPopoverPresented: $isPresented,
+                        presentationStyle: .popover
+                    )
+                }
+        }
+    }
+
+#if os(macOS)
+    private let popoverArrowEdge: Edge = .bottom
+#else
+    private let popoverArrowEdge: Edge = .top
+#endif
+}
+
+private enum SessionTaskFilterPickerPresentationStyle {
+    case popover
+    case sheet
+}
+
 private struct SessionTaskFilterPickerPopover: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
     @Binding var isTaskFilterPopoverPresented: Bool
+    let presentationStyle: SessionTaskFilterPickerPresentationStyle
 
     var body: some View {
+        Group {
+            if presentationStyle == .sheet {
+                ScrollView {
+                    content
+                        .padding(20)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .scrollIndicators(.visible)
+            } else {
+                content
+                    .padding(popoverContentPadding)
+#if os(macOS)
+                    .frame(width: 430)
+#else
+                    .frame(maxWidth: .infinity, alignment: .leading)
+#endif
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(.thinMaterial)
+                    )
+                    .padding(.horizontal, popoverOuterHorizontalPadding)
+                    .padding(.vertical, popoverOuterVerticalPadding)
+            }
+        }
+        .orbitOnExitCommand {
+            isTaskFilterPopoverPresented = false
+        }
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Filters")
@@ -195,21 +280,6 @@ private struct SessionTaskFilterPickerPopover: View {
                 }
                 .scrollIndicators(.hidden)
             }
-        }
-        .padding(popoverContentPadding)
-#if os(macOS)
-        .frame(width: 430)
-#else
-        .frame(maxWidth: .infinity, alignment: .leading)
-#endif
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.thinMaterial)
-        )
-        .padding(.horizontal, popoverOuterHorizontalPadding)
-        .padding(.vertical, popoverOuterVerticalPadding)
-        .orbitOnExitCommand {
-            isTaskFilterPopoverPresented = false
         }
     }
 

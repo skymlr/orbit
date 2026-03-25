@@ -4,14 +4,29 @@ enum OrbitTypography {
     static func swiftUIFont(
         _ style: Font.TextStyle,
         weight: Font.Weight? = nil,
+        layout: OrbitAdaptiveLayoutValue = .regular,
         appearance: AppearanceSettings,
         monospaced: Bool = false,
         monospacedDigits: Bool = false
     ) -> Font {
-        Font(
+        let platformWeight = weight.map(platformFontWeight(for:))
+        let baseSize = appKitFont(
+            style,
+            weight: platformWeight,
+            appearance: appearance,
+            monospaced: monospaced,
+            monospacedDigits: monospacedDigits
+        )
+        .pointSize
+
+        return Font(
             appKitFont(
-                style,
-                weight: weight.map(platformFontWeight(for:)),
+                size: adjustedPointSize(
+                    for: style,
+                    baseSize: baseSize,
+                    layout: layout
+                ),
+                weight: platformWeight ?? .regular,
                 appearance: appearance,
                 monospaced: monospaced,
                 monospacedDigits: monospacedDigits
@@ -23,6 +38,7 @@ enum OrbitTypography {
         size: CGFloat,
         weight: Font.Weight? = nil,
         design: Font.Design? = nil,
+        layout: OrbitAdaptiveLayoutValue = .regular,
         appearance: AppearanceSettings,
         monospaced: Bool = false,
         monospacedDigits: Bool = false,
@@ -30,7 +46,10 @@ enum OrbitTypography {
     ) -> Font {
         Font(
             appKitFont(
-                size: size,
+                size: adjustedPointSize(
+                    forFixedSize: size,
+                    layout: layout
+                ),
                 weight: weight.map(platformFontWeight(for:)) ?? .regular,
                 design: design.map(platformFontDesign(for:)),
                 appearance: appearance,
@@ -241,6 +260,58 @@ enum OrbitTypography {
             return .default
         }
     }
+
+    private static func adjustedPointSize(
+        for style: Font.TextStyle,
+        baseSize: CGFloat,
+        layout: OrbitAdaptiveLayoutValue
+    ) -> CGFloat {
+#if os(iOS)
+        guard layout.isCompact else { return baseSize }
+
+        let adjustedSize: CGFloat
+        switch style {
+        case .largeTitle, .title:
+            adjustedSize = baseSize - 4
+        case .title2:
+            adjustedSize = baseSize - 3
+        case .title3:
+            adjustedSize = baseSize - 2.5
+        case .headline, .body:
+            adjustedSize = baseSize - 2
+        case .subheadline, .callout:
+            adjustedSize = baseSize - 1.5
+        case .caption:
+            adjustedSize = baseSize - 1
+        case .caption2:
+            adjustedSize = baseSize - 0.5
+        default:
+            adjustedSize = baseSize - 1.5
+        }
+        return max(11, adjustedSize)
+#else
+        return baseSize
+#endif
+    }
+
+    private static func adjustedPointSize(
+        forFixedSize size: CGFloat,
+        layout: OrbitAdaptiveLayoutValue
+    ) -> CGFloat {
+#if os(iOS)
+        guard layout.isCompact else { return size }
+
+        if size >= 24 {
+            return size - 2
+        }
+        if size >= 16 {
+            return size - 1
+        }
+        return size
+#else
+        return size
+#endif
+    }
 }
 
 private enum OrbitFontWeightBucket {
@@ -251,6 +322,7 @@ private enum OrbitFontWeightBucket {
 
 private struct OrbitFontModifier: ViewModifier {
     @Environment(\.orbitAppearance) private var appearance
+    @Environment(\.orbitAdaptiveLayout) private var layout
 
     let style: Font.TextStyle
     let weight: Font.Weight?
@@ -262,6 +334,7 @@ private struct OrbitFontModifier: ViewModifier {
             OrbitTypography.swiftUIFont(
                 style,
                 weight: weight,
+                layout: layout,
                 appearance: appearance,
                 monospaced: monospaced,
                 monospacedDigits: monospacedDigits
@@ -272,6 +345,7 @@ private struct OrbitFontModifier: ViewModifier {
 
 private struct OrbitSizedFontModifier: ViewModifier {
     @Environment(\.orbitAppearance) private var appearance
+    @Environment(\.orbitAdaptiveLayout) private var layout
 
     let size: CGFloat
     let weight: Font.Weight?
@@ -285,6 +359,7 @@ private struct OrbitSizedFontModifier: ViewModifier {
                 size: size,
                 weight: weight,
                 design: design,
+                layout: layout,
                 appearance: appearance,
                 monospaced: monospaced,
                 monospacedDigits: monospacedDigits

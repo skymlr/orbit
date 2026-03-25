@@ -31,13 +31,52 @@ struct OrbitIOSApp: App {
 private struct OrbitIOSRootView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
 
+    private var isPhone: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone
+    }
+
     var body: some View {
-        NavigationStack {
-            WorkspaceView(store: store)
+        Group {
+            if isPhone {
+                OrbitPhoneShellView(store: store)
+            } else {
+                OrbitIOSTabletRootView(store: store)
+            }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             AppLaunchCoordinator(store: store)
         }
+        .sheet(
+            item: Binding(
+                get: { store.presentation.sharedExport },
+                set: { sharedExport in
+                    if sharedExport == nil {
+                        store.send(.sharedExportDismissed)
+                    }
+                }
+            )
+        ) { sharedExport in
+            OrbitShareSheet(activityItems: sharedExport.urls)
+        }
+    }
+}
+
+private struct OrbitIOSTabletRootView: View {
+    @SwiftUI.Bindable var store: StoreOf<AppFeature>
+
+    var body: some View {
+        NavigationStack {
+            WorkspaceView(store: store)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background {
+            OrbitSpaceBackground()
+        }
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .bottomBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .bottomBar)
         .sheet(
             isPresented: Binding(
                 get: { store.presentation.isPreferencesPresented },
@@ -62,20 +101,8 @@ private struct OrbitIOSRootView: View {
         ) {
             quickCapture
         }
-        .sheet(
-            item: Binding(
-                get: { store.presentation.sharedExport },
-                set: { sharedExport in
-                    if sharedExport == nil {
-                        store.send(.sharedExportDismissed)
-                    }
-                }
-            )
-        ) { sharedExport in
-            OrbitShareSheet(activityItems: sharedExport.urls)
-        }
     }
-    
+
     @ViewBuilder
     private var preferences: some View {
         NavigationStack {
@@ -84,7 +111,7 @@ private struct OrbitIOSRootView: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
     }
-    
+
     @ViewBuilder
     private var quickCapture: some View {
         NavigationStack {
@@ -96,4 +123,5 @@ private struct OrbitIOSRootView: View {
         .presentationDragIndicator(.hidden)
     }
 }
+
 #endif

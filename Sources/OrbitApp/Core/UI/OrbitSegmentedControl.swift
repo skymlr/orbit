@@ -8,6 +8,7 @@ private enum OrbitSegmentedControlLayout {
 }
 
 struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
+    @Environment(\.orbitAdaptiveLayout) private var layout
     let title: LocalizedStringKey
     @Binding var selection: SelectionValue
     let options: [SelectionValue]
@@ -26,15 +27,24 @@ struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
     }
 
     var body: some View {
-        glassControl
+        control
             .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: selection)
     }
 
-    private var glassControl: some View {
+    @ViewBuilder
+    private var control: some View {
+        if layout.isCompact {
+            compactGlassControl
+        } else {
+            regularGlassControl
+        }
+    }
+
+    private var regularGlassControl: some View {
         GlassEffectContainer(spacing: OrbitSegmentedControlLayout.spacing) {
             HStack(spacing: OrbitSegmentedControlLayout.spacing) {
                 ForEach(options, id: \.self) { option in
-                    segmentButton(for: option)
+                    regularSegmentButton(for: option)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -43,7 +53,23 @@ struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
         }
     }
 
-    private func segmentButton(for option: SelectionValue) -> some View {
+    private var compactGlassControl: some View {
+        GlassEffectContainer(spacing: OrbitSegmentedControlLayout.spacing) {
+            ScrollView(.horizontal) {
+                HStack(spacing: OrbitSegmentedControlLayout.spacing) {
+                    ForEach(options, id: \.self) { option in
+                        compactSegmentButton(for: option)
+                    }
+                }
+                .padding(OrbitSegmentedControlLayout.containerPadding)
+                .fixedSize(horizontal: true, vertical: false)
+            }
+            .scrollIndicators(.hidden)
+            .glassEffect(.regular.interactive(), in: Capsule())
+        }
+    }
+
+    private func regularSegmentButton(for option: SelectionValue) -> some View {
         Button {
             selection = option
         } label: {
@@ -57,6 +83,27 @@ struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
+        .background {
+            Capsule()
+                .fill(Color.clear)
+        }
+        .contentShape(Capsule())
+        .orbitPointerCursor()
+        .modifier(OrbitGlassSegmentSelectionModifier(isSelected: option == selection))
+    }
+
+    private func compactSegmentButton(for option: SelectionValue) -> some View {
+        Button {
+            selection = option
+        } label: {
+            Text(label(option))
+                .orbitFont(.subheadline, weight: .semibold)
+                .foregroundStyle(option == selection ? Color.primary : Color.primary.opacity(0.76))
+                .lineLimit(1)
+                .padding(.horizontal, OrbitSegmentedControlLayout.segmentHorizontalPadding)
+                .padding(.vertical, OrbitSegmentedControlLayout.segmentVerticalPadding)
+        }
+        .buttonStyle(.plain)
         .background {
             Capsule()
                 .fill(Color.clear)
@@ -109,6 +156,8 @@ private enum OrbitSegmentedControlPreviewFilter: String, CaseIterable, Identifia
 
 private struct OrbitSegmentedControlPreviewCard: View {
     @State private var selection: OrbitSegmentedControlPreviewFilter = .all
+    let layout: OrbitAdaptiveLayoutValue
+    let width: CGFloat
 
     var body: some View {
         ZStack {
@@ -144,14 +193,27 @@ private struct OrbitSegmentedControlPreviewCard: View {
             )
             .padding(24)
         }
-        .frame(width: 520, height: 220)
+        .frame(width: width, height: 220)
+        .environment(\.orbitAdaptiveLayout, layout)
     }
 }
 
 struct OrbitSegmentedControl_Previews: PreviewProvider {
     static var previews: some View {
-        OrbitSegmentedControlPreviewCard()
-            .preferredColorScheme(.dark)
+        Group {
+            OrbitSegmentedControlPreviewCard(
+                layout: .init(style: .regular, availableWidth: 520),
+                width: 520
+            )
+            .previewDisplayName("Regular")
+
+            OrbitSegmentedControlPreviewCard(
+                layout: .init(style: .compact, availableWidth: 360),
+                width: 360
+            )
+            .previewDisplayName("Compact")
+        }
+        .preferredColorScheme(.dark)
     }
 }
 #endif

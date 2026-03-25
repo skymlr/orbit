@@ -1,34 +1,86 @@
 import SwiftUI
 
 struct TaskRowFloatingTools: View {
+    @Environment(\.orbitAdaptiveLayout) private var layout
     let draft: AppFeature.State.TaskDraft
     let onEdit: () -> Void
     let onDelete: () -> Void
 
     @State private var isDeleteConfirmationPending = false
     @State private var deleteConfirmationToken = 0
-    @State private var isTaskInfoPopoverPresented = false
+    @State private var isDeleteDialogPresented = false
+    @State private var isTaskInfoPresented = false
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 8) {
             infoAction
         }
         .fixedSize(horizontal: true, vertical: false)
+        .confirmationDialog(
+            "Delete Task?",
+            isPresented: $isDeleteDialogPresented
+        ) {
+            Button("Delete Task", role: .destructive) {
+                isTaskInfoPresented = false
+                onDelete()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This task will be removed from the current session.")
+        }
     }
 
     private var infoAction: some View {
+        Group {
+            if layout.isCompact {
+                compactInfoAction
+            } else {
+                regularInfoAction
+            }
+        }
+    }
+
+    private var compactInfoAction: some View {
         Button {
-            if !isTaskInfoPopoverPresented {
+            isTaskInfoPresented.toggle()
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .orbitFont(.body, weight: .semibold)
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $isTaskInfoPresented) {
+            NavigationStack {
+                compactTaskInfoSheet
+                    .navigationTitle("Task Actions")
+                    .orbitInlineNavigationTitleDisplayMode()
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                isTaskInfoPresented = false
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .foregroundStyle(.secondary)
+        .accessibilityLabel("Task actions")
+    }
+
+    private var regularInfoAction: some View {
+        Button {
+            if !isTaskInfoPresented {
                 isDeleteConfirmationPending = false
             }
-            isTaskInfoPopoverPresented.toggle()
+            isTaskInfoPresented.toggle()
         } label: {
             Image(systemName: "info.circle")
                 .orbitFont(.body, weight: .semibold)
         }
         .buttonStyle(.plain)
         .popover(
-            isPresented: $isTaskInfoPopoverPresented,
+            isPresented: $isTaskInfoPresented,
             attachmentAnchor: .rect(.bounds),
             arrowEdge: .top
         ) {
@@ -44,25 +96,49 @@ struct TaskRowFloatingTools: View {
         .accessibilityLabel("Task information")
     }
 
+    private var compactTaskInfoSheet: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            taskMetadata
+
+            VStack(spacing: 12) {
+                Button {
+                    isTaskInfoPresented = false
+                    onEdit()
+                } label: {
+                    Label("Edit Task", systemImage: "pencil")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.orbitSecondary)
+
+                Button(role: .destructive) {
+                    isDeleteDialogPresented = true
+                } label: {
+                    Label("Delete Task", systemImage: "trash")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.orbitDestructive)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(OrbitSpaceBackground())
+    }
+
     private var taskInfoPopover: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Task Information")
                 .orbitFont(.subheadline, weight: .semibold)
 
-            Text("Created: \(draft.createdAt.formatted(date: .abbreviated, time: .shortened))")
-                .orbitFont(.caption)
-
-            if draft.carriedFromTaskID != nil {
-                Text("Carried from: \(draft.carriedFromSessionName ?? "Previous session")")
-                    .orbitFont(.caption)
-            }
+            taskMetadata
 
             Divider()
                 .overlay(Color.white.opacity(0.25))
 
             VStack(alignment: .leading, spacing: 8) {
                 Button {
-                    isTaskInfoPopoverPresented = false
+                    isTaskInfoPresented = false
                     onEdit()
                 } label: {
                     Label("Edit Task", systemImage: "pencil")
@@ -73,7 +149,7 @@ struct TaskRowFloatingTools: View {
 
                 if isDeleteConfirmationPending {
                     Button("Confirm Deletion", role: .destructive) {
-                        isTaskInfoPopoverPresented = false
+                        isTaskInfoPresented = false
                         onDelete()
                     }
                     .buttonStyle(.orbitDestructive)
@@ -101,6 +177,18 @@ struct TaskRowFloatingTools: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(TaskRowPalette.heroCyan.opacity(0.48), lineWidth: 1)
         )
+    }
+
+    private var taskMetadata: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Created: \(draft.createdAt.formatted(date: .abbreviated, time: .shortened))")
+                .orbitFont(.caption)
+
+            if draft.carriedFromTaskID != nil {
+                Text("Carried from: \(draft.carriedFromSessionName ?? "Previous session")")
+                    .orbitFont(.caption)
+            }
+        }
     }
 
     private func scheduleDeleteConfirmationReset() {

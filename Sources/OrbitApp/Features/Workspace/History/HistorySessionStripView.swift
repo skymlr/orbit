@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 
 struct HistorySessionStripView: View {
+    @Environment(\.orbitAdaptiveLayout) private var layout
     let sessions: [FocusSessionRecord]
     let selectedSessionID: UUID?
     let onSelect: (UUID) -> Void
@@ -12,6 +13,7 @@ struct HistorySessionStripView: View {
     @State private var menuSessionID: UUID?
     @State private var menuMode: MenuMode = .actions
     @State private var renameDraft = ""
+    @State private var renameSessionID: UUID?
     @State private var deleteConfirmationSessionID: UUID?
 
     private enum MenuMode {
@@ -53,6 +55,79 @@ struct HistorySessionStripView: View {
         } message: {
             Text("This cannot be undone.")
         }
+        .confirmationDialog(
+            "Session Actions",
+            isPresented: compactMenuBinding,
+            titleVisibility: .visible
+        ) {
+            if let session = currentMenuSession {
+                Button("Rename") {
+                    renameDraft = session.name
+                    renameSessionID = session.id
+                    closeMenu()
+                }
+
+                Button("Export") {
+                    onExport(session.id)
+                    closeMenu()
+                }
+
+                Button("Delete Session", role: .destructive) {
+                    deleteConfirmationSessionID = session.id
+                    closeMenu()
+                }
+            }
+
+            Button("Cancel", role: .cancel) {
+                closeMenu()
+            }
+        }
+        .sheet(isPresented: $renameSessionID.isPresented) {
+            if let session = currentRenameSession {
+                NavigationStack {
+                    renameSheet(for: session)
+                        .navigationTitle("Rename Session")
+                        .orbitInlineNavigationTitleDisplayMode()
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") {
+                                    renameSessionID = nil
+                                }
+                            }
+
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Save") {
+                                    saveRename(for: session.id)
+                                }
+                                .disabled(renameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            }
+                        }
+                }
+                .presentationDetents([.height(240)])
+                .presentationDragIndicator(.visible)
+            }
+        }
+    }
+
+    private var compactMenuBinding: Binding<Bool> {
+        Binding(
+            get: {
+                layout.isCompact && menuSessionID != nil
+            },
+            set: { isPresented in
+                if !isPresented {
+                    closeMenu()
+                }
+            }
+        )
+    }
+
+    private var currentMenuSession: FocusSessionRecord? {
+        sessions.first(where: { $0.id == menuSessionID })
+    }
+
+    private var currentRenameSession: FocusSessionRecord? {
+        sessions.first(where: { $0.id == renameSessionID })
     }
 
     private func sessionButton(for session: FocusSessionRecord) -> some View {
@@ -93,21 +168,33 @@ struct HistorySessionStripView: View {
             .accessibilityLabel(session.name)
             .accessibilityHint("Open this session in read-only mode")
 
-            Button {
-                menuSessionID = session.id
-                menuMode = .actions
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .orbitFont(.caption, weight: .semibold)
-                    .foregroundStyle(.secondary)
-                    .padding(8)
-            }
-            .buttonStyle(.plain)
-            .popover(
-                isPresented: $menuSessionID[isPresenting: session.id],
-                arrowEdge: .top
-            ) {
-                sessionMenuPopover(for: session)
+            if layout.isCompact {
+                Button {
+                    menuSessionID = session.id
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .orbitFont(.caption, weight: .semibold)
+                        .foregroundStyle(.secondary)
+                        .padding(8)
+                }
+                .buttonStyle(.plain)
+            } else {
+                Button {
+                    menuSessionID = session.id
+                    menuMode = .actions
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .orbitFont(.caption, weight: .semibold)
+                        .foregroundStyle(.secondary)
+                        .padding(8)
+                }
+                .buttonStyle(.plain)
+                .popover(
+                    isPresented: $menuSessionID[isPresenting: session.id],
+                    arrowEdge: .top
+                ) {
+                    sessionMenuPopover(for: session)
+                }
             }
         }
     }
@@ -170,10 +257,30 @@ struct HistorySessionStripView: View {
         }
     }
 
+    private func renameSheet(for session: FocusSessionRecord) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Update the title used for this archived session.")
+                .orbitFont(.caption)
+                .foregroundStyle(.secondary)
+
+            TextField("Session name", text: $renameDraft)
+                .textFieldStyle(.roundedBorder)
+                .onSubmit {
+                    saveRename(for: session.id)
+                }
+
+            Spacer(minLength: 0)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(OrbitSpaceBackground())
+    }
+
     private func saveRename(for sessionID: UUID) {
         let trimmed = renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         onRename(sessionID, trimmed)
+        renameSessionID = nil
         closeMenu()
     }
 

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct HistoryTaskListView: View {
+    @Environment(\.orbitAdaptiveLayout) private var layout
     let session: FocusSessionRecord
     let filteredTasks: [FocusTaskRecord]
     @Binding var historyTaskFilter: HistoryTaskFilter
@@ -11,19 +12,33 @@ struct HistoryTaskListView: View {
                 Text(session.name)
                     .orbitFont(.title3, weight: .semibold)
 
-                HStack(spacing: 8) {
-                    Text("Started \(session.startedAt, style: .time)")
+                if layout.isCompact {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Started \(session.startedAt, style: .time)")
 
-                    if let endedAt = session.endedAt {
-                        Text("•")
-                        Text("Ended \(endedAt, style: .time)")
+                        if let endedAt = session.endedAt {
+                            Text("Ended \(endedAt, style: .time)")
+                        }
+
+                        Text("\(session.tasks.count) \(session.tasks.count == 1 ? "task" : "tasks")")
                     }
+                    .orbitFont(.caption)
+                    .foregroundStyle(.secondary)
+                } else {
+                    HStack(spacing: 8) {
+                        Text("Started \(session.startedAt, style: .time)")
 
-                    Text("•")
-                    Text("\(session.tasks.count) \(session.tasks.count == 1 ? "task" : "tasks")")
+                        if let endedAt = session.endedAt {
+                            Text("•")
+                            Text("Ended \(endedAt, style: .time)")
+                        }
+
+                        Text("•")
+                        Text("\(session.tasks.count) \(session.tasks.count == 1 ? "task" : "tasks")")
+                    }
+                    .orbitFont(.caption)
+                    .foregroundStyle(.secondary)
                 }
-                .orbitFont(.caption)
-                .foregroundStyle(.secondary)
             }
 
             OrbitSegmentedControl(
@@ -33,7 +48,6 @@ struct HistoryTaskListView: View {
             ) { filter in
                 filter.title
             }
-            .frame(maxWidth: 440)
 
             if filteredTasks.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {

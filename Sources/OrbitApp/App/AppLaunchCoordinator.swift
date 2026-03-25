@@ -9,7 +9,6 @@ struct AppLaunchCoordinator: View {
             .frame(width: 0, height: 0)
             .task {
                 store.send(.onLaunch)
-                store.send(.openWorkspaceTapped)
             }
     }
 }

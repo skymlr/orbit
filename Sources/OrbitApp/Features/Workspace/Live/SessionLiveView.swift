@@ -20,13 +20,8 @@ struct SessionLiveView: View {
         case next
     }
 
-#if os(iOS)
-    private enum SessionInfoTransitionID {
-        static let toolbarButton = "session-info-toolbar-button"
-    }
-#endif
-
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
+    @Environment(\.orbitAdaptiveLayout) private var layout
     @State private var focusedTaskID: UUID?
     @State private var searchText = ""
     @State private var isTaskFilterPopoverPresented = false
@@ -34,13 +29,14 @@ struct SessionLiveView: View {
 #if os(macOS)
     @State private var isMacSessionInfoCollapsed = false
 #endif
-#if os(iOS)
-    @Namespace private var sessionInfoTransitionNamespace
-#endif
 
     var body: some View {
         liveContent
-            .frame(maxWidth: Layout.contentMaxWidth, alignment: .leading)
+            .frame(
+                maxWidth: layout.isCompact ? .infinity : Layout.contentMaxWidth,
+                maxHeight: .infinity,
+                alignment: .topLeading
+            )
             .task(id: store.activeSession?.id) {
                 focusedTaskID = nil
             }
@@ -61,6 +57,16 @@ struct SessionLiveView: View {
             .toolbar {
                 sessionInfoToolbarContent
             }
+#if os(iOS)
+            .background {
+                if layout.isCompact {
+                    OrbitSpaceBackground(
+                        style: store.appearance.background,
+                        showsOrbitalLayer: store.appearance.showsOrbitalLayer
+                    )
+                }
+            }
+#endif
             .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
             .animation(.easeInOut(duration: 0.16), value: store.taskDrafts.count)
     }
@@ -163,7 +169,7 @@ struct SessionLiveView: View {
                 sessionHeroLabel(shortcut: store.hotkeys.startShortcut)
             }
             .buttonStyle(.orbitHero)
-            .frame(maxWidth: 500)
+            .frame(maxWidth: layout.isCompact ? .infinity : 500)
             .help(
                 store.platform.supportsGlobalHotkeys
                 ? "Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))"
@@ -171,7 +177,7 @@ struct SessionLiveView: View {
             )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .offset(y: -48)
+        .offset(y: inactiveStateVerticalOffset)
     }
 
     private var startupLoadingView: some View {
@@ -183,7 +189,7 @@ struct SessionLiveView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .offset(y: -34)
+        .offset(y: statusStateVerticalOffset)
     }
 
     private func startupLoadErrorView(message: String) -> some View {
@@ -208,7 +214,7 @@ struct SessionLiveView: View {
             .buttonStyle(.orbitSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .offset(y: -34)
+        .offset(y: statusStateVerticalOffset)
     }
 
     @ViewBuilder
@@ -250,7 +256,7 @@ struct SessionLiveView: View {
                     }
                 }
                 .padding(.top, scrollContentTopPadding)
-                .padding(.trailing, 8)
+                .padding(.trailing, layout.isCompact ? 0 : 8)
             }
             .scrollIndicators(.visible)
             .onChange(of: focusedTaskID) { _, _ in
@@ -268,6 +274,14 @@ struct SessionLiveView: View {
 #else
         return 0
 #endif
+    }
+
+    private var inactiveStateVerticalOffset: CGFloat {
+        layout.isCompact ? 0 : -48
+    }
+
+    private var statusStateVerticalOffset: CGFloat {
+        layout.isCompact ? 0 : -34
     }
 
     @ToolbarContentBuilder
@@ -293,22 +307,16 @@ struct SessionLiveView: View {
                 taskFilterToolbarButton
             }
 #else
-            ToolbarSpacer(.fixed, placement: .topBarLeading)
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    isSessionInfoPresented.toggle()
-                } label: {
-                    Text(activeSession.name)
-                        .orbitFont(.headline)
+            if layout.isCompact {
+                ToolbarItem(placement: .principal) {
+                    sessionInfoToolbarButton(for: activeSession)
                 }
-                .accessibilityLabel("Session Info")
-                .accessibilityHint("Open current session information")
-                .popover(isPresented: $isSessionInfoPresented, arrowEdge: .top) {
-                    sessionInfoPresentation(for: activeSession)
+            } else {
+                ToolbarSpacer(.fixed, placement: .topBarLeading)
+                ToolbarItem(placement: .topBarLeading) {
+                    sessionInfoToolbarButton(for: activeSession)
                 }
             }
-            .sharedBackgroundVisibility(.visible)
-            .matchedTransitionSource(id: SessionInfoTransitionID.toolbarButton, in: sessionInfoTransitionNamespace)
 
             ToolbarItem(placement: .topBarTrailing) {
                 taskFilterToolbarButton
@@ -324,8 +332,40 @@ struct SessionLiveView: View {
         )
     }
 
+    @ViewBuilder
+    private func sessionInfoToolbarButton(for activeSession: FocusSessionRecord) -> some View {
+        if layout.isCompact {
+            Button {
+                isSessionInfoPresented.toggle()
+            } label: {
+                Text(activeSession.name)
+                    .orbitFont(.subheadline, weight: .semibold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+            .accessibilityLabel("Session Info")
+            .accessibilityHint("Open current session information")
+            .sheet(isPresented: $isSessionInfoPresented) {
+                sessionInfoPresentation(for: activeSession)
+            }
+        } else {
+            Button {
+                isSessionInfoPresented.toggle()
+            } label: {
+                Text(activeSession.name)
+                    .orbitFont(.headline)
+            }
+            .accessibilityLabel("Session Info")
+            .accessibilityHint("Open current session information")
+            .popover(isPresented: $isSessionInfoPresented, arrowEdge: .top) {
+                sessionInfoPresentation(for: activeSession)
+            }
+        }
+    }
+
+    @ViewBuilder
     private func sessionInfoPresentation(for session: FocusSessionRecord) -> some View {
-        SessionInfoSurface(
+        let surface = SessionInfoSurface(
             session: session,
             endSessionDraft: store.endSessionDraft,
             taskDrafts: Array(store.taskDrafts),
@@ -335,10 +375,29 @@ struct SessionLiveView: View {
             onEndSessionConfirm: confirmEndSession(name:),
             onEndSessionCancel: cancelEndSession
         )
-        .presentationCompactAdaptation(.sheet)
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-        .presentationSizing(.fitted)
+
+        if layout.isCompact {
+            NavigationStack {
+                surface
+                    .navigationTitle("Session Info")
+                    .orbitInlineNavigationTitleDisplayMode()
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                isSessionInfoPresented = false
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        } else {
+            surface
+                .presentationCompactAdaptation(.sheet)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationSizing(.fitted)
+        }
     }
 
 #if os(macOS)
