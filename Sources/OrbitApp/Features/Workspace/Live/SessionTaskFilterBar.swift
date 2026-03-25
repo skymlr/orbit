@@ -139,38 +139,17 @@ private struct FilterPickerPresentationModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if layout.isCompact {
-            content
-                .sheet(isPresented: $isPresented) {
-                    NavigationStack {
-                        SessionTaskFilterPickerPopover(
-                            store: store,
-                            isTaskFilterPopoverPresented: $isPresented,
-                            presentationStyle: .sheet
-                        )
-                        .navigationTitle("Filters")
-                        .orbitInlineNavigationTitleDisplayMode()
-                        .toolbar {
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("Done") {
-                                    isPresented = false
-                                }
-                            }
-                        }
-                    }
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-                }
-        } else {
-            content
-                .popover(isPresented: $isPresented, arrowEdge: popoverArrowEdge) {
-                    SessionTaskFilterPickerPopover(
-                        store: store,
-                        isTaskFilterPopoverPresented: $isPresented,
-                        presentationStyle: .popover
-                    )
-                }
-        }
+        content
+            .popover(isPresented: $isPresented, arrowEdge: popoverArrowEdge) {
+                SessionTaskFilterPickerPopover(
+                    store: store,
+                    isTaskFilterPopoverPresented: $isPresented,
+                    presentationStyle: .popover
+                )
+#if os(iOS)
+                .presentationCompactAdaptation(.popover)
+#endif
+            }
     }
 
 #if os(macOS)

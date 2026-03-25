@@ -61,6 +61,7 @@ struct OrbitPhoneShellView: View {
                     .tag(RootTab.settings)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .tint(OrbitTheme.Palette.orbitLine)
 
             quickCaptureButton
         }
