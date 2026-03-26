@@ -2,9 +2,14 @@ import ComposableArchitecture
 import Foundation
 import SwiftUI
 
+#if os(iOS)
+import UIKit
+#endif
+
 struct SessionHistoryView: View {
     private enum Layout {
         static let contentMaxWidth: CGFloat = 700
+        static let phoneContentInsets = EdgeInsets(top: 20, leading: 16, bottom: 28, trailing: 16)
     }
 
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
@@ -19,9 +24,32 @@ struct SessionHistoryView: View {
     @State private var historyTaskFilter: HistoryTaskFilter = .completed
 
     var body: some View {
+        Group {
+            if isPhone {
+                ScrollView {
+                    pageContent
+                        .padding(Layout.phoneContentInsets)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .scrollIndicators(.visible)
+            } else {
+                pageContent
+            }
+        }
+        .frame(
+            maxWidth: layout.isCompact ? .infinity : Layout.contentMaxWidth,
+            maxHeight: .infinity,
+            alignment: .topLeading
+        )
+        .transition(.orbitMicro)
+    }
+
+    private var pageContent: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Read-Only Session History")
-                .orbitFont(.title3, weight: .bold)
+            if !layout.isCompact {
+                Text("Read-Only Session History")
+                    .orbitFont(.title3, weight: .bold)
+            }
 
             if let activeSession = store.activeSession {
                 CurrentSessionHistoryBanner(
@@ -37,15 +65,7 @@ struct SessionHistoryView: View {
                     message: "No completed sessions yet. End a session to build your history timeline."
                 )
             } else {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(SessionHistoryBrowserSupport.dayLabel(selectedHistoryDay))
-                        .orbitFont(.headline, weight: .semibold)
-                        .foregroundStyle(.cyan)
-
-                    Text("\(selectedHistoryDaySessions.count) \(selectedHistoryDaySessions.count == 1 ? "session" : "sessions")")
-                        .orbitFont(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                selectedDaySummaryCard
 
                 if selectedHistoryDaySessions.isEmpty {
                     historyContentUnavailableState(
@@ -71,11 +91,16 @@ struct SessionHistoryView: View {
                 }
             }
         }
-        .frame(
-            maxWidth: layout.isCompact ? .infinity : Layout.contentMaxWidth,
-            alignment: .leading
+    }
+
+    private var selectedDaySummaryCard: some View {
+        OrbitIndexCard(
+            systemImage: "calendar",
+            title: SessionHistoryBrowserSupport.dayLabel(selectedHistoryDay),
+            subtitle: selectedDaySummary,
+            tint: .cyan,
+            showsChevron: false
         )
-        .transition(.orbitMicro)
     }
 
     private var noActiveSessionBanner: some View {
@@ -105,10 +130,7 @@ struct SessionHistoryView: View {
             }
         }
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.thinMaterial)
-        )
+        .orbitSurfaceCard()
     }
 
     private var selectedHistoryDaySessions: [FocusSessionRecord] {
@@ -142,10 +164,17 @@ struct SessionHistoryView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.thinMaterial)
-        )
+        .orbitSurfaceCard()
+    }
+
+    private var selectedDaySummary: String {
+        let sessionCount = selectedHistoryDaySessions.count
+        let taskCount = selectedHistoryDaySessions.reduce(into: 0) { count, session in
+            count += session.tasks.count
+        }
+        let sessionLabel = "\(sessionCount) \(sessionCount == 1 ? "session" : "sessions")"
+        let taskLabel = "\(taskCount) \(taskCount == 1 ? "task" : "tasks")"
+        return "\(sessionLabel) • \(taskLabel)"
     }
 
     private func renameSession(sessionID: UUID, name: String) {
@@ -154,5 +183,13 @@ struct SessionHistoryView: View {
 
     private func deleteSession(sessionID: UUID) {
         store.send(.settingsDeleteSessionTapped(sessionID))
+    }
+
+    private var isPhone: Bool {
+#if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+#else
+        false
+#endif
     }
 }

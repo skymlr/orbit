@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if os(iOS)
+import UIKit
+#endif
+
 private enum OrbitSegmentedControlLayout {
     static let spacing: CGFloat = 8
     static let containerPadding: CGFloat = 6
@@ -8,7 +12,6 @@ private enum OrbitSegmentedControlLayout {
 }
 
 struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
-    @Environment(\.orbitAdaptiveLayout) private var layout
     let title: LocalizedStringKey
     @Binding var selection: SelectionValue
     let options: [SelectionValue]
@@ -33,11 +36,21 @@ struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
 
     @ViewBuilder
     private var control: some View {
-        if layout.isCompact {
-            compactGlassControl
+        if isPhone {
+            phonePicker
         } else {
             regularGlassControl
         }
+    }
+
+    private var phonePicker: some View {
+        Picker(title, selection: $selection) {
+            ForEach(options, id: \.self) { option in
+                Text(label(option))
+                    .tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
     }
 
     private var regularGlassControl: some View {
@@ -49,22 +62,6 @@ struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
             }
             .frame(maxWidth: .infinity)
             .padding(OrbitSegmentedControlLayout.containerPadding)
-            .glassEffect(.regular.interactive(), in: Capsule())
-        }
-    }
-
-    private var compactGlassControl: some View {
-        GlassEffectContainer(spacing: OrbitSegmentedControlLayout.spacing) {
-            ScrollView(.horizontal) {
-                HStack(spacing: OrbitSegmentedControlLayout.spacing) {
-                    ForEach(options, id: \.self) { option in
-                        compactSegmentButton(for: option)
-                    }
-                }
-                .padding(OrbitSegmentedControlLayout.containerPadding)
-                .fixedSize(horizontal: true, vertical: false)
-            }
-            .scrollIndicators(.hidden)
             .glassEffect(.regular.interactive(), in: Capsule())
         }
     }
@@ -92,25 +89,12 @@ struct OrbitSegmentedControl<SelectionValue: Hashable>: View {
         .modifier(OrbitGlassSegmentSelectionModifier(isSelected: option == selection))
     }
 
-    private func compactSegmentButton(for option: SelectionValue) -> some View {
-        Button {
-            selection = option
-        } label: {
-            Text(label(option))
-                .orbitFont(.subheadline, weight: .semibold)
-                .foregroundStyle(option == selection ? Color.primary : Color.primary.opacity(0.76))
-                .lineLimit(1)
-                .padding(.horizontal, OrbitSegmentedControlLayout.segmentHorizontalPadding)
-                .padding(.vertical, OrbitSegmentedControlLayout.segmentVerticalPadding)
-        }
-        .buttonStyle(.plain)
-        .background {
-            Capsule()
-                .fill(Color.clear)
-        }
-        .contentShape(Capsule())
-        .orbitPointerCursor()
-        .modifier(OrbitGlassSegmentSelectionModifier(isSelected: option == selection))
+    private var isPhone: Bool {
+#if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+#else
+        false
+#endif
     }
 }
 

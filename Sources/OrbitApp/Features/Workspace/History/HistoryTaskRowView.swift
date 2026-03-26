@@ -65,17 +65,11 @@ struct HistoryTaskRowView: View {
             }
         }
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.white.opacity(0.02))
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.20), lineWidth: 1)
+        .orbitSurfaceCard(
+            fillStyle: .ultraThinMaterial,
+            cornerRadius: OrbitTheme.Radius.card,
+            borderColor: OrbitTheme.Palette.glassBorderStrong,
+            overlayColor: Color.white.opacity(0.02)
         )
     }
 

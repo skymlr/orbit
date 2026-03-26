@@ -50,13 +50,8 @@ struct CurrentSessionHistoryBanner: View {
             }
         }
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.thinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.cyan.opacity(0.62), lineWidth: 1)
-                )
+        .orbitSurfaceCard(
+            borderColor: Color.cyan.opacity(0.62)
         )
     }
 

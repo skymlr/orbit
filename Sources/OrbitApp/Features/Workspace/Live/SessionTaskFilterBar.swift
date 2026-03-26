@@ -58,6 +58,9 @@ struct SessionTaskFilterBar: View {
         .padding(.horizontal, layout.isCompact ? 12 : 14)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
+#if os(iOS)
+        .modifier(CompactFilterBarCardModifier(isCompact: layout.isCompact))
+#endif
     }
 
     @ViewBuilder
@@ -131,6 +134,21 @@ struct SessionTaskFilterBar: View {
         .accessibilityHint("Remove filter")
     }
 }
+
+#if os(iOS)
+private struct CompactFilterBarCardModifier: ViewModifier {
+    let isCompact: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isCompact {
+            content.orbitSurfaceCard()
+        } else {
+            content
+        }
+    }
+}
+#endif
 
 private struct FilterPickerPresentationModifier: ViewModifier {
     let layout: OrbitAdaptiveLayoutValue

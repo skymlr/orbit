@@ -1,9 +1,36 @@
 import SwiftUI
 
+#if os(iOS)
+import UIKit
+#endif
+
 struct HistorySearchView: View {
+    private enum Layout {
+        static let phoneContentInsets = EdgeInsets(top: 20, leading: 16, bottom: 28, trailing: 16)
+    }
+
     @ObservedObject var model: HistorySearchPanelModel
 
     var body: some View {
+        Group {
+            if isPhone {
+                ScrollView {
+                    pageContent
+                        .padding(Layout.phoneContentInsets)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .scrollIndicators(.visible)
+            } else {
+                pageContent
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .orbitOnExitCommand {
+            model.closeRequested()
+        }
+    }
+
+    private var pageContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             header
 
@@ -16,10 +43,6 @@ struct HistorySearchView: View {
             }
 
             content
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .orbitOnExitCommand {
-            model.closeRequested()
         }
     }
 
@@ -52,16 +75,27 @@ struct HistorySearchView: View {
                 message: "Try a different phrase or switch between All, Completed, Open, and Created Here."
             )
         } else {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    ForEach(searchResults) { dayGroup in
-                        dayGroupView(dayGroup)
+            Group {
+                if isPhone {
+                    resultGroups
+                } else {
+                    ScrollView {
+                        resultGroups
                     }
+                    .scrollIndicators(.visible)
                 }
-                .padding(.vertical, 2)
             }
-            .scrollIndicators(.visible)
         }
+    }
+
+    private var resultGroups: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ForEach(searchResults) { dayGroup in
+                dayGroupView(dayGroup)
+            }
+        }
+        .padding(.vertical, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var archivedSessionCount: Int {
@@ -114,14 +148,7 @@ struct HistorySearchView: View {
             }
         }
         .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
-                .fill(.thinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
-                .stroke(OrbitTheme.Palette.glassBorderStrong, lineWidth: 1)
-        )
+        .orbitSurfaceCard(fillStyle: .thinMaterial)
     }
 
     private func sessionGroupView(_ sessionGroup: HistorySearchSessionGroup) -> some View {
@@ -161,13 +188,10 @@ struct HistorySearchView: View {
             }
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
-                .fill(.ultraThinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
-                .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
+        .orbitSurfaceCard(
+            fillStyle: .ultraThinMaterial,
+            cornerRadius: OrbitTheme.Radius.card,
+            borderColor: OrbitTheme.Palette.glassBorder
         )
     }
 
@@ -182,14 +206,7 @@ struct HistorySearchView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
-        .background(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
-                .fill(.thinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
-                .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
-        )
+        .orbitSurfaceCard(fillStyle: .thinMaterial, borderColor: OrbitTheme.Palette.glassBorder)
     }
 
     private func dayGroupSummary(_ dayGroup: HistorySearchDayGroup) -> some View {
@@ -232,5 +249,13 @@ struct HistorySearchView: View {
         }
 
         return "Started \(startedAt) • \(taskLabel)"
+    }
+
+    private var isPhone: Bool {
+#if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+#else
+        false
+#endif
     }
 }

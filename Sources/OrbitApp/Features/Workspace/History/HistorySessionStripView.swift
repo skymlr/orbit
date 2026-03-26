@@ -155,13 +155,10 @@ struct HistorySessionStripView: View {
                 .padding(.vertical, 8)
                 .padding(.trailing, 24)
                 .frame(minWidth: 164, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(isSelected ? Color.cyan.opacity(0.18) : Color.white.opacity(0.05))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(isSelected ? Color.cyan.opacity(0.86) : Color.white.opacity(0.22), lineWidth: 1)
+                .orbitSurfaceCard(
+                    cornerRadius: OrbitTheme.Radius.medium,
+                    borderColor: isSelected ? Color.cyan.opacity(0.86) : OrbitTheme.Palette.glassBorderStrong,
+                    overlayColor: isSelected ? Color.cyan.opacity(0.10) : nil
                 )
             }
             .buttonStyle(.plain)

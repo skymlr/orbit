@@ -111,39 +111,10 @@ struct PreferencesView: View {
     }
 
     private func settingsIndexCard(for section: PreferencesSection) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: section.symbolName)
-                .font(.system(size: 21, weight: .medium))
-                .foregroundStyle(OrbitTheme.Palette.orbitLine)
-                .frame(width: 34, height: 34)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(section.title)
-                    .orbitFont(.headline, weight: .semibold)
-
-                Text(section.subtitle)
-                    .orbitFont(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 12)
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(OrbitTheme.Palette.priorityNone.opacity(0.82))
-                .padding(.top, 4)
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
-                .fill(Color.white.opacity(0.10))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
-                .stroke(OrbitTheme.Palette.glassBorderStrong, lineWidth: 1)
+        OrbitIndexCard(
+            systemImage: section.symbolName,
+            title: section.title,
+            subtitle: section.subtitle
         )
     }
 
@@ -464,13 +435,9 @@ struct PreferencesView: View {
         sectionCard {
             content()
         }
-        .background(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
-                .fill(.thinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.panel, style: .continuous)
-                .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
+        .orbitSurfaceCard(
+            fillStyle: .thinMaterial,
+            borderColor: OrbitTheme.Palette.glassBorder
         )
     }
 

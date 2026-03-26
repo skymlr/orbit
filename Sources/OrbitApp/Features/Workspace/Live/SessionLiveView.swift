@@ -2,6 +2,10 @@ import ComposableArchitecture
 import Foundation
 import SwiftUI
 
+#if os(iOS)
+import UIKit
+#endif
+
 struct SessionLiveView: View {
     private enum Layout {
 #if os(macOS)
@@ -13,6 +17,7 @@ struct SessionLiveView: View {
         static let contentMaxWidth: CGFloat = 700
 #endif
         static let taskSpacing: CGFloat = 12
+        static let phoneContentInsets = EdgeInsets(top: 20, leading: 16, bottom: 28, trailing: 16)
     }
 
     private enum TaskNavigationDirection {
@@ -117,6 +122,32 @@ struct SessionLiveView: View {
 
     @ViewBuilder
     private var inactiveSessionContent: some View {
+        if isPhone {
+            GeometryReader { proxy in
+                ScrollView {
+                    inactiveSessionState
+                        .frame(
+                            maxWidth: .infinity,
+                            minHeight: max(
+                                0,
+                                proxy.size.height
+                                    - Layout.phoneContentInsets.top
+                                    - Layout.phoneContentInsets.bottom
+                            ),
+                            alignment: .center
+                        )
+                        .padding(Layout.phoneContentInsets)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .scrollIndicators(.hidden)
+            }
+        } else {
+            inactiveSessionState
+        }
+    }
+
+    @ViewBuilder
+    private var inactiveSessionState: some View {
         switch store.sessionBootstrapState {
         case .loading:
             startupLoadingView
@@ -155,10 +186,7 @@ struct SessionLiveView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.thinMaterial)
-        )
+        .orbitSurfaceCard()
     }
 
     private var noActiveSessionView: some View {
@@ -247,6 +275,8 @@ struct SessionLiveView: View {
                     spacing: 14,
                     pinnedViews: hasSelectedFilters ? [.sectionHeaders] : []
                 ) {
+                    compactSessionOverviewCard
+
                     Section {
                         taskSectionContent
                     } header: {
@@ -256,7 +286,10 @@ struct SessionLiveView: View {
                     }
                 }
                 .padding(.top, scrollContentTopPadding)
-                .padding(.trailing, layout.isCompact ? 0 : 8)
+                .padding(.horizontal, scrollContentHorizontalPadding)
+                .padding(.bottom, scrollContentBottomPadding)
+                .padding(.trailing, scrollContentTrailingPadding)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollIndicators(.visible)
             .onChange(of: focusedTaskID) { _, _ in
@@ -270,10 +303,25 @@ struct SessionLiveView: View {
 
     private var scrollContentTopPadding: CGFloat {
 #if os(iOS)
-        return 6
+        if isPhone {
+            return Layout.phoneContentInsets.top
+        }
+        return layout.isCompact ? 0 : 6
 #else
         return 0
 #endif
+    }
+
+    private var scrollContentHorizontalPadding: CGFloat {
+        isPhone ? Layout.phoneContentInsets.leading : 0
+    }
+
+    private var scrollContentBottomPadding: CGFloat {
+        isPhone ? Layout.phoneContentInsets.bottom : 0
+    }
+
+    private var scrollContentTrailingPadding: CGFloat {
+        isPhone ? 0 : (layout.isCompact ? 0 : 8)
     }
 
     private var inactiveStateVerticalOffset: CGFloat {
@@ -282,6 +330,14 @@ struct SessionLiveView: View {
 
     private var statusStateVerticalOffset: CGFloat {
         layout.isCompact ? 0 : -34
+    }
+
+    private var isPhone: Bool {
+#if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+#else
+        false
+#endif
     }
 
     @ToolbarContentBuilder
@@ -330,6 +386,24 @@ struct SessionLiveView: View {
             store: store,
             isTaskFilterPopoverPresented: $isTaskFilterPopoverPresented
         )
+    }
+
+    @ViewBuilder
+    private var compactSessionOverviewCard: some View {
+#if os(iOS)
+        if layout.isCompact, let activeSession = store.activeSession {
+            Button {
+                isSessionInfoPresented = true
+            } label: {
+                OrbitIndexCard(
+                    systemImage: "checklist",
+                    title: activeSession.name,
+                    subtitle: liveSessionSummary(for: activeSession)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+#endif
     }
 
     @ViewBuilder
@@ -516,6 +590,25 @@ struct SessionLiveView: View {
 
     private var sortedFilteredTasks: [AppFeature.State.TaskDraft] {
         sortedTasks(filteredTaskDrafts)
+    }
+
+    private var liveCompletedTaskCount: Int {
+        store.taskDrafts.reduce(into: 0) { count, task in
+            if task.completedAt != nil {
+                count += 1
+            }
+        }
+    }
+
+    private var liveOpenTaskCount: Int {
+        max(0, store.taskDrafts.count - liveCompletedTaskCount)
+    }
+
+    private func liveSessionSummary(for session: FocusSessionRecord) -> String {
+        let startedAt = session.startedAt.formatted(date: .omitted, time: .shortened)
+        let openTaskLabel = "\(liveOpenTaskCount) open"
+        let completedTaskLabel = "\(liveCompletedTaskCount) completed"
+        return "Started \(startedAt) • \(openTaskLabel) • \(completedTaskLabel)"
     }
 
     private var sortedFilteredTaskIDs: [UUID] {

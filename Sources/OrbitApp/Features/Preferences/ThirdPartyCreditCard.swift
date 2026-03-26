@@ -17,10 +17,8 @@ struct ThirdPartyCreditCard: View {
 
                 Spacer(minLength: 12)
 
-                HStack(spacing: 8) {
-                    CreditMetadataChip(title: "v\(credit.version)", usesMonospacedDigits: true)
-                    CreditMetadataChip(title: credit.licenseName)
-                }
+                CreditMetadataChip(title: "v\(credit.version)", usesMonospacedDigits: true)
+
             }
 
             HStack(spacing: 8) {

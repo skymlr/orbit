@@ -61,7 +61,6 @@ struct OrbitPhoneShellView: View {
                     .tag(RootTab.settings)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .tint(OrbitTheme.Palette.orbitLine)
 
             quickCaptureButton
         }
@@ -89,9 +88,6 @@ struct OrbitPhoneShellView: View {
         phoneNavigationStack {
             SessionLiveView(store: store)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .padding(.horizontal, 14)
-                .padding(.top, 8)
-                .padding(.bottom, 10)
                 .background {
                     OrbitSpaceBackground(
                         style: store.appearance.background,
@@ -226,9 +222,6 @@ private struct OrbitPhoneHistoryRootView: View {
     var body: some View {
         historyContent
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .padding(.horizontal, 14)
-            .padding(.top, 10)
-            .padding(.bottom, 10)
             .background {
                 OrbitSpaceBackground(
                     style: store.appearance.background,

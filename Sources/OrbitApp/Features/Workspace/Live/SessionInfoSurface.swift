@@ -96,13 +96,14 @@ struct SessionInfoSurface: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.ultraThinMaterial)
-        .overlay {
-            panelShape
-                .stroke(panelStroke, lineWidth: 1)
-        }
-        .clipShape(panelShape)
-        .shadow(color: OrbitTheme.Palette.heroCyan.opacity(0.18), radius: 14, y: 6)
+        .orbitSurfaceCard(
+            fillStyle: .ultraThinMaterial,
+            cornerRadius: OrbitTheme.Radius.hero,
+            borderColor: panelStroke,
+            shadowColor: OrbitTheme.Palette.heroCyan.opacity(0.18),
+            shadowRadius: 14,
+            shadowY: 6
+        )
     }
 
     private var header: some View {
@@ -262,11 +263,6 @@ struct SessionInfoSurface: View {
         )
         .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: isEndSessionArmed)
     }
-
-    private var panelShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: OrbitTheme.Radius.hero, style: .continuous)
-    }
-
     private var panelStroke: Color {
         OrbitTheme.Palette.glassBorderStrong.opacity(0.92)
     }
