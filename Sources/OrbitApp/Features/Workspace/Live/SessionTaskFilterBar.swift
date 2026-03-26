@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import Flow
 import SwiftUI
 
 struct SessionTaskFilterToolbarButton: View {
@@ -188,30 +189,15 @@ private struct SessionTaskFilterPickerPopover: View {
     let presentationStyle: SessionTaskFilterPickerPresentationStyle
 
     var body: some View {
-        Group {
-            if presentationStyle == .sheet {
-                ScrollView {
-                    content
-                        .padding(20)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .scrollIndicators(.visible)
-            } else {
-                content
-                    .padding(popoverContentPadding)
+        content
+            .padding(contentPadding)
 #if os(macOS)
-                    .frame(width: 430)
+            .frame(width: 430)
 #else
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
 #endif
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(.thinMaterial)
-                    )
-                    .padding(.horizontal, popoverOuterHorizontalPadding)
-                    .padding(.vertical, popoverOuterVerticalPadding)
-            }
-        }
+            .padding(.horizontal, popoverOuterHorizontalPadding)
+            .padding(.vertical, popoverOuterVerticalPadding)
         .orbitOnExitCommand {
             isTaskFilterPopoverPresented = false
         }
@@ -236,32 +222,30 @@ private struct SessionTaskFilterPickerPopover: View {
                     .orbitFont(.caption, weight: .semibold)
                     .foregroundStyle(.secondary)
 
-                ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
-                        ForEach(SessionTaskFilterSupport.priorityFilterOrder, id: \.self) { priority in
-                            priorityFilterChip(
-                                title: priority.title,
-                                count: SessionTaskFilterSupport.countForPriority(priority, in: store),
-                                isSelected: SessionTaskFilterSupport.isPrioritySelected(priority, in: store),
-                                tint: SessionTaskFilterSupport.priorityFilterTint(for: priority),
-                                icon: SessionTaskFilterSupport.priorityFilterIcon(for: priority)
-                            ) {
-                                store.send(.sessionTaskPriorityFilterToggled(priority))
-                            }
+                HFlow(itemSpacing: 8, rowSpacing: 8) {
+                    ForEach(SessionTaskFilterSupport.priorityFilterOrder, id: \.self) { priority in
+                        priorityFilterChip(
+                            title: priority.title,
+                            count: SessionTaskFilterSupport.countForPriority(priority, in: store),
+                            isSelected: SessionTaskFilterSupport.isPrioritySelected(priority, in: store),
+                            tint: SessionTaskFilterSupport.priorityFilterTint(for: priority),
+                            icon: SessionTaskFilterSupport.priorityFilterIcon(for: priority)
+                        ) {
+                            store.send(.sessionTaskPriorityFilterToggled(priority))
                         }
                     }
-                    .padding(.vertical, 2)
                 }
-                .scrollIndicators(.hidden)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 2)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Categories")
-                    .orbitFont(.caption, weight: .semibold)
-                    .foregroundStyle(.secondary)
+            if !categoriesWithTasks.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Categories")
+                        .orbitFont(.caption, weight: .semibold)
+                        .foregroundStyle(.secondary)
 
-                ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
+                    HFlow(itemSpacing: 8, rowSpacing: 8) {
                         ForEach(categoriesWithTasks) { category in
                             filterChip(
                                 title: category.name,
@@ -273,9 +257,9 @@ private struct SessionTaskFilterPickerPopover: View {
                             }
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 2)
                 }
-                .scrollIndicators(.hidden)
             }
         }
     }
@@ -286,6 +270,10 @@ private struct SessionTaskFilterPickerPopover: View {
 
     private var categoriesWithTasks: [SessionCategoryRecord] {
         SessionTaskFilterSupport.categoriesWithTasks(in: store)
+    }
+
+    private var contentPadding: CGFloat {
+        presentationStyle == .sheet ? 20 : popoverContentPadding
     }
 
 #if os(macOS)

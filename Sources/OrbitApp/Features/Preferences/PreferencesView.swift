@@ -127,14 +127,22 @@ struct PreferencesView: View {
                     HStack(spacing: 8) {
                         TextField("Add category", text: $newCategoryName)
                             .textFieldStyle(.roundedBorder)
+                            .disabled(isAtCategoryLimit)
 
                         Button("Add") {
                             addCategoryButtonTapped()
                         }
                         .buttonStyle(.orbitSecondary)
+                        .disabled(isAtCategoryLimit)
                     }
 
                     CategoryColorPalettePicker(selectedHex: $newCategoryColorHex)
+
+                    if isAtCategoryLimit {
+                        Text("Category limit reached. Orbit supports up to \(FocusDefaults.maxCategoryCount) categories.")
+                            .orbitFont(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
                     if store.settings.categories.isEmpty {
                         Text("No categories yet. Add one to make it available everywhere Orbit groups work.")
@@ -318,10 +326,15 @@ struct PreferencesView: View {
     private func addCategoryButtonTapped() {
         let trimmedName = newCategoryName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
+        guard !isAtCategoryLimit else { return }
 
         store.send(.settingsAddCategoryTapped(trimmedName, newCategoryColorHex))
         newCategoryName = ""
         newCategoryColorHex = FocusDefaults.defaultCategoryColorHex
+    }
+
+    private var isAtCategoryLimit: Bool {
+        store.settings.categories.count >= FocusDefaults.maxCategoryCount
     }
 
     private var appVersionString: String {

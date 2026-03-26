@@ -96,14 +96,14 @@ struct SessionInfoSurface: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .orbitSurfaceCard(
-            fillStyle: .ultraThinMaterial,
-            cornerRadius: OrbitTheme.Radius.hero,
-            borderColor: panelStroke,
-            shadowColor: OrbitTheme.Palette.heroCyan.opacity(0.18),
-            shadowRadius: 14,
-            shadowY: 6
-        )
+//        .orbitSurfaceCard(
+//            fillStyle: .ultraThinMaterial,
+//            cornerRadius: OrbitTheme.Radius.hero,
+//            borderColor: panelStroke,
+//            shadowColor: OrbitTheme.Palette.heroCyan.opacity(0.18),
+//            shadowRadius: 14,
+//            shadowY: 6
+//        )
     }
 
     private var header: some View {

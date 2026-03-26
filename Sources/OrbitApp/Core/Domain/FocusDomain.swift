@@ -102,6 +102,7 @@ struct FocusSessionRecord: Equatable, Identifiable, Sendable {
 
 enum FocusDefaults {
     static let defaultCategoryColorHex = "#58B5FF"
+    static let maxCategoryCount = 10
     static let categoryColorOptions: [String] = [
         "#00B5FF",
         "#58B5FF",

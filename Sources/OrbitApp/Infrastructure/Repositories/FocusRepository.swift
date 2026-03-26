@@ -174,6 +174,11 @@ extension FocusRepository: DependencyKey {
                 let normalizedColor = FocusDefaults.normalizedCategoryColorHex(colorHex)
 
                 return try await database.write { db in
+                    let categoryCount = try SessionCategory.fetchCount(db)
+                    guard categoryCount < FocusDefaults.maxCategoryCount else {
+                        throw FocusRepositoryError.categoryLimitReached
+                    }
+
                     if try SessionCategory.where({ $0.normalizedName.eq(normalized) }).fetchOne(db) != nil {
                         return nil
                     }
@@ -369,6 +374,7 @@ extension DependencyValues {
 
 enum FocusRepositoryError: Error {
     case notFound
+    case categoryLimitReached
 }
 
 private func buildSessionRecord(db: Database, sessionID: UUID) throws -> FocusSessionRecord? {

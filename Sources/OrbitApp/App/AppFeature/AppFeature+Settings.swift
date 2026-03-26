@@ -131,6 +131,8 @@ extension AppFeature {
                     }
                     await send(.settingsRefreshTapped)
                     await send(.showToast(tone: .success, message: "Category added"))
+                } catch FocusRepositoryError.categoryLimitReached {
+                    await send(.showToast(tone: .failure, message: "You can only have up to \(FocusDefaults.maxCategoryCount) categories"))
                 } catch {
                     await send(.showToast(tone: .failure, message: "Category already exists or name is invalid"))
                 }
