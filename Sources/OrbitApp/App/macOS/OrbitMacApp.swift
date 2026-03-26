@@ -6,6 +6,12 @@ import SwiftUI
 
 @main
 struct OrbitMacApp: App {
+    private enum Layout {
+        static let workspaceMinWidth: CGFloat = 820
+        static let workspaceDefaultSize = CGSize(width: 820, height: 680)
+        static let settingsDefaultSize = CGSize(width: 650, height: 500)
+    }
+
     @NSApplicationDelegateAdaptor(OrbitApplicationDelegate.self) private var appDelegate
     let store: StoreOf<AppFeature>
 
@@ -38,6 +44,7 @@ struct OrbitMacApp: App {
                 if store.presentation.isWorkspacePresented {
                     WorkspaceView(store: store)
                         .orbitAppearance(store.appearance)
+                        .frame(minWidth: Layout.workspaceMinWidth)
                         .onDisappear {
                             store.send(.workspaceWindowClosed)
                         }
@@ -50,7 +57,11 @@ struct OrbitMacApp: App {
         }
         .windowStyle(.titleBar)
         .windowBackgroundDragBehavior(.enabled)
-        .defaultSize(width: 920, height: 680)
+        .defaultSize(
+            width: Layout.workspaceDefaultSize.width,
+            height: Layout.workspaceDefaultSize.height
+        )
+        .windowResizability(.contentMinSize)
 
         Settings {
             PreferencesView(store: store)
@@ -58,7 +69,10 @@ struct OrbitMacApp: App {
                 .preferredColorScheme(.dark)
         }
         .windowBackgroundDragBehavior(.enabled)
-        .defaultSize(width: 650, height: 500)
+        .defaultSize(
+            width: Layout.settingsDefaultSize.width,
+            height: Layout.settingsDefaultSize.height
+        )
     }
 }
 

@@ -27,9 +27,6 @@ struct SessionPageView: View {
         .padding(.horizontal, horizontalContentPadding)
         .padding(.bottom, bottomContentPadding)
         .padding(.top, contentTopPadding)
-#if os(macOS)
-        .frame(minWidth: 760, idealWidth: 1_180, minHeight: 680, idealHeight: 760)
-#endif
 #if os(iOS)
         .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
@@ -37,6 +34,10 @@ struct SessionPageView: View {
         .toolbar {
             sessionToolbarContent
         }
+#if os(macOS)
+        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .toolbarColorScheme(.dark, for: .windowToolbar)
+#endif
         .confirmationDialog(
             "Export All Sessions?",
             isPresented: $isExportAllConfirmationPresented

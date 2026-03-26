@@ -24,18 +24,12 @@ struct SessionHistoryView: View {
     @State private var historyTaskFilter: HistoryTaskFilter = .completed
 
     var body: some View {
-        Group {
-            if isPhone {
-                ScrollView {
-                    pageContent
-                        .padding(Layout.phoneContentInsets)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .scrollIndicators(.visible)
-            } else {
-                pageContent
-            }
+        ScrollView {
+            pageContent
+                .padding(pageContentInsets)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .scrollIndicators(.visible)
         .frame(
             maxWidth: layout.isCompact ? .infinity : Layout.contentMaxWidth,
             maxHeight: .infinity,
@@ -183,6 +177,14 @@ struct SessionHistoryView: View {
 
     private func deleteSession(sessionID: UUID) {
         store.send(.settingsDeleteSessionTapped(sessionID))
+    }
+
+    private var pageContentInsets: EdgeInsets {
+        if isPhone {
+            Layout.phoneContentInsets
+        } else {
+            EdgeInsets()
+        }
     }
 
     private var isPhone: Bool {

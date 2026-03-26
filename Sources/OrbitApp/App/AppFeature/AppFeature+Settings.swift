@@ -9,6 +9,7 @@ extension AppFeature {
                 .autoEndSession,
                 .bootstrapActiveSessionFailed,
                 .bootstrapActiveSessionLoaded,
+                .captureDeleteTapped,
                 .captureSubmitTapped,
                 .captureTapped,
                 .captureWindowClosed,

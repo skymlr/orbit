@@ -8,7 +8,6 @@ struct TaskRowFloatingTools: View {
 
     @State private var isDeleteConfirmationPending = false
     @State private var deleteConfirmationToken = 0
-    @State private var isDeleteDialogPresented = false
     @State private var isTaskInfoPresented = false
 
     var body: some View {
@@ -16,66 +15,16 @@ struct TaskRowFloatingTools: View {
             infoAction
         }
         .fixedSize(horizontal: true, vertical: false)
-        .confirmationDialog(
-            "Delete Task?",
-            isPresented: $isDeleteDialogPresented
-        ) {
-            Button("Delete Task", role: .destructive) {
-                isTaskInfoPresented = false
-                onDelete()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This task will be removed from the current session.")
-        }
     }
 
     private var infoAction: some View {
-        Group {
-            if layout.isCompact {
-                compactInfoAction
-            } else {
-                regularInfoAction
-            }
-        }
-    }
-
-    private var compactInfoAction: some View {
-        Button {
-            isTaskInfoPresented.toggle()
-        } label: {
-            Image(systemName: "ellipsis.circle")
-                .orbitFont(.body, weight: .semibold)
-        }
-        .buttonStyle(.plain)
-        .sheet(isPresented: $isTaskInfoPresented) {
-            NavigationStack {
-                compactTaskInfoSheet
-                    .navigationTitle("Task Actions")
-                    .orbitInlineNavigationTitleDisplayMode()
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") {
-                                isTaskInfoPresented = false
-                            }
-                        }
-                    }
-            }
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
-        .foregroundStyle(.secondary)
-        .accessibilityLabel("Task actions")
-    }
-
-    private var regularInfoAction: some View {
         Button {
             if !isTaskInfoPresented {
                 isDeleteConfirmationPending = false
             }
             isTaskInfoPresented.toggle()
         } label: {
-            Image(systemName: "info.circle")
+            Image(systemName: layout.isCompact ? "ellipsis.circle" : "info.circle")
                 .orbitFont(.body, weight: .semibold)
         }
         .buttonStyle(.plain)
@@ -85,6 +34,9 @@ struct TaskRowFloatingTools: View {
             arrowEdge: .top
         ) {
             taskInfoPopover
+#if os(iOS)
+                .presentationCompactAdaptation(.popover)
+#endif
         }
         .orbitInteractiveControl(
             scale: 1.06,
@@ -93,37 +45,7 @@ struct TaskRowFloatingTools: View {
             shadowRadius: 6
         )
         .foregroundStyle(.secondary)
-        .accessibilityLabel("Task information")
-    }
-
-    private var compactTaskInfoSheet: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            taskMetadata
-
-            VStack(spacing: 12) {
-                Button {
-                    isTaskInfoPresented = false
-                    onEdit()
-                } label: {
-                    Label("Edit Task", systemImage: "pencil")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .buttonStyle(.orbitSecondary)
-
-                Button(role: .destructive) {
-                    isDeleteDialogPresented = true
-                } label: {
-                    Label("Delete Task", systemImage: "trash")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .buttonStyle(.orbitDestructive)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(OrbitSpaceBackground())
+        .accessibilityLabel(layout.isCompact ? "Task actions" : "Task information")
     }
 
     private var taskInfoPopover: some View {

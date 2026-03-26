@@ -6,6 +6,7 @@ extension AppFeature {
         switch action {
         case .binding,
                 .autoEndSession,
+                .captureDeleteTapped,
                 .captureSubmitTapped,
                 .captureTapped,
                 .endSessionCancelTapped,

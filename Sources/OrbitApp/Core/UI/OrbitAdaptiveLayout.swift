@@ -69,11 +69,6 @@ struct OrbitAdaptiveLayoutReader<Content: View>: View {
 
             content(layout)
                 .environment(\.orbitAdaptiveLayout, layout)
-                .frame(
-                    width: proxy.size.width,
-                    height: proxy.size.height,
-                    alignment: .topLeading
-                )
         }
     }
 }

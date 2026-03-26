@@ -17,54 +17,81 @@ struct QuickCaptureView: View {
     @State private var isAddingFirstCategory = false
     @State private var newCategoryName = ""
     @State private var newCategoryColorHex = FocusDefaults.defaultCategoryColorHex
+    @State private var isDeleteConfirmationPresented = false
     @State private var pendingCreatedCategoryNormalizedName: String?
     @FocusState private var focusedField: FocusField?
 
     var body: some View {
         OrbitAdaptiveLayoutReader { layout in
-            captureContent(for: layout)
-                .task {
-                    editorState.text = store.captureDraft.markdown
-                    editorState.selectionRange = NSRange(location: (store.captureDraft.markdown as NSString).length, length: 0)
-                    requestEditorFocus()
-                }
-                .onChange(of: store.captureDraft.editingTaskID) { _, _ in
-                    requestEditorFocus()
-                }
-                .onChange(of: store.presentation.capturePresentationRequest) { _, _ in
-                    requestEditorFocus()
-                }
-                .onChange(of: editorState.isPreviewVisible) { _, newValue in
-                    if !newValue {
-                        requestEditorFocus()
-                    } else {
-                        isEditorFocused = false
-                    }
-                }
-                .onChange(of: editorState.text) { _, newValue in
-                    store.captureDraft.markdown = newValue
-                }
-                .onChange(of: store.captureDraft.markdown) { _, newValue in
-                    if newValue != editorState.text {
-                        editorState.text = newValue
-                        editorState.selectionRange = NSRange(location: (newValue as NSString).length, length: 0)
-                    }
-                }
-                .onChange(of: store.categories) { _, categories in
-                    categoriesChanged(categories)
-                }
+            captureView(for: layout)
+        }
+    }
+
+    private func captureView(for layout: OrbitAdaptiveLayoutValue) -> some View {
+        let content = AnyView(captureContent(for: layout))
+        let baseView = AnyView(
+            content
                 .background {
                     captureBackground(for: layout)
+                }
+                .background {
+                    keyboardShortcutBindings
                 }
                 .orbitOnExitCommand {
                     dismissCapture()
                 }
-                .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: editorState.isPreviewVisible)
-                .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: store.captureDraft.editingTaskID != nil)
-                .background {
-                    keyboardShortcutBindings
+        )
+        let observedView = AnyView(
+            baseView
+            .task {
+                editorState.text = store.captureDraft.markdown
+                editorState.selectionRange = NSRange(location: (store.captureDraft.markdown as NSString).length, length: 0)
+                requestEditorFocus()
+            }
+            .onChange(of: store.captureDraft.editingTaskID) { _, newValue in
+                if newValue == nil {
+                    isDeleteConfirmationPresented = false
                 }
-        }
+                requestEditorFocus()
+            }
+            .onChange(of: store.presentation.capturePresentationRequest) { _, _ in
+                requestEditorFocus()
+            }
+            .onChange(of: editorState.isPreviewVisible) { _, newValue in
+                if !newValue {
+                    requestEditorFocus()
+                } else {
+                    isEditorFocused = false
+                }
+            }
+            .onChange(of: editorState.text) { _, newValue in
+                store.captureDraft.markdown = newValue
+            }
+            .onChange(of: store.captureDraft.markdown) { _, newValue in
+                if newValue != editorState.text {
+                    editorState.text = newValue
+                    editorState.selectionRange = NSRange(location: (newValue as NSString).length, length: 0)
+                }
+            }
+            .onChange(of: store.categories) { _, categories in
+                categoriesChanged(categories)
+            }
+        )
+
+        return observedView
+            .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: editorState.isPreviewVisible)
+            .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: store.captureDraft.editingTaskID != nil)
+            .confirmationDialog(
+                "Delete Task?",
+                isPresented: $isDeleteConfirmationPresented
+            ) {
+                Button("Delete Task", role: .destructive) {
+                    confirmDeleteButtonTapped()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This task will be removed from the current session.")
+            }
     }
 
     @ViewBuilder
@@ -93,6 +120,7 @@ struct QuickCaptureView: View {
                 captureHeader
                 editorSection
                 categorySection(for: layout)
+                pickerArea(for: layout)
             }
             .padding(.horizontal, 14)
             .padding(.top, 14)
@@ -101,7 +129,7 @@ struct QuickCaptureView: View {
         }
         .orbitInteractiveKeyboardDismiss()
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            compactActionBar
+            compactSaveBar
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -214,16 +242,13 @@ struct QuickCaptureView: View {
 
     private func actionArea(for layout: OrbitAdaptiveLayoutValue) -> some View {
         HStack {
-            HStack(spacing: 6) {
-                Text("Priority")
-                    .orbitFont(.caption, weight: .semibold)
-                    .foregroundStyle(.secondary)
-                shortcutSubtitle(store.hotkeys.captureNextPriorityShortcut, isVisible: !layout.isCompact)
-            }
-
-            priorityPicker
+            pickerArea(for: layout)
 
             Spacer()
+
+            if isEditingTask {
+                deleteButton
+            }
 
             Button {
                 saveButtonTapped()
@@ -238,17 +263,24 @@ struct QuickCaptureView: View {
             .keyboardShortcut(.return, modifiers: [.command])
         }
     }
-
-    private var compactActionBar: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
+    
+    private func pickerArea(for layout: OrbitAdaptiveLayoutValue) -> some View {
+        HStack {
+            HStack(spacing: 6) {
                 Text("Priority")
                     .orbitFont(.caption, weight: .semibold)
                     .foregroundStyle(.secondary)
+                shortcutSubtitle(store.hotkeys.captureNextPriorityShortcut, isVisible: !layout.isCompact)
+            }
 
-                Spacer()
+            priorityPicker
+        }
+    }
 
-                priorityPicker
+    private var compactSaveBar: some View {
+        HStack(spacing: 12) {
+            if isEditingTask {
+                deleteButton
             }
 
             Button {
@@ -264,7 +296,6 @@ struct QuickCaptureView: View {
         .padding(.horizontal, 14)
         .padding(.top, 12)
         .padding(.bottom, 14)
-        .background(.ultraThinMaterial)
     }
 
     private var priorityPicker: some View {
@@ -358,6 +389,10 @@ struct QuickCaptureView: View {
         !trimmedNewCategoryName.isEmpty
     }
 
+    private var isEditingTask: Bool {
+        store.captureDraft.editingTaskID != nil
+    }
+
     private var saveButtonTitle: String {
         store.captureDraft.editingTaskID == nil ? "Save Task" : "Save Task Changes"
     }
@@ -382,10 +417,6 @@ struct QuickCaptureView: View {
 
     private var emptyCategoryState: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("No categories yet. Add your first category to start organizing captured tasks.")
-                .orbitFont(.caption)
-                .foregroundStyle(.secondary)
-
             if isAddingFirstCategory {
                 VStack(alignment: .leading, spacing: 10) {
                     TextField("Category name", text: $newCategoryName)
@@ -422,11 +453,6 @@ struct QuickCaptureView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.small, style: .continuous)
-                .fill(.ultraThinMaterial)
-        )
     }
 
     @ViewBuilder
@@ -455,8 +481,26 @@ struct QuickCaptureView: View {
         store.send(.captureSubmitTapped)
     }
 
+    private var deleteButton: some View {
+        Button(role: .destructive) {
+            deleteButtonTapped()
+        } label: {
+            Text("Delete Task")
+        }
+        .buttonStyle(.orbitDestructive)
+    }
+
     private func dismissCapture() {
         store.send(.captureWindowClosed)
+    }
+
+    private func deleteButtonTapped() {
+        guard isEditingTask else { return }
+        isDeleteConfirmationPresented = true
+    }
+
+    private func confirmDeleteButtonTapped() {
+        store.send(.captureDeleteTapped)
     }
 
     private func focusCategoryField() {

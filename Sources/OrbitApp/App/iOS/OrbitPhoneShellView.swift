@@ -68,7 +68,7 @@ struct OrbitPhoneShellView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             toastInset
         }
-        .fullScreenCover(isPresented: capturePresentationBinding) {
+        .sheet(isPresented: capturePresentationBinding) {
             quickCapture
         }
         .onChange(of: store.presentation.preferencesPresentationRequest) { oldValue, newValue in
@@ -185,6 +185,7 @@ struct OrbitPhoneShellView: View {
                 .preferredColorScheme(.dark)
         }
         .toolbar(.hidden, for: .navigationBar)
+        .presentationDetents([.large])
     }
 
     private func quickCaptureButtonTapped() {

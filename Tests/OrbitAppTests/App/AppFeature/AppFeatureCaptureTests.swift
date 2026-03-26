@@ -220,6 +220,124 @@ struct AppFeatureCaptureTests {
     }
 
     @Test
+    func captureDeleteTappedInEditModeDeletesTaskAndClosesCapture() async {
+        let active = makeActiveSession(taskCategoryIDs: [appFeatureProjectACategoryID])
+        let task = active.tasks[0]
+        let tracker = TaskMutationTracker()
+        let toastID = UUID(uuidString: "196B05BD-36B7-4CB1-8C89-AFD0FA655AF2")!
+        let clock = TestClock()
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+        initial.categories = sampleCategories
+        initial.captureDraft.markdown = task.markdown
+        initial.captureDraft.priority = task.priority
+        initial.captureDraft.selectedCategoryIDs = [appFeatureProjectACategoryID]
+        initial.captureDraft.editingTaskID = task.id
+        initial.windowDestinations.insert(.captureWindow)
+
+        var repository = FocusRepository.testValue
+        repository.deleteTask = { taskID in
+            await tracker.recordDelete(taskID: taskID)
+        }
+        repository.loadActiveSession = { nil }
+        repository.listSessions = { [] }
+        repository.listCategories = { sampleCategories }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.date.now = Date(timeIntervalSince1970: 1_700_000_000)
+            $0.focusRepository = repository
+            $0.uuid = .constant(toastID)
+        }
+
+        await store.send(.captureDeleteTapped)
+        await store.receive(\.loadActiveSessionResponse) {
+            $0.activeSession = nil
+            $0.taskDrafts = []
+            $0.endSessionDraft = nil
+            $0.windowDestinations = []
+            $0.captureDraft = AppFeature.State.CaptureDraft(selectedCategoryIDs: [])
+            $0.selectedTaskCategoryFilterIDs = []
+            $0.selectedTaskPriorityFilters = []
+        }
+        await store.receive(\.settingsRefreshTapped)
+        await store.receive(\.captureWindowClosed)
+        await store.receive(\.showToast) {
+            $0.toast = AppFeature.State.Toast(
+                id: toastID,
+                tone: .success,
+                message: "Task deleted"
+            )
+        }
+        await store.receive(\.settingsDataResponse) {
+            $0.settings.sessions = []
+            $0.settings.categories = sampleCategories
+            $0.categories = sampleCategories
+            $0.captureDraft.selectedCategoryIDs = []
+        }
+        await store.send(.toastDismissTapped) {
+            $0.toast = nil
+        }
+
+        let counts = await tracker.counts()
+        #expect(counts.deleted == [task.id])
+        #expect(counts.updated.isEmpty)
+        #expect(counts.created.isEmpty)
+        #expect(store.state.windowDestinations.contains(.captureWindow) == false)
+        #expect(store.state.captureDraft.editingTaskID == nil)
+    }
+
+    @Test
+    func captureDeleteTappedInEditModeShowsFailureToastWhenDeleteFails() async {
+        let active = makeActiveSession(taskCategoryIDs: [appFeatureProjectACategoryID])
+        let task = active.tasks[0]
+        let toastID = UUID(uuidString: "470EF4C0-0EA5-4B25-978F-2D86B82E5892")!
+        let clock = TestClock()
+
+        var initial = AppFeature.State()
+        initial.activeSession = active
+        initial.categories = sampleCategories
+        initial.captureDraft.markdown = task.markdown
+        initial.captureDraft.priority = task.priority
+        initial.captureDraft.selectedCategoryIDs = [appFeatureProjectACategoryID]
+        initial.captureDraft.editingTaskID = task.id
+        initial.windowDestinations.insert(.captureWindow)
+
+        var repository = FocusRepository.testValue
+        repository.deleteTask = { _ in
+            throw AppFeatureTestError.failed
+        }
+
+        let store = TestStore(initialState: initial) {
+            AppFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.date.now = Date(timeIntervalSince1970: 1_700_000_000)
+            $0.focusRepository = repository
+            $0.uuid = .constant(toastID)
+        }
+
+        await store.send(.captureDeleteTapped)
+        await store.receive(\.showToast) {
+            $0.toast = AppFeature.State.Toast(
+                id: toastID,
+                tone: .failure,
+                message: "Could not delete task"
+            )
+        }
+        await store.send(.toastDismissTapped) {
+            $0.toast = nil
+        }
+
+        #expect(store.state.windowDestinations.contains(.captureWindow))
+        #expect(store.state.captureDraft.editingTaskID == task.id)
+        #expect(store.state.captureDraft.markdown == task.markdown)
+    }
+
+    @Test
     func captureSubmitTappedInEditModeUpdatesExistingTask() async {
         let active = makeActiveSession(taskCategoryIDs: [appFeatureProjectACategoryID])
         let task = active.tasks[0]

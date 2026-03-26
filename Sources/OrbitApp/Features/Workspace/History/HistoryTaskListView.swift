@@ -1,9 +1,5 @@
 import SwiftUI
 
-#if os(iOS)
-import UIKit
-#endif
-
 struct HistoryTaskListView: View {
     @Environment(\.orbitAdaptiveLayout) private var layout
     let session: FocusSessionRecord
@@ -65,16 +61,7 @@ struct HistoryTaskListView: View {
                 .padding(16)
                 .orbitSurfaceCard()
             } else {
-                Group {
-                    if isPhone {
-                        taskRows
-                    } else {
-                        ScrollView {
-                            taskRows
-                        }
-                        .scrollIndicators(.visible)
-                    }
-                }
+                taskRows
             }
         }
     }
@@ -87,13 +74,5 @@ struct HistoryTaskListView: View {
         }
         .padding(.vertical, 2)
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var isPhone: Bool {
-#if os(iOS)
-        UIDevice.current.userInterfaceIdiom == .phone
-#else
-        false
-#endif
     }
 }

@@ -28,6 +28,7 @@ extension AppFeature {
         case captureWindowClosed
         case preferencesWindowClosed
 
+        case captureDeleteTapped
         case captureSubmitTapped
         case sessionAddTaskTapped
         case sessionRenameTapped(String)

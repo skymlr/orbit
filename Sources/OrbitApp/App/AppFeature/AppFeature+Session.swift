@@ -110,6 +110,22 @@ extension AppFeature {
             }
             return .none
 
+        case .captureDeleteTapped:
+            guard let taskID = state.captureDraft.editingTaskID else { return .none }
+
+            return .run { send in
+                do {
+                    try await focusRepository.deleteTask(taskID)
+                    let active = try? await focusRepository.loadActiveSession()
+                    await send(.loadActiveSessionResponse(active))
+                    await send(.settingsRefreshTapped)
+                    await send(.captureWindowClosed)
+                    await send(.showToast(tone: .success, message: "Task deleted"))
+                } catch {
+                    await send(.showToast(tone: .failure, message: "Could not delete task"))
+                }
+            }
+
         case .captureSubmitTapped:
             guard let activeSession = state.activeSession else { return .none }
             let markdown = state.captureDraft.markdown

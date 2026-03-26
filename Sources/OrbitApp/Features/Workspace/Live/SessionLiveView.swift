@@ -517,6 +517,9 @@ struct SessionLiveView: View {
                         }
                     }
                 },
+                onEditRequested: {
+                    editTaskButtonTapped(draftID: draft.id)
+                },
                 onPrioritySet: { priority in
                     setTaskPriority(draftID: draft.id, priority: priority)
                 },
@@ -528,7 +531,7 @@ struct SessionLiveView: View {
                 }
             )
             .accessibilityAddTraits(draft.id == focusedTaskID ? .isSelected : [])
-            .accessibilityHint("Press Up or Down Arrow to move between tasks. Press Return to edit. Press Space to toggle completion. Press Escape to clear task focus.")
+            .accessibilityHint("Tap or click to edit. Press Up or Down Arrow to move between tasks. Press Return to edit. Press Space to toggle completion. Press Escape to clear task focus.")
 
             TaskRowFloatingTools(
                 draft: draft,

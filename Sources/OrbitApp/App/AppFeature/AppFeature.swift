@@ -47,6 +47,7 @@ struct AppFeature {
                 return reduceLifecycle(into: &state, action: action)
 
             case .autoEndSession,
+                    .captureDeleteTapped,
                     .captureSubmitTapped,
                     .captureTapped,
                     .endSessionCancelTapped,

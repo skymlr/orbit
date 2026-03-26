@@ -8,6 +8,7 @@ import Foundation
 actor TaskMutationTracker {
     private(set) var created: [UUID] = []
     private(set) var createdCategories: [[UUID]] = []
+    private(set) var deleted: [UUID] = []
     private(set) var updated: [UUID] = []
     private(set) var updatedCategories: [[UUID]] = []
     private(set) var updatedMarkdowns: [String] = []
@@ -27,6 +28,10 @@ actor TaskMutationTracker {
         }
     }
 
+    func recordDelete(taskID: UUID) {
+        deleted.append(taskID)
+    }
+
     func recordCompletion(taskID: UUID, isCompleted: Bool) {
         completedTaskIDs.append(taskID)
         completedFlags.append(isCompleted)
@@ -35,6 +40,7 @@ actor TaskMutationTracker {
     func counts() -> (
         created: [UUID],
         createdCategories: [[UUID]],
+        deleted: [UUID],
         updated: [UUID],
         updatedCategories: [[UUID]],
         updatedMarkdowns: [String],
@@ -44,6 +50,7 @@ actor TaskMutationTracker {
         (
             created,
             createdCategories,
+            deleted,
             updated,
             updatedCategories,
             updatedMarkdowns,

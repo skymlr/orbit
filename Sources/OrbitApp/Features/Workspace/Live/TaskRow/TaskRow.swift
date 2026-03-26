@@ -6,6 +6,7 @@ struct TaskRow: View {
     let draft: AppFeature.State.TaskDraft
     let isKeyboardHighlighted: Bool
     let onKeyboardPopoverDismissed: (() -> Void)?
+    let onEditRequested: () -> Void
     let onPrioritySet: (NotePriority) -> Void
     let onToggleCompletion: () -> Void
     let onToggleChecklistLine: (Int) -> Void
@@ -20,6 +21,7 @@ struct TaskRow: View {
         draft: AppFeature.State.TaskDraft,
         isKeyboardHighlighted: Bool = false,
         onKeyboardPopoverDismissed: (() -> Void)? = nil,
+        onEditRequested: @escaping () -> Void,
         onPrioritySet: @escaping (NotePriority) -> Void,
         onToggleCompletion: @escaping () -> Void,
         onToggleChecklistLine: @escaping (Int) -> Void
@@ -27,6 +29,7 @@ struct TaskRow: View {
         self.draft = draft
         self.isKeyboardHighlighted = isKeyboardHighlighted
         self.onKeyboardPopoverDismissed = onKeyboardPopoverDismissed
+        self.onEditRequested = onEditRequested
         self.onPrioritySet = onPrioritySet
         self.onToggleCompletion = onToggleCompletion
         self.onToggleChecklistLine = onToggleChecklistLine
@@ -76,10 +79,6 @@ struct TaskRow: View {
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(taskBackgroundColor(isCompleted: isCompleted))
-                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -93,6 +92,7 @@ struct TaskRow: View {
                 .padding(.leading, 4)
                 .accessibilityHidden(true)
         }
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .scaleEffect(isKeyboardHighlighted ? 1.015 : 1)
         .shadow(
@@ -118,6 +118,9 @@ struct TaskRow: View {
             if !newValue && isKeyboardHighlighted {
                 onKeyboardPopoverDismissed?()
             }
+        }
+        .onTapGesture {
+            onEditRequested()
         }
         .task(id: draft.id) {
             resetTransientUIState()
@@ -356,13 +359,6 @@ struct TaskRow: View {
         .orbitOnExitCommand {
             isPriorityPopoverPresented = false
         }
-    }
-
-    private func taskBackgroundColor(isCompleted: Bool) -> Color {
-        if isCompleted {
-            return TaskRowPalette.heroNavy.opacity(0.40)
-        }
-        return TaskRowPalette.heroNavy.opacity(0.32)
     }
 
     private func taskBorderColor(isCompleted: Bool) -> Color {
@@ -631,6 +627,7 @@ private struct TaskRowPreviewCard: View {
         TaskRow(
             draft: draft,
             isKeyboardHighlighted: isKeyboardHighlighted,
+            onEditRequested: {},
             onPrioritySet: { draft.priority = $0 },
             onToggleCompletion: toggleCompletion,
             onToggleChecklistLine: toggleChecklistLine(at:)
