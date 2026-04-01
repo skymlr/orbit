@@ -40,13 +40,10 @@ struct SessionLiveLoadingStateView: View {
     let verticalOffset: CGFloat
 
     var body: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-                .controlSize(.large)
-            Text("Loading active session…")
-                .orbitFont(.subheadline, weight: .semibold)
-                .foregroundStyle(.secondary)
-        }
+        OrbitLaunchLoadingScreen(
+            message: "Loading active session...",
+            showsBackground: false
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .offset(y: verticalOffset)
     }

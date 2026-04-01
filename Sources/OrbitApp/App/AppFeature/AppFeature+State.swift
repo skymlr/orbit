@@ -106,6 +106,10 @@ extension AppFeature {
         var sessionBootstrapState: SessionBootstrapState = .idle
         var hasLaunched = false
 
+        var isLaunching: Bool {
+            !hasLaunched || sessionBootstrapState == .loading
+        }
+
         var filteredTaskDrafts: [TaskDraft] {
             taskDrafts.filter { draft in
                 let categoryMatch: Bool

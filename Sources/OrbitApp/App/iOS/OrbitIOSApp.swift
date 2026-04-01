@@ -36,17 +36,25 @@ private struct OrbitIOSRootView: View {
     }
 
     var body: some View {
-        Group {
-            if isPhone {
-                OrbitPhoneShellView(store: store)
-            } else {
-                OrbitIOSTabletRootView(store: store)
+        ZStack {
+            Group {
+                if isPhone {
+                    OrbitPhoneShellView(store: store)
+                } else {
+                    OrbitIOSTabletRootView(store: store)
+                }
+            }
+
+            if store.isLaunching {
+                OrbitLaunchLoadingScreen()
+                    .transition(.opacity)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             AppLaunchCoordinator(store: store)
         }
+        .animation(.easeInOut(duration: OrbitTheme.Motion.relaxed), value: store.isLaunching)
         .sheet(
             item: Binding(
                 get: { store.presentation.sharedExport },
