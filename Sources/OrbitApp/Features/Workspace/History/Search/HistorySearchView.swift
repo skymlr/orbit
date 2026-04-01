@@ -7,19 +7,27 @@ import UIKit
 struct HistorySearchView: View {
     private enum Layout {
         static let phoneContentInsets = EdgeInsets(top: 20, leading: 16, bottom: 28, trailing: 16)
+        static let phoneRowSpacing: CGFloat = 14
     }
 
     @ObservedObject var model: HistorySearchPanelModel
+    private let sessionsOverride: [FocusSessionRecord]?
+    private let excludingActiveSessionIDOverride: UUID?
+
+    init(
+        model: HistorySearchPanelModel,
+        sessions: [FocusSessionRecord]? = nil,
+        excludingActiveSessionID: UUID? = nil
+    ) {
+        self.model = model
+        self.sessionsOverride = sessions
+        self.excludingActiveSessionIDOverride = excludingActiveSessionID
+    }
 
     var body: some View {
         Group {
             if isPhone {
-                ScrollView {
-                    pageContent
-                        .padding(Layout.phoneContentInsets)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .scrollIndicators(.visible)
+                phoneListContent
             } else {
                 pageContent
             }
@@ -99,8 +107,8 @@ struct HistorySearchView: View {
     }
 
     private var archivedSessionCount: Int {
-        model.sessions.filter { session in
-            session.endedAt != nil && session.id != model.excludingActiveSessionID
+        searchSessions.filter { session in
+            session.endedAt != nil && session.id != excludedActiveSessionID
         }.count
     }
 
@@ -110,11 +118,30 @@ struct HistorySearchView: View {
 
     private var searchResults: [HistorySearchDayGroup] {
         SessionHistorySearchSupport.dayGroups(
-            from: model.sessions,
-            excludingActiveSessionID: model.excludingActiveSessionID,
+            from: searchSessions,
+            excludingActiveSessionID: excludedActiveSessionID,
             query: model.query,
             filter: model.filter
         )
+    }
+
+    private var phoneListContent: some View {
+        List {
+            header
+                .orbitPhoneListRow(insets: phoneListInsets(top: Layout.phoneContentInsets.top))
+
+            OrbitSegmentedControl(
+                "Task filter",
+                selection: $model.filter,
+                options: HistoryTaskFilter.searchTabs
+            ) { filter in
+                filter.title
+            }
+            .orbitPhoneListRow(insets: phoneListInsets())
+
+            phoneContent
+        }
+        .orbitPhoneListStyle()
     }
 
     private func dayGroupView(_ dayGroup: HistorySearchDayGroup) -> some View {
@@ -221,6 +248,61 @@ struct HistorySearchView: View {
         }
     }
 
+    @ViewBuilder
+    private var phoneContent: some View {
+        if archivedSessionCount == 0 {
+            emptyState(
+                title: "No Archived Sessions Yet",
+                message: "End a session to build your searchable history timeline."
+            )
+            .orbitPhoneListRow(insets: phoneListInsets(bottom: Layout.phoneContentInsets.bottom))
+        } else if trimmedQuery.isEmpty {
+            emptyState(
+                title: "Start Typing To Search",
+                message: "Use the toolbar search field to search archived session names and task text."
+            )
+            .orbitPhoneListRow(insets: phoneListInsets(bottom: Layout.phoneContentInsets.bottom))
+        } else if searchResults.isEmpty {
+            emptyState(
+                title: "No Matches Found",
+                message: "Try a different phrase or switch between All, Completed, Open, and Created Here."
+            )
+            .orbitPhoneListRow(insets: phoneListInsets(bottom: Layout.phoneContentInsets.bottom))
+        } else {
+            let dayGroups = Array(searchResults.enumerated())
+
+            ForEach(dayGroups, id: \.element.id) { dayEntry in
+                let dayIndex = dayEntry.offset
+                let dayGroup = dayEntry.element
+
+                Section {
+                    let sessionGroups = Array(dayGroup.sessions.enumerated())
+
+                    ForEach(sessionGroups, id: \.element.id) { sessionEntry in
+                        let sessionIndex = sessionEntry.offset
+                        let sessionGroup = sessionEntry.element
+
+                        sessionGroupView(sessionGroup)
+                            .orbitPhoneListRow(
+                                insets: phoneListInsets(
+                                    bottom: isLastSearchRow(
+                                        dayIndex: dayIndex,
+                                        sessionIndex: sessionIndex,
+                                        in: dayGroups
+                                    )
+                                    ? Layout.phoneContentInsets.bottom
+                                    : Layout.phoneRowSpacing
+                                )
+                            )
+                    }
+                } header: {
+                    phoneDayGroupHeader(dayGroup)
+                        .textCase(nil)
+                }
+            }
+        }
+    }
+
     private func sessionGroupSummary(_ sessionGroup: HistorySearchSessionGroup) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(sessionGroup.session.name)
@@ -257,5 +339,59 @@ struct HistorySearchView: View {
 #else
         false
 #endif
+    }
+
+    private var searchSessions: [FocusSessionRecord] {
+        sessionsOverride ?? model.sessions
+    }
+
+    private var excludedActiveSessionID: UUID? {
+        excludingActiveSessionIDOverride ?? model.excludingActiveSessionID
+    }
+
+    private func phoneDayGroupHeader(_ dayGroup: HistorySearchDayGroup) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 12) {
+                dayGroupSummary(dayGroup)
+
+                Spacer()
+
+                Button("Go to Day") {
+                    model.goToDay(dayGroup.day)
+                }
+                .buttonStyle(.orbitSecondary)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                dayGroupSummary(dayGroup)
+
+                Button("Go to Day") {
+                    model.goToDay(dayGroup.day)
+                }
+                .buttonStyle(.orbitSecondary)
+            }
+        }
+        .padding(.horizontal, Layout.phoneContentInsets.leading)
+        .padding(.top, 2)
+        .padding(.bottom, 8)
+    }
+
+    private func isLastSearchRow(
+        dayIndex: Int,
+        sessionIndex: Int,
+        in dayGroups: [(offset: Int, element: HistorySearchDayGroup)]
+    ) -> Bool {
+        guard let lastDayIndex = dayGroups.indices.last else { return false }
+        guard let lastSessionIndex = dayGroups[lastDayIndex].element.sessions.indices.last else { return false }
+        return dayIndex == lastDayIndex && sessionIndex == lastSessionIndex
+    }
+
+    private func phoneListInsets(top: CGFloat = 0, bottom: CGFloat = Layout.phoneRowSpacing) -> EdgeInsets {
+        EdgeInsets(
+            top: top,
+            leading: Layout.phoneContentInsets.leading,
+            bottom: bottom,
+            trailing: Layout.phoneContentInsets.trailing
+        )
     }
 }

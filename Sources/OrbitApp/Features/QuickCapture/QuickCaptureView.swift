@@ -28,33 +28,25 @@ struct QuickCaptureView: View {
     }
 
     private func captureView(for layout: OrbitAdaptiveLayoutValue) -> some View {
-        let content = AnyView(captureContent(for: layout))
-        let baseView = AnyView(
-            content
-                .background {
-                    captureBackground(for: layout)
-                }
-                .background {
-                    keyboardShortcutBindings
-                }
-                .orbitOnExitCommand {
-                    dismissCapture()
-                }
-        )
-        let observedView = AnyView(
-            baseView
-            .task {
-                editorState.text = store.captureDraft.markdown
-                editorState.selectionRange = NSRange(location: (store.captureDraft.markdown as NSString).length, length: 0)
+        captureContent(for: layout)
+            .background {
+                captureBackground(for: layout)
+            }
+            .background {
+                keyboardShortcutBindings
+            }
+            .orbitOnExitCommand {
+                dismissCapture()
+            }
+            .task(id: store.presentation.capturePresentationRequest) {
+                syncEditorStateFromDraft()
                 requestEditorFocus()
             }
             .onChange(of: store.captureDraft.editingTaskID) { _, newValue in
                 if newValue == nil {
                     isDeleteConfirmationPresented = false
                 }
-                requestEditorFocus()
-            }
-            .onChange(of: store.presentation.capturePresentationRequest) { _, _ in
+                syncEditorStateFromDraft()
                 requestEditorFocus()
             }
             .onChange(of: editorState.isPreviewVisible) { _, newValue in
@@ -64,21 +56,9 @@ struct QuickCaptureView: View {
                     isEditorFocused = false
                 }
             }
-            .onChange(of: editorState.text) { _, newValue in
-                store.captureDraft.markdown = newValue
-            }
-            .onChange(of: store.captureDraft.markdown) { _, newValue in
-                if newValue != editorState.text {
-                    editorState.text = newValue
-                    editorState.selectionRange = NSRange(location: (newValue as NSString).length, length: 0)
-                }
-            }
             .onChange(of: store.categories) { _, categories in
                 categoriesChanged(categories)
             }
-        )
-
-        return observedView
             .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: editorState.isPreviewVisible)
             .animation(.easeInOut(duration: OrbitTheme.Motion.micro), value: store.captureDraft.editingTaskID != nil)
             .confirmationDialog(
@@ -105,7 +85,7 @@ struct QuickCaptureView: View {
 
     private func regularCaptureContent(for layout: OrbitAdaptiveLayoutValue) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            captureHeader
+            captureHeader(for: layout)
             editorSection
             categorySection(for: layout)
             actionArea(for: layout)
@@ -117,7 +97,7 @@ struct QuickCaptureView: View {
     private func compactCaptureContent(for layout: OrbitAdaptiveLayoutValue) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                captureHeader
+                captureHeader(for: layout)
                 editorSection
                 categorySection(for: layout)
                 pickerArea(for: layout)
@@ -150,7 +130,7 @@ struct QuickCaptureView: View {
         }
     }
 
-    private var captureHeader: some View {
+    private func captureHeader(for layout: OrbitAdaptiveLayoutValue) -> some View {
         HStack {
             if let activeSession = store.activeSession {
                 Text(activeSession.name)
@@ -158,7 +138,7 @@ struct QuickCaptureView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-
+            
             if store.captureDraft.editingTaskID != nil {
                 Text("Editing task")
                     .orbitFont(.caption2, weight: .semibold)
@@ -171,23 +151,25 @@ struct QuickCaptureView: View {
                     )
                     .transition(.orbitMicro)
             }
-
+            
             Spacer()
-
-            Button {
-                dismissCapture()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
+            
+            if !layout.isCompact {
+                Button {
+                    dismissCapture()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut(.escape, modifiers: [])
+                .orbitInteractiveControl(
+                    scale: 1.08,
+                    lift: -1.0,
+                    shadowColor: Color.white.opacity(0.14),
+                    shadowRadius: 5
+                )
+                .foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
-            .keyboardShortcut(.escape, modifiers: [])
-            .orbitInteractiveControl(
-                scale: 1.08,
-                lift: -1.0,
-                shadowColor: Color.white.opacity(0.14),
-                shadowRadius: 5
-            )
-            .foregroundStyle(.secondary)
         }
     }
 
@@ -479,6 +461,18 @@ struct QuickCaptureView: View {
         guard canSave else { return }
         store.captureDraft.markdown = editorState.text
         store.send(.captureSubmitTapped)
+    }
+
+    private func syncEditorStateFromDraft() {
+        let markdown = store.captureDraft.markdown
+        if editorState.text != markdown {
+            editorState.text = markdown
+        }
+
+        let selection = NSRange(location: (markdown as NSString).length, length: 0)
+        if editorState.selectionRange != selection {
+            editorState.selectionRange = selection
+        }
     }
 
     private var deleteButton: some View {

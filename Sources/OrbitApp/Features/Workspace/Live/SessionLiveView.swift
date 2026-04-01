@@ -42,20 +42,20 @@ struct SessionLiveView: View {
                 maxHeight: .infinity,
                 alignment: .topLeading
             )
-            .task(id: store.activeSession?.id) {
+            .task(id: renderedActiveSession?.id) {
                 focusedTaskID = nil
             }
             .onChange(of: sortedFilteredTaskIDs) { _, newTaskIDs in
                 syncFocusedTask(with: newTaskIDs)
             }
-            .onChange(of: store.activeSession?.id) { oldValue, newValue in
+            .onChange(of: renderedActiveSession?.id) { oldValue, newValue in
                 if oldValue != newValue {
                     isTaskFilterPopoverPresented = false
                     isSessionInfoPresented = false
                 }
             }
             .background {
-                if store.activeSession != nil {
+                if renderedActiveSession != nil {
                     keyboardShortcutBindings
                 }
             }
@@ -72,13 +72,13 @@ struct SessionLiveView: View {
                 }
             }
 #endif
-            .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
-            .animation(.easeInOut(duration: 0.16), value: store.taskDrafts.count)
+            .animation(.easeInOut(duration: 0.18), value: renderedActiveSession?.id)
+            .animation(.easeInOut(duration: 0.16), value: renderedTaskDrafts.count)
     }
 
     @ViewBuilder
     private var liveContent: some View {
-        if store.activeSession != nil {
+        if renderedActiveSession != nil {
             activeSessionContent
                 .searchable(text: $searchText, placement: .toolbar, prompt: "Search tasks")
         } else {
@@ -88,7 +88,7 @@ struct SessionLiveView: View {
 
     @ViewBuilder
     private var activeSessionContent: some View {
-        if let activeSession = store.activeSession {
+        if let activeSession = renderedActiveSession {
 #if os(macOS)
             GeometryReader { proxy in
                 let isCollapsed = shouldCollapseMacSessionInfo(for: proxy.size.width)
@@ -169,7 +169,7 @@ struct SessionLiveView: View {
                 .orbitFont(.title3, weight: .semibold)
 
             HStack(spacing: 6) {
-                if store.taskDrafts.isEmpty {
+                if renderedTaskDrafts.isEmpty {
                     if store.platform.supportsGlobalHotkeys {
                         Text("Use + or")
                         HotkeyHintLabel(shortcut: store.hotkeys.captureShortcut)
@@ -190,59 +190,28 @@ struct SessionLiveView: View {
     }
 
     private var noActiveSessionView: some View {
-        VStack {
-            Button {
-                startSessionButtonTapped()
-            } label: {
-                sessionHeroLabel(shortcut: store.hotkeys.startShortcut)
-            }
-            .buttonStyle(.orbitHero)
-            .frame(maxWidth: layout.isCompact ? .infinity : 500)
-            .help(
-                store.platform.supportsGlobalHotkeys
+        SessionLiveNoActiveSessionView(
+            maxButtonWidth: layout.isCompact ? nil : 500,
+            helpText: store.platform.supportsGlobalHotkeys
                 ? "Start Session \(HotkeyHintFormatter.hint(from: store.hotkeys.startShortcut))"
-                : "Start Session"
-            )
+                : "Start Session",
+            verticalOffset: inactiveStateVerticalOffset,
+            action: startSessionButtonTapped
+        ) {
+            sessionHeroLabel(shortcut: store.hotkeys.startShortcut)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .offset(y: inactiveStateVerticalOffset)
     }
 
     private var startupLoadingView: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-                .controlSize(.large)
-            Text("Loading active session…")
-                .orbitFont(.subheadline, weight: .semibold)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .offset(y: statusStateVerticalOffset)
+        SessionLiveLoadingStateView(verticalOffset: statusStateVerticalOffset)
     }
 
     private func startupLoadErrorView(message: String) -> some View {
-        VStack(spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .orbitFont(.title2)
-                .foregroundStyle(.orange)
-
-            Text("Could not load active session")
-                .orbitFont(.headline)
-
-            Text(message)
-                .orbitFont(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-                .frame(maxWidth: 480)
-
-            Button("Retry") {
-                retryBootstrapButtonTapped()
-            }
-            .buttonStyle(.orbitSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .offset(y: statusStateVerticalOffset)
+        SessionLiveErrorStateView(
+            message: message,
+            verticalOffset: statusStateVerticalOffset,
+            retryAction: retryBootstrapButtonTapped
+        )
     }
 
     @ViewBuilder
@@ -252,14 +221,16 @@ struct SessionLiveView: View {
                 .padding(.top, 4)
                 .transition(.orbitMicro)
         } else {
-            VStack(spacing: Layout.taskSpacing) {
-                ForEach(sortedFilteredTasks) { draft in
-                    taskRow(for: draft)
-                        .id(draft.id)
-                }
+            ForEach(Array(sortedFilteredTasks.enumerated()), id: \.element.id) { entry in
+                let index = entry.offset
+                let draft = entry.element
+
+                taskRow(for: draft)
+                    .id(draft.id)
+                    .padding(.top, index == 0 ? 4 : 0)
+                    .padding(.bottom, Layout.taskSpacing)
+                    .transition(.orbitMicro)
             }
-            .padding(.top, 4)
-            .transition(.orbitMicro)
         }
     }
 
@@ -267,38 +238,23 @@ struct SessionLiveView: View {
         SessionTaskFilterBar(store: store)
     }
 
+    @ViewBuilder
     private var taskScrollView: some View {
-        ScrollViewReader { scrollProxy in
-            ScrollView {
-                LazyVStack(
-                    alignment: .leading,
-                    spacing: 14,
-                    pinnedViews: hasSelectedFilters ? [.sectionHeaders] : []
-                ) {
-                    compactSessionOverviewCard
-
-                    Section {
-                        taskSectionContent
-                    } header: {
-                        if hasSelectedFilters {
-                            stickyFilterBar
-                        }
-                    }
-                }
-                .padding(.top, scrollContentTopPadding)
-                .padding(.horizontal, scrollContentHorizontalPadding)
-                .padding(.bottom, scrollContentBottomPadding)
-                .padding(.trailing, scrollContentTrailingPadding)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .scrollIndicators(.visible)
-            .onChange(of: focusedTaskID) { _, _ in
-                scrollFocusedTaskIfNeeded(using: scrollProxy)
-            }
+        SessionLiveTaskListView(
+            usesPhoneListLayout: isPhone,
+            hasSelectedFilters: hasSelectedFilters,
+            topPadding: scrollContentTopPadding,
+            horizontalPadding: scrollContentHorizontalPadding,
+            bottomPadding: scrollContentBottomPadding,
+            trailingPadding: scrollContentTrailingPadding,
+            focusedTaskID: $focusedTaskID
+        ) {
+            compactSessionOverviewCard
+        } filterBar: {
+            stickyFilterBar
+        } taskContent: {
+            taskSectionContent
         }
-#if os(macOS)
-        .scrollEdgeEffectStyle(.hard, for: .top)
-#endif
     }
 
     private var scrollContentTopPadding: CGFloat {
@@ -342,8 +298,8 @@ struct SessionLiveView: View {
 
     @ToolbarContentBuilder
     private var sessionInfoToolbarContent: some ToolbarContent {
-        if let activeSession = store.activeSession {
 #if os(macOS)
+        if let activeSession = renderedActiveSession {
             if isMacSessionInfoCollapsed {
                 ToolbarItem(placement: .automatic) {
                     Button {
@@ -362,7 +318,30 @@ struct SessionLiveView: View {
             ToolbarItem(placement: .primaryAction) {
                 taskFilterToolbarButton
             }
+        }
 #else
+        if isPhone {
+            if renderedActiveSession != nil {
+                ToolbarItem(placement: .topBarLeading) {
+                    taskFilterToolbarButton
+                }
+            }
+
+            if let activeSession = renderedActiveSession, layout.isCompact {
+                ToolbarItem(placement: .principal) {
+                    sessionInfoToolbarButton(for: activeSession)
+                }
+            } else if let activeSession = renderedActiveSession {
+                ToolbarSpacer(.fixed, placement: .topBarLeading)
+                ToolbarItem(placement: .topBarLeading) {
+                    sessionInfoToolbarButton(for: activeSession)
+                }
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                quickCaptureToolbarButton
+            }
+        } else if let activeSession = renderedActiveSession {
             if layout.isCompact {
                 ToolbarItem(placement: .principal) {
                     sessionInfoToolbarButton(for: activeSession)
@@ -377,8 +356,8 @@ struct SessionLiveView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 taskFilterToolbarButton
             }
-#endif
         }
+#endif
     }
 
     private var taskFilterToolbarButton: some View {
@@ -388,10 +367,27 @@ struct SessionLiveView: View {
         )
     }
 
+    private var quickCaptureToolbarButton: some View {
+        Button(action: quickCaptureButtonTapped) {
+            Image(systemName: "plus")
+        }
+        .buttonStyle(.glassProminent)
+        .accessibilityLabel("Quick Capture")
+        .accessibilityHint("Capture a task from the current session")
+    }
+
+    private func quickCaptureButtonTapped() {
+        if store.activeSession == nil {
+            store.send(.captureTapped)
+        } else {
+            store.send(.sessionAddTaskTapped)
+        }
+    }
+
     @ViewBuilder
     private var compactSessionOverviewCard: some View {
 #if os(iOS)
-        if layout.isCompact, let activeSession = store.activeSession {
+        if layout.isCompact, let activeSession = renderedActiveSession {
             Button {
                 isSessionInfoPresented = true
             } label: {
@@ -442,7 +438,7 @@ struct SessionLiveView: View {
         let surface = SessionInfoSurface(
             session: session,
             endSessionDraft: store.endSessionDraft,
-            taskDrafts: Array(store.taskDrafts),
+            taskDrafts: renderedTaskDrafts,
             style: .presentation,
             onRename: renameSession(_:),
             onEndSessionTapped: endSessionButtonTapped,
@@ -479,7 +475,7 @@ struct SessionLiveView: View {
         SessionInfoSurface(
             session: session,
             endSessionDraft: store.endSessionDraft,
-            taskDrafts: Array(store.taskDrafts),
+            taskDrafts: renderedTaskDrafts,
             style: .card,
             onRename: renameSession(_:),
             onEndSessionTapped: endSessionButtonTapped,
@@ -548,7 +544,7 @@ struct SessionLiveView: View {
     }
 
     private var emptyStateTitle: String {
-        if store.taskDrafts.isEmpty {
+        if renderedTaskDrafts.isEmpty {
             return "No tasks yet"
         }
         if !trimmedSearchText.isEmpty {
@@ -585,8 +581,16 @@ struct SessionLiveView: View {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var renderedActiveSession: FocusSessionRecord? {
+        store.activeSession
+    }
+
+    private var renderedTaskDrafts: [AppFeature.State.TaskDraft] {
+        Array(store.taskDrafts)
+    }
+
     private var filteredTaskDrafts: [AppFeature.State.TaskDraft] {
-        let tasks = store.filteredTaskDrafts
+        let tasks = renderedTaskDrafts.filter(matchesSelectedFilters(_:))
         guard !trimmedSearchText.isEmpty else { return tasks }
         return tasks.filter(matchesLiveSearch(_:))
     }
@@ -596,7 +600,7 @@ struct SessionLiveView: View {
     }
 
     private var liveCompletedTaskCount: Int {
-        store.taskDrafts.reduce(into: 0) { count, task in
+        renderedTaskDrafts.reduce(into: 0) { count, task in
             if task.completedAt != nil {
                 count += 1
             }
@@ -604,7 +608,7 @@ struct SessionLiveView: View {
     }
 
     private var liveOpenTaskCount: Int {
-        max(0, store.taskDrafts.count - liveCompletedTaskCount)
+        max(0, renderedTaskDrafts.count - liveCompletedTaskCount)
     }
 
     private func liveSessionSummary(for session: FocusSessionRecord) -> String {
@@ -672,6 +676,24 @@ struct SessionLiveView: View {
 
     private func matchesLiveSearch(_ draft: AppFeature.State.TaskDraft) -> Bool {
         draft.markdown.localizedCaseInsensitiveContains(trimmedSearchText)
+    }
+
+    private func matchesSelectedFilters(_ draft: AppFeature.State.TaskDraft) -> Bool {
+        let categoryMatch: Bool
+        if store.selectedTaskCategoryFilterIDs.isEmpty {
+            categoryMatch = true
+        } else {
+            categoryMatch = draft.categories.contains(where: { store.selectedTaskCategoryFilterIDs.contains($0.id) })
+        }
+
+        let priorityMatch: Bool
+        if store.selectedTaskPriorityFilters.isEmpty {
+            priorityMatch = true
+        } else {
+            priorityMatch = store.selectedTaskPriorityFilters.contains(draft.priority)
+        }
+
+        return categoryMatch && priorityMatch
     }
 
     private func sortedTasks(_ tasks: [AppFeature.State.TaskDraft]) -> [AppFeature.State.TaskDraft] {
@@ -801,13 +823,6 @@ struct SessionLiveView: View {
 
         if !taskIDs.contains(focusedTaskID) {
             self.focusedTaskID = taskIDs.first
-        }
-    }
-
-    private func scrollFocusedTaskIfNeeded(using scrollProxy: ScrollViewProxy) {
-        guard let focusedTaskID else { return }
-        withAnimation(.easeInOut(duration: 0.18)) {
-            scrollProxy.scrollTo(focusedTaskID, anchor: .center)
         }
     }
 

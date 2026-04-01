@@ -61,30 +61,9 @@ struct PreferencesView: View {
     }
 
     private var compactNavigationContent: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 14) {
-                ForEach(sections) { section in
-                    NavigationLink {
-                        sectionContent(for: section)
-                            .navigationTitle(section.title)
-                            .orbitInlineNavigationTitleDisplayMode()
-                    } label: {
-                        settingsIndexCard(for: section)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 20)
-            .padding(.bottom, 28)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        PreferencesCompactIndexView(sections: sections) { section in
+            sectionContent(for: section)
         }
-#if os(iOS)
-        .scrollIndicators(.hidden)
-#endif
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .navigationTitle("Settings")
-        .orbitInlineNavigationTitleDisplayMode()
     }
 
     private var tabSelection: Binding<PreferencesSection> {
@@ -108,14 +87,6 @@ struct PreferencesView: View {
         case .credits:
             creditsPage
         }
-    }
-
-    private func settingsIndexCard(for section: PreferencesSection) -> some View {
-        OrbitIndexCard(
-            systemImage: section.symbolName,
-            title: section.title,
-            subtitle: section.subtitle
-        )
     }
 
     private var categoriesPage: some View {
@@ -455,75 +426,19 @@ struct PreferencesView: View {
     }
 
     private var appearanceSaveCallout: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .center, spacing: 14) {
-                appearanceSaveSummary
-                Spacer(minLength: 12)
-                appearanceActionButtons
-            }
-
-            VStack(alignment: .leading, spacing: 14) {
-                appearanceSaveSummary
-                appearanceActionButtons
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
-                .fill(appearanceCalloutFill)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
-                .stroke(appearanceCalloutStroke, lineWidth: 1)
-        )
-    }
-
-    private var appearanceSaveSummary: some View {
-        HStack(alignment: .top, spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(appearanceCalloutIconBackground)
-
-                Image(systemName: hasUnsavedAppearanceChanges ? "square.and.arrow.down.fill" : "checkmark.circle.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(appearanceCalloutIconColor)
-            }
-            .frame(width: 34, height: 34)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(hasUnsavedAppearanceChanges ? "Unsaved appearance changes" : "Appearance is saved")
-                    .orbitFont(.callout, weight: .semibold)
-
-                Text(
-                    hasUnsavedAppearanceChanges
-                    ? "Save to apply this canvas across Orbit and keep it the next time the app opens."
-                    : "This canvas is already applied across Orbit and saved for future launches."
-                )
-                .orbitFont(.caption)
-                .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private var appearanceActionButtons: some View {
-        HStack(spacing: 8) {
-            Button("Reset Appearance") {
+        PreferencesAppearanceSaveCalloutView(
+            hasUnsavedChanges: hasUnsavedAppearanceChanges,
+            fill: appearanceCalloutFill,
+            stroke: appearanceCalloutStroke,
+            iconBackground: appearanceCalloutIconBackground,
+            iconColor: appearanceCalloutIconColor,
+            resetAction: {
                 store.send(.settingsResetAppearanceTapped)
-            }
-            .buttonStyle(.orbitSecondary)
-
-            Button {
+            },
+            saveAction: {
                 store.send(.settingsSaveAppearanceTapped)
-            } label: {
-                Label(
-                    hasUnsavedAppearanceChanges ? "Save Appearance" : "Appearance Saved",
-                    systemImage: hasUnsavedAppearanceChanges ? "square.and.arrow.down" : "checkmark.circle"
-                )
             }
-            .buttonStyle(.orbitPrimary)
-            .disabled(!hasUnsavedAppearanceChanges)
-            .opacity(hasUnsavedAppearanceChanges ? 1 : 0.72)
-        }
+        )
     }
 
     private var appearanceCalloutFill: Color {
@@ -618,58 +533,23 @@ struct PreferencesView: View {
 #if os(iOS)
     private func backgroundOptionCard(for option: OrbitBackgroundOption) -> some View {
         let isSelected = store.settings.appearanceDraft.background == option
+        let showsOrbitalLayer = store.settings.appearanceDraft.showsOrbitalLayer
 
-        return Button {
-            store.settings.appearanceDraft.background = option
-        } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                OrbitSpaceBackground(
-                    style: option,
-                    showsOrbitalLayer: store.settings.appearanceDraft.showsOrbitalLayer
-                )
-                .frame(maxWidth: .infinity)
-                .frame(height: 88)
-                .clipShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.medium, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: OrbitTheme.Radius.medium, style: .continuous)
-                        .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
-                )
-
-                HStack(alignment: .top, spacing: 10) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(option.title)
-                            .orbitFont(.body, weight: .semibold)
-
-                        Text(
-                            backgroundPreviewSubtitle(
-                                for: option,
-                                showsOrbitalLayer: store.settings.appearanceDraft.showsOrbitalLayer
-                            )
-                        )
-                        .orbitFont(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-
-                    Spacer(minLength: 12)
-
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(backgroundOptionIndicatorColor(isSelected: isSelected))
-                }
+        return PreferencesBackgroundOptionCardView(
+            option: option,
+            showsOrbitalLayer: showsOrbitalLayer,
+            isSelected: isSelected,
+            previewSubtitle: backgroundPreviewSubtitle(
+                for: option,
+                showsOrbitalLayer: showsOrbitalLayer
+            ),
+            fillColor: backgroundOptionCardFill(isSelected: isSelected),
+            strokeColor: backgroundOptionCardStroke(isSelected: isSelected),
+            indicatorColor: backgroundOptionIndicatorColor(isSelected: isSelected),
+            action: {
+                store.settings.appearanceDraft.background = option
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
-                    .fill(backgroundOptionCardFill(isSelected: isSelected))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
-                    .stroke(backgroundOptionCardStroke(isSelected: isSelected), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-        .contentShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous))
+        )
     }
 
     private func backgroundOptionCardFill(isSelected: Bool) -> Color {

@@ -24,18 +24,22 @@ struct SessionHistoryView: View {
     @State private var historyTaskFilter: HistoryTaskFilter = .completed
 
     var body: some View {
-        ScrollView {
-            pageContent
-                .padding(pageContentInsets)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        if isPhone {
+            phoneListContent
+        } else {
+            ScrollView {
+                pageContent
+                    .padding(pageContentInsets)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .scrollIndicators(.visible)
+            .frame(
+                maxWidth: layout.isCompact ? .infinity : Layout.contentMaxWidth,
+                maxHeight: .infinity,
+                alignment: .topLeading
+            )
+            .transition(.orbitMicro)
         }
-        .scrollIndicators(.visible)
-        .frame(
-            maxWidth: layout.isCompact ? .infinity : Layout.contentMaxWidth,
-            maxHeight: .infinity,
-            alignment: .topLeading
-        )
-        .transition(.orbitMicro)
     }
 
     private var pageContent: some View {
@@ -82,6 +86,63 @@ struct SessionHistoryView: View {
                             historyTaskFilter: $historyTaskFilter
                         )
                     }
+                }
+            }
+        }
+    }
+
+    private var phoneListContent: some View {
+        List {
+            phoneContentRows
+        }
+        .orbitPhoneListStyle()
+    }
+
+    @ViewBuilder
+    private var phoneContentRows: some View {
+        if let activeSession = store.activeSession {
+            CurrentSessionHistoryBanner(
+                session: activeSession,
+                onBackToLiveSession: onExitHistoryMode
+            )
+            .orbitPhoneListRow(insets: phoneListInsets(top: Layout.phoneContentInsets.top))
+        } else {
+            noActiveSessionBanner
+                .orbitPhoneListRow(insets: phoneListInsets(top: Layout.phoneContentInsets.top))
+        }
+
+        if historyDayGroups.isEmpty {
+            historyContentUnavailableState(
+                message: "No completed sessions yet. End a session to build your history timeline."
+            )
+            .orbitPhoneListRow(insets: phoneListInsets(bottom: Layout.phoneContentInsets.bottom))
+        } else {
+            selectedDaySummaryCard
+                .orbitPhoneListRow(insets: phoneListInsets())
+
+            if selectedHistoryDaySessions.isEmpty {
+                historyContentUnavailableState(
+                    message: "No sessions on this day. Use the arrows or calendar to jump to a day with saved sessions."
+                )
+                .orbitPhoneListRow(insets: phoneListInsets(bottom: Layout.phoneContentInsets.bottom))
+            } else {
+                HistorySessionStripView(
+                    sessions: selectedHistoryDaySessions,
+                    selectedSessionID: selectedHistorySession?.id,
+                    onSelect: onSelectHistorySession,
+                    onRename: renameSession(sessionID:name:),
+                    onDelete: deleteSession(sessionID:),
+                    onExport: onExportSession
+                )
+                .orbitPhoneListRow(insets: phoneListInsets())
+
+                if let selectedHistorySession {
+                    HistoryTaskListView(
+                        session: selectedHistorySession,
+                        filteredTasks: historyFilteredTasks,
+                        historyTaskFilter: $historyTaskFilter
+                    )
+                    .orbitPhoneListRow(insets: phoneListInsets(bottom: Layout.phoneContentInsets.bottom))
                 }
             }
         }
@@ -180,11 +241,16 @@ struct SessionHistoryView: View {
     }
 
     private var pageContentInsets: EdgeInsets {
-        if isPhone {
-            Layout.phoneContentInsets
-        } else {
-            EdgeInsets()
-        }
+        EdgeInsets()
+    }
+
+    private func phoneListInsets(top: CGFloat = 0, bottom: CGFloat = 14) -> EdgeInsets {
+        EdgeInsets(
+            top: top,
+            leading: Layout.phoneContentInsets.leading,
+            bottom: bottom,
+            trailing: Layout.phoneContentInsets.trailing
+        )
     }
 
     private var isPhone: Bool {
@@ -194,4 +260,5 @@ struct SessionHistoryView: View {
         false
 #endif
     }
+
 }
