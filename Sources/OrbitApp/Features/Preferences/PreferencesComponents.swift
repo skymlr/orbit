@@ -114,7 +114,6 @@ struct PreferencesAppearanceSaveCalloutView: View {
     }
 }
 
-#if os(iOS)
 struct PreferencesBackgroundOptionCardView: View {
     let option: OrbitBackgroundOption
     let showsOrbitalLayer: Bool
@@ -172,4 +171,3 @@ struct PreferencesBackgroundOptionCardView: View {
         .contentShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous))
     }
 }
-#endif

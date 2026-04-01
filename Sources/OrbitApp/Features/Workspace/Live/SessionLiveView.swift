@@ -28,7 +28,6 @@ struct SessionLiveView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
     @Environment(\.orbitAdaptiveLayout) private var layout
     @State private var focusedTaskID: UUID?
-    @State private var searchText = ""
     @State private var isTaskFilterPopoverPresented = false
     @State private var isSessionInfoPresented = false
 #if os(macOS)
@@ -79,12 +78,7 @@ struct SessionLiveView: View {
     @ViewBuilder
     private var liveContent: some View {
         if renderedActiveSession != nil {
-            if isPhone {
-                activeSessionContent
-            } else {
-                activeSessionContent
-                    .searchable(text: $searchText, placement: .toolbar, prompt: "Search tasks")
-            }
+            activeSessionContent
         } else {
             inactiveSessionContent
         }
@@ -538,9 +532,6 @@ struct SessionLiveView: View {
         if renderedTaskDrafts.isEmpty {
             return "No tasks yet"
         }
-        if !trimmedSearchText.isEmpty {
-            return "No tasks match this search"
-        }
 
         let hasCategoryFilters = !store.selectedTaskCategoryFilterIDs.isEmpty
         let hasPriorityFilters = !store.selectedTaskPriorityFilters.isEmpty
@@ -558,18 +549,11 @@ struct SessionLiveView: View {
     }
 
     private var emptyStateSubtitle: String {
-        if !trimmedSearchText.isEmpty {
-            return "Try a different search or clear the search field."
-        }
         return "Adjust filters to view other tasks."
     }
 
     private var hasSelectedFilters: Bool {
         !store.selectedTaskCategoryFilterIDs.isEmpty || !store.selectedTaskPriorityFilters.isEmpty
-    }
-
-    private var trimmedSearchText: String {
-        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var renderedActiveSession: FocusSessionRecord? {
@@ -585,7 +569,7 @@ struct SessionLiveView: View {
             from: renderedTaskDrafts,
             selectedCategoryFilterIDs: store.selectedTaskCategoryFilterIDs,
             selectedPriorityFilters: store.selectedTaskPriorityFilters,
-            searchText: searchText
+            searchText: ""
         )
     }
 

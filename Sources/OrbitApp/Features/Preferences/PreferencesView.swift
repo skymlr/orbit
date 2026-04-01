@@ -479,58 +479,15 @@ struct PreferencesView: View {
         .padding(.vertical, 2)
     }
 
-    private func backgroundOptionRow(for option: OrbitBackgroundOption) -> some View {
-        HStack(spacing: 12) {
-            OrbitSpaceBackground(
-                style: option,
-                showsOrbitalLayer: store.settings.appearanceDraft.showsOrbitalLayer
-            )
-                .frame(width: 96, height: 58)
-                .clipShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.medium, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: OrbitTheme.Radius.medium, style: .continuous)
-                        .stroke(OrbitTheme.Palette.glassBorder, lineWidth: 1)
-                )
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(option.title)
-                    .orbitFont(.body, weight: .semibold)
-#if os(macOS)
-                Text(
-                    backgroundPreviewSubtitle(
-                        for: option,
-                        showsOrbitalLayer: store.settings.appearanceDraft.showsOrbitalLayer
-                    )
-                )
-                    .orbitFont(.caption)
-                    .foregroundStyle(.secondary)
-#endif
-            }
-        }
-        .padding(.vertical, 2)
-    }
-
     @ViewBuilder
     private var backgroundSelectionControl: some View {
-#if os(macOS)
-        Picker("Background", selection: $store.settings.appearanceDraft.background) {
-            ForEach(OrbitBackgroundOption.allCases) { option in
-                backgroundOptionRow(for: option)
-                    .tag(option)
-            }
-        }
-        .pickerStyle(appearancePickerStyle)
-        .labelsHidden()
-#else
         VStack(alignment: .leading, spacing: 12) {
             ForEach(OrbitBackgroundOption.allCases) { option in
                 backgroundOptionCard(for: option)
             }
         }
-#endif
     }
 
-#if os(iOS)
     private func backgroundOptionCard(for option: OrbitBackgroundOption) -> some View {
         let isSelected = store.settings.appearanceDraft.background == option
         let showsOrbitalLayer = store.settings.appearanceDraft.showsOrbitalLayer
@@ -587,7 +544,6 @@ struct PreferencesView: View {
                 : OrbitTheme.Palette.lightTextSecondary.opacity(0.72)
         }
     }
-#endif
 
     private func backgroundPreviewSubtitle(
         for option: OrbitBackgroundOption,

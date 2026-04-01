@@ -24,11 +24,13 @@
 		7B5C28F45D9E184E171F6FC2 /* StructuredQueries in Frameworks */ = {isa = PBXBuildFile; productRef = D3A4FF2A734D6E1A1CCB5E7C /* StructuredQueries */; };
 		7CA2F5C988DE8FFFCF264367 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 3AAF415269A2878FE0A31517 /* SQLiteData */; };
 		8184011CBB40FF439A2FADC0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9589E10F327CF6C7BCA98486 /* Assets.xcassets */; };
+		8184011CBB40FF439A2FADC1 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = A7C12E4B9D6F4300B1C2D3E6 /* AppIcon.icon */; };
 		8555587D3F4BEDE136D3B3D2 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = C1F90FC1C0C31122E35D4F73 /* Dependencies */; };
 		A7C12E4B9D6F4300B1C2D3E4 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = A7C12E4B9D6F4300B1C2D3E5 /* Fonts */; };
 		AB6C444405882E05AADED0C9 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */; };
 		E1A1B1C1D1E1F10111213151 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9589E10F327CF6C7BCA98486 /* Assets.xcassets */; };
 		E1A1B1C1D1E1F10111213152 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = A7C12E4B9D6F4300B1C2D3E5 /* Fonts */; };
+		F1B2C3D4E5F60718293A4B5D /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = A7C12E4B9D6F4300B1C2D3E6 /* AppIcon.icon */; };
 		E1A1B1C1D1E1F10111213153 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 44492BB61285D2CADF1D3884 /* ComposableArchitecture */; };
 		E1A1B1C1D1E1F10111213154 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = B9B5F3AE02A9EAB3B0B47FC3 /* CasePaths */; };
 		E1A1B1C1D1E1F10111213155 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = C1F90FC1C0C31122E35D4F73 /* Dependencies */; };
@@ -58,6 +60,7 @@
 		9589E10F327CF6C7BCA98486 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5E /* MASTER.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; path = MASTER.md; sourceTree = "<group>"; };
 		A7C12E4B9D6F4300B1C2D3E5 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fonts; sourceTree = "<group>"; };
+		A7C12E4B9D6F4300B1C2D3E6 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		DC70B03F528B2C69AA9ED812 /* OrbitMacApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OrbitMacApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A1B1C1D1E1F10111213150 /* OrbitIOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OrbitIOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -128,6 +131,7 @@
 		36A4DAFAAD04A70CAFF19B7B /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				A7C12E4B9D6F4300B1C2D3E6 /* AppIcon.icon */,
 				9589E10F327CF6C7BCA98486 /* Assets.xcassets */,
 				A7C12E4B9D6F4300B1C2D3E5 /* Fonts */,
 			);
@@ -411,6 +415,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8184011CBB40FF439A2FADC1 /* AppIcon.icon in Resources */,
 				8184011CBB40FF439A2FADC0 /* Assets.xcassets in Resources */,
 				A7C12E4B9D6F4300B1C2D3E4 /* Fonts in Resources */,
 			);
@@ -420,6 +425,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F1B2C3D4E5F60718293A4B5D /* AppIcon.icon in Resources */,
 				E1A1B1C1D1E1F10111213151 /* Assets.xcassets in Resources */,
 				E1A1B1C1D1E1F10111213152 /* Fonts in Resources */,
 			);
@@ -808,7 +814,6 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -838,7 +843,6 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Orbit";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

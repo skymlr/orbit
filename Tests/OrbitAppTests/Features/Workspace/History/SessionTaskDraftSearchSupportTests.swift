@@ -8,6 +8,18 @@ import Testing
 
 struct SessionTaskDraftSearchSupportTests {
     @Test
+    func missingActiveSessionReturnsNoLiveSearchResult() {
+        let result = SessionTaskDraftSearchSupport.liveSearchResult(
+            activeSession: nil,
+            taskDrafts: [makeTaskDraft(markdown: "Ship search", createdAt: Date(timeIntervalSince1970: 0))],
+            query: "ship",
+            filter: .all
+        )
+
+        #expect(result == nil)
+    }
+
+    @Test
     func emptyQueryReturnsAllLiveTasksSortedUsingLiveRules() {
         let calendar = liveSearchTestCalendar
         let activeSession = makeLiveSearchSession(

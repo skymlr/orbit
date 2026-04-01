@@ -1,4 +1,3 @@
-#if os(iOS)
 import SwiftUI
 
 extension View {
@@ -14,4 +13,3 @@ extension View {
             .listRowInsets(insets)
     }
 }
-#endif

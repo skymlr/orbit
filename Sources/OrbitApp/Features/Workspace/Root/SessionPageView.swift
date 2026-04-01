@@ -2,91 +2,118 @@ import ComposableArchitecture
 import Foundation
 import SwiftUI
 
+#if os(iOS)
+import UIKit
+#endif
+
 #if os(macOS)
 import AppKit
 #endif
+
+private enum SessionPageMode: Equatable {
+    case live
+    case history
+    case search
+}
 
 struct SessionPageView: View {
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
     @Environment(\.orbitAdaptiveLayout) private var layout
 
-    @State private var isHistoryMode = false
+    @State private var pageMode: SessionPageMode = .live
+    @State private var searchReturnMode: SessionPageMode = .live
     @State private var selectedHistoryDay = SessionHistoryBrowserSupport.normalizedDay(for: Date())
     @State private var selectedHistorySessionID: UUID?
     @State private var isHistoryCalendarPresented = false
     @State private var isExportAllConfirmationPresented = false
-    @State private var isHistorySearchPresented = false
-    @StateObject private var historySearchModel = HistorySearchPanelModel()
-#if os(macOS)
-    @State private var historySearchPanelController = HistorySearchPanelController()
-#endif
+    @StateObject private var searchModel = SessionUnifiedSearchModel()
+    @FocusState private var isSearchFieldFocused: Bool
 
     var body: some View {
         contentView
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(.horizontal, horizontalContentPadding)
-        .padding(.bottom, bottomContentPadding)
-        .padding(.top, contentTopPadding)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .padding(.horizontal, horizontalContentPadding)
+            .padding(.bottom, bottomContentPadding)
+            .padding(.top, contentTopPadding)
 #if os(iOS)
-        .navigationTitle(navigationTitle)
-        .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(navigationTitle)
+            .navigationBarTitleDisplayMode(.inline)
 #endif
-        .toolbar {
-            sessionToolbarContent
-        }
+            .toolbar {
+                sessionToolbarContent
+            }
 #if os(macOS)
-        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
-        .toolbarColorScheme(.dark, for: .windowToolbar)
+            .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+            .toolbarColorScheme(.dark, for: .windowToolbar)
 #endif
-        .confirmationDialog(
-            "Export All Sessions?",
-            isPresented: $isExportAllConfirmationPresented
-        ) {
-            Button("Export \(completedHistorySessionIDs.count) Session\(completedHistorySessionIDs.count == 1 ? "" : "s")") {
-                exportAllSessionsConfirmationAccepted()
-            }
-
-            Button("Cancel", role: .cancel) {
-                isExportAllConfirmationPresented = false
-            }
-        } message: {
-            Text("Export markdown files for every completed session currently saved in history.")
-        }
-        .task(id: store.activeSession?.id) {
-            reconcileHistorySelection()
-            refreshHistorySearchPanelIfNeeded()
-        }
-        .onChange(of: historyDayGroups) { _, _ in
-            reconcileHistorySelection()
-            refreshHistorySearchPanelIfNeeded()
-        }
-        .onChange(of: store.appearance) { _, _ in
-            refreshHistorySearchPanelIfNeeded()
-        }
-        .onChange(of: store.presentation.pendingDirectoryExport?.id) { _, requestID in
-            guard requestID != nil else { return }
-            presentPendingDirectoryExportIfNeeded()
-        }
-        .onChange(of: selectedHistoryDay) { _, newDay in
-            let normalized = SessionHistoryBrowserSupport.normalizedDay(for: newDay)
-            if selectedHistoryDay != normalized {
-                selectedHistoryDay = normalized
-                return
-            }
-            selectedHistorySessionID = SessionHistoryBrowserSupport.defaultSessionID(
-                on: normalized,
-                groups: historyDayGroups
+            .applyUnifiedToolbarSearch(
+                isEnabled: usesToolbarUnifiedSearchField,
+                query: $searchModel.query,
+                isSearchFieldFocused: $isSearchFieldFocused
             )
-        }
-        .onChange(of: isHistoryMode) { _, isHistoryMode in
-            guard !isHistoryMode else { return }
-            dismissHistorySearchPanel()
-        }
-        .onDisappear {
-            dismissHistorySearchPanel()
-        }
-        .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
-        .animation(.easeInOut(duration: 0.16), value: isHistoryMode)
+            .confirmationDialog(
+                "Export All Sessions?",
+                isPresented: $isExportAllConfirmationPresented
+            ) {
+                Button("Export \(completedHistorySessionIDs.count) Session\(completedHistorySessionIDs.count == 1 ? "" : "s")") {
+                    exportAllSessionsConfirmationAccepted()
+                }
+
+                Button("Cancel", role: .cancel) {
+                    isExportAllConfirmationPresented = false
+                }
+            } message: {
+                Text("Export markdown files for every completed session currently saved in history.")
+            }
+            .task(id: store.activeSession?.id) {
+                reconcileHistorySelection()
+                configureSearchModel()
+            }
+            .onChange(of: historyDayGroups) { _, _ in
+                reconcileHistorySelection()
+                configureSearchModel()
+            }
+            .onChange(of: store.presentation.pendingDirectoryExport?.id) { _, requestID in
+                guard requestID != nil else { return }
+                presentPendingDirectoryExportIfNeeded()
+            }
+            .onChange(of: selectedHistoryDay) { _, newDay in
+                let normalized = SessionHistoryBrowserSupport.normalizedDay(for: newDay)
+                if selectedHistoryDay != normalized {
+                    selectedHistoryDay = normalized
+                    return
+                }
+
+                let resolvedSession = SessionHistoryBrowserSupport.resolveSelectedSession(
+                    id: selectedHistorySessionID,
+                    on: normalized,
+                    groups: historyDayGroups
+                )
+                selectedHistorySessionID = resolvedSession?.id
+                    ?? SessionHistoryBrowserSupport.defaultSessionID(
+                        on: normalized,
+                        groups: historyDayGroups
+                    )
+            }
+            .onChange(of: pageMode) { _, newMode in
+                if newMode == .search {
+                    focusSearchFieldSoon()
+                } else {
+                    isSearchFieldFocused = false
+                }
+            }
+            .onChange(of: isSearchFieldFocused) { _, isFocused in
+                guard usesToolbarUnifiedSearchField else { return }
+                guard isFocused else { return }
+                enterSearchModeIfNeeded()
+            }
+            .onChange(of: searchModel.query) { _, newQuery in
+                guard usesToolbarUnifiedSearchField else { return }
+                guard !newQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                enterSearchModeIfNeeded()
+            }
+            .animation(.easeInOut(duration: 0.18), value: store.activeSession?.id)
+            .animation(.easeInOut(duration: 0.16), value: pageMode)
     }
 
     private var horizontalContentPadding: CGFloat {
@@ -100,17 +127,17 @@ struct SessionPageView: View {
     private var contentTopPadding: CGFloat {
 #if os(iOS)
         if layout.isCompact {
-            if isHistoryMode || store.activeSession == nil {
+            if pageMode != .live || store.activeSession == nil {
                 return 10
             }
             return 4
         }
-        if isHistoryMode || store.activeSession == nil {
+        if pageMode != .live || store.activeSession == nil {
             return 18
         }
         return 0
 #else
-        if isHistoryMode || store.activeSession == nil {
+        if pageMode != .live || store.activeSession == nil {
             return 18
         }
         return 0
@@ -119,26 +146,21 @@ struct SessionPageView: View {
 
     @ViewBuilder
     private var contentView: some View {
-        if isHistoryMode {
-            historyModeContent
-        } else {
+        switch pageMode {
+        case .live:
             SessionLiveView(store: store)
-        }
-    }
 
-    @ViewBuilder
-    private var historyModeContent: some View {
-#if os(iOS)
-        if isShowingInlineHistorySearchResults {
-            HistorySearchView(model: historySearchModel)
-                .searchable(text: $historySearchModel.query, placement: .toolbar, prompt: "Search history")
-        } else {
+        case .history:
             sessionHistoryContent
-                .searchable(text: $historySearchModel.query, placement: .toolbar, prompt: "Search history")
+
+        case .search:
+            SessionUnifiedSearchContainer(
+                store: store,
+                model: searchModel,
+                showsToolbarSearchField: !usesToolbarUnifiedSearchField,
+                isSearchFieldFocused: usesToolbarUnifiedSearchField ? nil : $isSearchFieldFocused
+            )
         }
-#else
-        sessionHistoryContent
-#endif
     }
 
     private var sessionHistoryContent: some View {
@@ -175,7 +197,7 @@ struct SessionPageView: View {
                 historyCalendarPopover
             }
 
-            if isHistoryMode {
+            if pageMode == .history {
                 Button {
                     navigateToPreviousHistoryDayButtonTapped()
                 } label: {
@@ -193,13 +215,6 @@ struct SessionPageView: View {
                 .help("Newer session day")
 
                 Button {
-                    searchHistoryButtonTapped()
-                } label: {
-                    Label("Search History", systemImage: "magnifyingglass")
-                }
-                .help(historySearchButtonHelpText)
-
-                Button {
                     exportAllSessionsToolbarButtonTapped()
                 } label: {
                     Label("Export All Sessions", systemImage: "square.and.arrow.up")
@@ -213,13 +228,20 @@ struct SessionPageView: View {
             }
             .help("Open Settings")
         }
+
+        if pageMode == .search {
+            ToolbarSpacer(.fixed, placement: .automatic)
+            ToolbarItem(placement: .primaryAction) {
+                exitSearchToolbarButton
+            }
+        }
 #else
         ToolbarItem(placement: .bottomBar) {
             Button(action: quickCaptureButtonTapped) {
                 Label("Add Task", systemImage: "plus")
             }
         }
-        
+
         ToolbarItem(placement: .topBarLeading) {
             Button(action: openPreferencesButtonTapped) {
                 Label("Settings", systemImage: "gearshape")
@@ -237,7 +259,7 @@ struct SessionPageView: View {
             }
         }
 
-        if isHistoryMode && !isShowingInlineHistorySearchResults {
+        if pageMode == .history {
             if layout.isCompact {
                 ToolbarItem(placement: .topBarTrailing) {
                     historyActionsMenu
@@ -257,13 +279,39 @@ struct SessionPageView: View {
                     historyActionsMenu
                 }
             }
-        } else if isHistoryMode && layout.isCompact {
+        }
+
+        if usesToolbarUnifiedSearchField {
+            if pageMode == .search {
+                ToolbarItem(placement: .topBarTrailing) {
+                    exitSearchToolbarButton
+                }
+            }
+        } else {
             ToolbarItem(placement: .topBarTrailing) {
-                historyActionsMenu
+                searchToolbarButton
             }
         }
 #endif
     }
+
+    private var exitSearchToolbarButton: some View {
+        Button(action: handleSearchExitRequested) {
+            Image(systemName: "xmark")
+        }
+        .accessibilityLabel("Return to previous page")
+        .help("Return to previous page")
+    }
+
+#if os(iOS)
+    private var searchToolbarButton: some View {
+        Button(action: searchPageButtonTapped) {
+            Image(systemName: pageMode == .search ? "xmark.circle" : "magnifyingglass")
+        }
+        .accessibilityLabel(pageMode == .search ? "Return to previous page" : "Search tasks and history")
+        .help(pageMode == .search ? "Return to previous page" : "Search tasks and history")
+    }
+#endif
 
 #if os(iOS)
     private var historyActionsMenu: some View {
@@ -330,19 +378,15 @@ struct SessionPageView: View {
     }
 
 #if os(iOS)
-    private var isShowingInlineHistorySearchResults: Bool {
-        !trimmedHistorySearchQuery.isEmpty
-    }
-
     private var navigationTitle: String {
-        if isHistoryMode {
+        switch pageMode {
+        case .history:
             return SessionHistoryBrowserSupport.dayLabel(selectedHistoryDay)
+        case .search:
+            return "Search"
+        case .live:
+            return ""
         }
-        return ""
-    }
-
-    private var trimmedHistorySearchQuery: String {
-        historySearchModel.query.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 #endif
 
@@ -365,6 +409,17 @@ struct SessionPageView: View {
     private func openHistoryCalendarButtonTapped() {
         isHistoryCalendarPresented = true
     }
+
+#if !os(macOS)
+    private func searchPageButtonTapped() {
+        if pageMode == .search {
+            handleSearchExitRequested()
+            return
+        }
+
+        enterSearchModeIfNeeded()
+    }
+#endif
 
     private func exportAllSessionsToolbarButtonTapped() {
         guard !completedHistorySessionIDs.isEmpty else { return }
@@ -396,8 +451,7 @@ struct SessionPageView: View {
 #endif
 
     private func enterHistoryMode(on day: Date) {
-        clearHistorySearch()
-        isHistoryMode = true
+        pageMode = .history
         selectedHistoryDay = SessionHistoryBrowserSupport.normalizedDay(for: day)
         selectedHistorySessionID = SessionHistoryBrowserSupport.defaultSessionID(
             on: selectedHistoryDay,
@@ -406,9 +460,25 @@ struct SessionPageView: View {
     }
 
     private func exitHistoryMode() {
-        dismissHistorySearchPanel()
-        clearHistorySearch()
-        isHistoryMode = false
+        pageMode = .live
+    }
+
+    private func enterSearchModeIfNeeded() {
+        guard pageMode != .search else { return }
+        searchReturnMode = pageMode
+        pageMode = .search
+    }
+
+    private func handleSearchExitRequested() {
+        if usesToolbarUnifiedSearchField {
+            searchModel.resetSearch()
+        }
+        exitSearchMode()
+    }
+
+    private func exitSearchMode() {
+        let destination = searchReturnMode == .search ? SessionPageMode.live : searchReturnMode
+        pageMode = destination
     }
 
     private func navigateHistoryDay(_ direction: HistoryDayNavigationDirection) {
@@ -444,74 +514,19 @@ struct SessionPageView: View {
         )?.id
     }
 
-    private func searchHistoryButtonTapped() {
-        guard isHistoryMode else { return }
-
-        let shouldResetSearch = !isHistorySearchPresented
-        configureHistorySearchModel(resetSearch: shouldResetSearch)
-        isHistorySearchPresented = true
-#if os(macOS)
-        historySearchPanelController.present(
-            configuration: historySearchPanelConfiguration(),
-            resetSearch: shouldResetSearch
-        )
-#endif
-    }
-
-    private func dismissHistorySearchPanel() {
-        guard isHistorySearchPresented else { return }
-        isHistorySearchPresented = false
-#if os(macOS)
-        historySearchPanelController.dismiss()
-#endif
-    }
-
-    private func refreshHistorySearchPanelIfNeeded() {
-        configureHistorySearchModel(resetSearch: false)
-#if os(macOS)
-        guard isHistorySearchPresented else { return }
-        historySearchPanelController.refresh(configuration: historySearchPanelConfiguration())
-#endif
-    }
-
-    private func historySearchPanelConfiguration() -> HistorySearchPanelConfiguration {
-        HistorySearchPanelConfiguration(
+    private func configureSearchModel() {
+        searchModel.update(
             sessions: store.settings.sessions,
             excludingActiveSessionID: store.activeSession?.id,
-            appearance: store.appearance,
-            onGoToDay: navigateToHistoryDayFromSearch(_:),
-            onGoToSession: navigateToHistorySessionFromSearch(day:sessionID:),
-            onClose: {
-                isHistorySearchPresented = false
-            }
+            onGoToDayRequested: navigateToHistoryDayFromSearch(_:),
+            onGoToSessionRequested: navigateToHistorySessionFromSearch(_:),
+            onExitRequested: handleSearchExitRequested
         )
     }
 
-    private var historySearchButtonHelpText: String {
-#if os(macOS)
-        "Open floating history search"
-#else
-        "Open history actions"
-#endif
-    }
-
-    private func configureHistorySearchModel(resetSearch: Bool) {
-        let configuration = historySearchPanelConfiguration()
-        historySearchModel.sessions = configuration.sessions
-        historySearchModel.excludingActiveSessionID = configuration.excludingActiveSessionID
-        historySearchModel.appearance = configuration.appearance
-        historySearchModel.onGoToDayRequested = { day in
-            configuration.onGoToDay(day)
-        }
-        historySearchModel.onGoToSessionRequested = { session in
-            configuration.onGoToSession(session.startedAt, session.id)
-        }
-        historySearchModel.onCloseRequested = {
-            configuration.onClose()
-        }
-
-        if resetSearch {
-            historySearchModel.resetSearch()
+    private func focusSearchFieldSoon() {
+        DispatchQueue.main.async {
+            isSearchFieldFocused = true
         }
     }
 
@@ -528,21 +543,54 @@ struct SessionPageView: View {
     }
 
     private func navigateToHistoryDayFromSearch(_ day: Date) {
+        pageMode = .history
         selectedHistoryDay = SessionHistoryBrowserSupport.normalizedDay(for: day)
         selectedHistorySessionID = SessionHistoryBrowserSupport.defaultSessionID(
             on: selectedHistoryDay,
             groups: historyDayGroups
         )
-        clearHistorySearch()
+        searchModel.resetSearch()
     }
 
-    private func navigateToHistorySessionFromSearch(day: Date, sessionID: UUID) {
-        selectedHistoryDay = SessionHistoryBrowserSupport.normalizedDay(for: day)
-        selectedHistorySessionID = sessionID
-        clearHistorySearch()
+    private func navigateToHistorySessionFromSearch(_ session: FocusSessionRecord) {
+        pageMode = .history
+        selectedHistoryDay = SessionHistoryBrowserSupport.normalizedDay(for: session.startedAt)
+        selectedHistorySessionID = session.id
+        searchModel.resetSearch()
     }
 
-    private func clearHistorySearch() {
-        historySearchModel.resetSearch()
+    private var usesToolbarUnifiedSearchField: Bool {
+#if os(macOS)
+        true
+#else
+        !isPhone
+#endif
+    }
+
+#if os(iOS)
+    private var isPhone: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone
+    }
+#endif
+}
+
+private extension View {
+    @ViewBuilder
+    func applyUnifiedToolbarSearch(
+        isEnabled: Bool,
+        query: Binding<String>,
+        isSearchFieldFocused: FocusState<Bool>.Binding
+    ) -> some View {
+        if isEnabled {
+            self
+                .searchable(
+                    text: query,
+                    placement: .toolbar,
+                    prompt: "Search tasks and history"
+                )
+                .searchFocused(isSearchFieldFocused)
+        } else {
+            self
+        }
     }
 }
