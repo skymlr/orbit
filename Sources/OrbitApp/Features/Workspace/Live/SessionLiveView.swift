@@ -79,8 +79,12 @@ struct SessionLiveView: View {
     @ViewBuilder
     private var liveContent: some View {
         if renderedActiveSession != nil {
-            activeSessionContent
-                .searchable(text: $searchText, placement: .toolbar, prompt: "Search tasks")
+            if isPhone {
+                activeSessionContent
+            } else {
+                activeSessionContent
+                    .searchable(text: $searchText, placement: .toolbar, prompt: "Search tasks")
+            }
         } else {
             inactiveSessionContent
         }
@@ -502,45 +506,32 @@ struct SessionLiveView: View {
 #endif
 
     private func taskRow(for draft: AppFeature.State.TaskDraft) -> some View {
-        ZStack(alignment: .topTrailing) {
-            TaskRow(
-                draft: draft,
-                isKeyboardHighlighted: draft.id == focusedTaskID,
-                onKeyboardPopoverDismissed: {
-                    DispatchQueue.main.async {
-                        if focusedTaskID == draft.id {
-                            focusedTaskID = nil
-                        }
+        SessionTaskInteractiveRow(
+            draft: draft,
+            isKeyboardHighlighted: draft.id == focusedTaskID,
+            onKeyboardPopoverDismissed: {
+                DispatchQueue.main.async {
+                    if focusedTaskID == draft.id {
+                        focusedTaskID = nil
                     }
-                },
-                onEditRequested: {
-                    editTaskButtonTapped(draftID: draft.id)
-                },
-                onPrioritySet: { priority in
-                    setTaskPriority(draftID: draft.id, priority: priority)
-                },
-                onToggleCompletion: {
-                    toggleTaskCompletion(draftID: draft.id, isCompleted: draft.isCompleted)
-                },
-                onToggleChecklistLine: { lineIndex in
-                    toggleChecklistLine(draftID: draft.id, lineIndex: lineIndex)
                 }
-            )
-            .accessibilityAddTraits(draft.id == focusedTaskID ? .isSelected : [])
-            .accessibilityHint("Tap or click to edit. Press Up or Down Arrow to move between tasks. Press Return to edit. Press Space to toggle completion. Press Escape to clear task focus.")
-
-            TaskRowFloatingTools(
-                draft: draft,
-                onEdit: {
-                    editTaskButtonTapped(draftID: draft.id)
-                },
-                onDelete: {
-                    deleteTaskButtonTapped(draftID: draft.id)
-                }
-            )
-            .padding(.top, 10)
-            .padding(.trailing, 8)
-        }
+            },
+            onEditRequested: {
+                editTaskButtonTapped(draftID: draft.id)
+            },
+            onPrioritySet: { priority in
+                setTaskPriority(draftID: draft.id, priority: priority)
+            },
+            onToggleCompletion: {
+                toggleTaskCompletion(draftID: draft.id, isCompleted: draft.isCompleted)
+            },
+            onToggleChecklistLine: { lineIndex in
+                toggleChecklistLine(draftID: draft.id, lineIndex: lineIndex)
+            },
+            onDeleteRequested: {
+                deleteTaskButtonTapped(draftID: draft.id)
+            }
+        )
     }
 
     private var emptyStateTitle: String {
@@ -589,14 +580,13 @@ struct SessionLiveView: View {
         Array(store.taskDrafts)
     }
 
-    private var filteredTaskDrafts: [AppFeature.State.TaskDraft] {
-        let tasks = renderedTaskDrafts.filter(matchesSelectedFilters(_:))
-        guard !trimmedSearchText.isEmpty else { return tasks }
-        return tasks.filter(matchesLiveSearch(_:))
-    }
-
     private var sortedFilteredTasks: [AppFeature.State.TaskDraft] {
-        sortedTasks(filteredTaskDrafts)
+        SessionTaskDraftSearchSupport.filteredTasks(
+            from: renderedTaskDrafts,
+            selectedCategoryFilterIDs: store.selectedTaskCategoryFilterIDs,
+            selectedPriorityFilters: store.selectedTaskPriorityFilters,
+            searchText: searchText
+        )
     }
 
     private var liveCompletedTaskCount: Int {
@@ -672,53 +662,6 @@ struct SessionLiveView: View {
     private var focusedTaskDraft: AppFeature.State.TaskDraft? {
         guard let focusedTaskID else { return nil }
         return sortedFilteredTasks.first(where: { $0.id == focusedTaskID })
-    }
-
-    private func matchesLiveSearch(_ draft: AppFeature.State.TaskDraft) -> Bool {
-        draft.markdown.localizedCaseInsensitiveContains(trimmedSearchText)
-    }
-
-    private func matchesSelectedFilters(_ draft: AppFeature.State.TaskDraft) -> Bool {
-        let categoryMatch: Bool
-        if store.selectedTaskCategoryFilterIDs.isEmpty {
-            categoryMatch = true
-        } else {
-            categoryMatch = draft.categories.contains(where: { store.selectedTaskCategoryFilterIDs.contains($0.id) })
-        }
-
-        let priorityMatch: Bool
-        if store.selectedTaskPriorityFilters.isEmpty {
-            priorityMatch = true
-        } else {
-            priorityMatch = store.selectedTaskPriorityFilters.contains(draft.priority)
-        }
-
-        return categoryMatch && priorityMatch
-    }
-
-    private func sortedTasks(_ tasks: [AppFeature.State.TaskDraft]) -> [AppFeature.State.TaskDraft] {
-        tasks.sorted { lhs, rhs in
-            if lhs.isCompleted != rhs.isCompleted {
-                return !lhs.isCompleted && rhs.isCompleted
-            }
-            if lhs.priority != rhs.priority {
-                return priorityRank(lhs.priority) > priorityRank(rhs.priority)
-            }
-            return lhs.createdAt > rhs.createdAt
-        }
-    }
-
-    private func priorityRank(_ priority: NotePriority) -> Int {
-        switch priority {
-        case .none:
-            return 0
-        case .low:
-            return 1
-        case .medium:
-            return 2
-        case .high:
-            return 3
-        }
     }
 
     private func renameSession(_ name: String) {
@@ -847,11 +790,5 @@ struct SessionLiveView: View {
                 .foregroundStyle(.white.opacity(0.86))
         }
         .foregroundStyle(.white)
-    }
-}
-
-private extension AppFeature.State.TaskDraft {
-    var isCompleted: Bool {
-        completedAt != nil
     }
 }

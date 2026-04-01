@@ -132,7 +132,7 @@ struct OrbitPhoneShellView: View {
 
     private var searchRoot: some View {
         phoneNavigationStack {
-            OrbitPhoneHistorySearchRootView(
+            OrbitPhoneSearchRootView(
                 store: store,
                 onNavigateToHistoryDay: navigateToHistoryDayFromSearch(_:),
                 onNavigateToHistorySession: navigateToHistorySessionFromSearch(_:)

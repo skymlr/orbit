@@ -70,6 +70,27 @@ struct SessionHistorySearchSupportTests {
     }
 
     @Test
+    func emptyQueryReturnsNoArchivedGroups() {
+        let calendar = testCalendar
+
+        let session = makeSession(
+            startedAt: date(2026, 3, 5, 9, 0, calendar: calendar),
+            endedAt: date(2026, 3, 5, 10, 0, calendar: calendar),
+            tasks: [makeTask(markdown: "Review notes", createdAt: date(2026, 3, 5, 9, 10, calendar: calendar), completedAt: nil)]
+        )
+
+        let groups = SessionHistorySearchSupport.dayGroups(
+            from: [session],
+            excludingActiveSessionID: nil,
+            query: "   ",
+            filter: .all,
+            calendar: calendar
+        )
+
+        #expect(groups.isEmpty)
+    }
+
+    @Test
     func groupsResultsByDayAndSessionDescending() {
         let calendar = testCalendar
 
