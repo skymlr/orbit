@@ -430,9 +430,6 @@ private struct SessionUnifiedSearchView: View {
             },
             onToggleChecklistLine: { lineIndex in
                 store.send(.sessionTaskChecklistLineToggled(draft.id, lineIndex))
-            },
-            onDeleteRequested: {
-                store.send(.sessionTaskDeleteTapped(draft.id))
             }
         )
     }

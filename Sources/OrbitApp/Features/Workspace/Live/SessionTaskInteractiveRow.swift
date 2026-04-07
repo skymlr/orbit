@@ -8,7 +8,6 @@ struct SessionTaskInteractiveRow: View {
     let onPrioritySet: (NotePriority) -> Void
     let onToggleCompletion: () -> Void
     let onToggleChecklistLine: (Int) -> Void
-    let onDeleteRequested: () -> Void
 
     init(
         draft: AppFeature.State.TaskDraft,
@@ -17,8 +16,7 @@ struct SessionTaskInteractiveRow: View {
         onEditRequested: @escaping () -> Void,
         onPrioritySet: @escaping (NotePriority) -> Void,
         onToggleCompletion: @escaping () -> Void,
-        onToggleChecklistLine: @escaping (Int) -> Void,
-        onDeleteRequested: @escaping () -> Void
+        onToggleChecklistLine: @escaping (Int) -> Void
     ) {
         self.draft = draft
         self.isKeyboardHighlighted = isKeyboardHighlighted
@@ -27,7 +25,6 @@ struct SessionTaskInteractiveRow: View {
         self.onPrioritySet = onPrioritySet
         self.onToggleCompletion = onToggleCompletion
         self.onToggleChecklistLine = onToggleChecklistLine
-        self.onDeleteRequested = onDeleteRequested
     }
 
     var body: some View {
@@ -42,12 +39,10 @@ struct SessionTaskInteractiveRow: View {
                 onToggleChecklistLine: onToggleChecklistLine
             )
             .accessibilityAddTraits(isKeyboardHighlighted ? .isSelected : [])
-            .accessibilityHint("Tap or click to edit. Press Up or Down Arrow to move between tasks. Press Return to edit. Press Space to toggle completion. Press Escape to clear task focus.")
+            .accessibilityHint("Tap or click to edit. Press Tab or Shift-Tab to move between tasks. Up and Down Arrow also move between tasks. Press Return to edit. Press Space to toggle completion. Press Escape to clear task focus.")
 
             TaskRowFloatingTools(
-                draft: draft,
-                onEdit: onEditRequested,
-                onDelete: onDeleteRequested
+                draft: draft
             )
             .padding(.top, 10)
             .padding(.trailing, 8)

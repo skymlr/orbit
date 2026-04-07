@@ -7,6 +7,8 @@ struct TaskRowKeyboardShortcutMenu: View {
                 .orbitFont(.caption2, weight: .bold)
                 .foregroundStyle(.secondary)
 
+            keyboardShortcutRow(key: "Tab", action: "Next task")
+            keyboardShortcutRow(key: "Shift-Tab", action: "Previous task")
             keyboardShortcutRow(key: "Return", action: "Edit task")
             keyboardShortcutRow(key: "Space", action: "Mark complete")
         }

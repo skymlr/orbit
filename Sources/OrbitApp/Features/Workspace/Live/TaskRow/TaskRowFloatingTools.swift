@@ -3,11 +3,7 @@ import SwiftUI
 struct TaskRowFloatingTools: View {
     @Environment(\.orbitAdaptiveLayout) private var layout
     let draft: AppFeature.State.TaskDraft
-    let onEdit: () -> Void
-    let onDelete: () -> Void
 
-    @State private var isDeleteConfirmationPending = false
-    @State private var deleteConfirmationToken = 0
     @State private var isTaskInfoPresented = false
 
     var body: some View {
@@ -19,9 +15,6 @@ struct TaskRowFloatingTools: View {
 
     private var infoAction: some View {
         Button {
-            if !isTaskInfoPresented {
-                isDeleteConfirmationPending = false
-            }
             isTaskInfoPresented.toggle()
         } label: {
             Image(systemName: layout.isCompact ? "ellipsis.circle" : "info.circle")
@@ -45,7 +38,7 @@ struct TaskRowFloatingTools: View {
             shadowRadius: 6
         )
         .foregroundStyle(.secondary)
-        .accessibilityLabel(layout.isCompact ? "Task actions" : "Task information")
+        .accessibilityLabel("Task information")
     }
 
     private var taskInfoPopover: some View {
@@ -54,39 +47,6 @@ struct TaskRowFloatingTools: View {
                 .orbitFont(.subheadline, weight: .semibold)
 
             taskMetadata
-
-            Divider()
-                .overlay(Color.white.opacity(0.25))
-
-            VStack(alignment: .leading, spacing: 8) {
-                Button {
-                    isTaskInfoPresented = false
-                    onEdit()
-                } label: {
-                    Label("Edit Task", systemImage: "pencil")
-                        .labelStyle(.titleAndIcon)
-                        .orbitFont(.caption, weight: .semibold)
-                }
-                .buttonStyle(.plain)
-
-                if isDeleteConfirmationPending {
-                    Button("Confirm Deletion", role: .destructive) {
-                        isTaskInfoPresented = false
-                        onDelete()
-                    }
-                    .buttonStyle(.orbitDestructive)
-                } else {
-                    Button(role: .destructive) {
-                        isDeleteConfirmationPending = true
-                        scheduleDeleteConfirmationReset()
-                    } label: {
-                        Label("Delete Task", systemImage: "trash")
-                            .labelStyle(.titleAndIcon)
-                            .orbitFont(.caption, weight: .semibold)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
         }
         .foregroundStyle(.white.opacity(0.92))
         .frame(minWidth: 220, alignment: .leading)
@@ -110,15 +70,6 @@ struct TaskRowFloatingTools: View {
                 Text("Carried from: \(draft.carriedFromSessionName ?? "Previous session")")
                     .orbitFont(.caption)
             }
-        }
-    }
-
-    private func scheduleDeleteConfirmationReset() {
-        deleteConfirmationToken += 1
-        let token = deleteConfirmationToken
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            guard token == deleteConfirmationToken, isDeleteConfirmationPending else { return }
-            isDeleteConfirmationPending = false
         }
     }
 }

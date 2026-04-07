@@ -6,6 +6,10 @@ import SwiftUI
 import UIKit
 #endif
 
+#if os(macOS)
+@preconcurrency import AppKit
+#endif
+
 struct SessionLiveView: View {
     private enum Layout {
 #if os(macOS)
@@ -18,11 +22,6 @@ struct SessionLiveView: View {
 #endif
         static let taskSpacing: CGFloat = 12
         static let phoneContentInsets = EdgeInsets(top: 20, leading: 16, bottom: 28, trailing: 16)
-    }
-
-    private enum TaskNavigationDirection {
-        case previous
-        case next
     }
 
     @SwiftUI.Bindable var store: StoreOf<AppFeature>
@@ -54,10 +53,23 @@ struct SessionLiveView: View {
                 }
             }
             .background {
-                if renderedActiveSession != nil {
+                if renderedActiveSession != nil, !isPhone {
                     keyboardShortcutBindings
                 }
             }
+#if os(macOS)
+            .background {
+                if renderedActiveSession != nil {
+                    SessionTaskTabKeyMonitor(
+                        onMoveToPreviousTask: focusPreviousTaskTriggered,
+                        onMoveToNextTask: focusNextTaskTriggered
+                    )
+                    .frame(width: 0, height: 0)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                }
+            }
+#endif
             .toolbar {
                 sessionInfoToolbarContent
             }
@@ -218,6 +230,8 @@ struct SessionLiveView: View {
             emptyState
                 .padding(.top, 4)
                 .transition(.orbitMicro)
+        } else if isPhone {
+            phoneTaskStack
         } else {
             ForEach(Array(sortedFilteredTasks.enumerated()), id: \.element.id) { entry in
                 let index = entry.offset
@@ -226,10 +240,19 @@ struct SessionLiveView: View {
                 taskRow(for: draft)
                     .id(draft.id)
                     .padding(.top, index == 0 ? 4 : 0)
-                    .padding(.bottom, Layout.taskSpacing)
                     .transition(.orbitMicro)
             }
         }
+    }
+
+    private var phoneTaskStack: some View {
+        VStack(alignment: .leading, spacing: Layout.taskSpacing) {
+            ForEach(sortedFilteredTasks) { draft in
+                taskRow(for: draft)
+            }
+        }
+        .padding(.top, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var stickyFilterBar: some View {
@@ -500,32 +523,49 @@ struct SessionLiveView: View {
 #endif
 
     private func taskRow(for draft: AppFeature.State.TaskDraft) -> some View {
-        SessionTaskInteractiveRow(
-            draft: draft,
-            isKeyboardHighlighted: draft.id == focusedTaskID,
-            onKeyboardPopoverDismissed: {
-                DispatchQueue.main.async {
-                    if focusedTaskID == draft.id {
-                        focusedTaskID = nil
+        Group {
+            if isPhone {
+                SessionLivePhoneTaskRowView(
+                    draft: draft,
+                    onEditRequested: {
+                        editTaskButtonTapped(draftID: draft.id)
+                    },
+                    onPrioritySet: { priority in
+                        setTaskPriority(draftID: draft.id, priority: priority)
+                    },
+                    onToggleCompletion: {
+                        toggleTaskCompletion(draftID: draft.id, isCompleted: draft.isCompleted)
+                    },
+                    onToggleChecklistLine: { lineIndex in
+                        toggleChecklistLine(draftID: draft.id, lineIndex: lineIndex)
                     }
-                }
-            },
-            onEditRequested: {
-                editTaskButtonTapped(draftID: draft.id)
-            },
-            onPrioritySet: { priority in
-                setTaskPriority(draftID: draft.id, priority: priority)
-            },
-            onToggleCompletion: {
-                toggleTaskCompletion(draftID: draft.id, isCompleted: draft.isCompleted)
-            },
-            onToggleChecklistLine: { lineIndex in
-                toggleChecklistLine(draftID: draft.id, lineIndex: lineIndex)
-            },
-            onDeleteRequested: {
-                deleteTaskButtonTapped(draftID: draft.id)
+                )
+            } else {
+                SessionTaskInteractiveRow(
+                    draft: draft,
+                    isKeyboardHighlighted: draft.id == focusedTaskID,
+                    onKeyboardPopoverDismissed: {
+                        DispatchQueue.main.async {
+                            if focusedTaskID == draft.id {
+                                focusedTaskID = nil
+                            }
+                        }
+                    },
+                    onEditRequested: {
+                        editTaskButtonTapped(draftID: draft.id)
+                    },
+                    onPrioritySet: { priority in
+                        setTaskPriority(draftID: draft.id, priority: priority)
+                    },
+                    onToggleCompletion: {
+                        toggleTaskCompletion(draftID: draft.id, isCompleted: draft.isCompleted)
+                    },
+                    onToggleChecklistLine: { lineIndex in
+                        toggleChecklistLine(draftID: draft.id, lineIndex: lineIndex)
+                    }
+                )
             }
-        )
+        }
     }
 
     private var emptyStateTitle: String {
@@ -710,7 +750,7 @@ struct SessionLiveView: View {
         toggleTaskCompletion(draftID: focusedTaskDraft.id, isCompleted: focusedTaskDraft.isCompleted)
     }
 
-    private func moveTaskFocus(_ direction: TaskNavigationDirection) {
+    private func moveTaskFocus(_ direction: SessionTaskNavigationDirection) {
         let taskIDs = sortedFilteredTaskIDs
         guard !taskIDs.isEmpty else {
             focusedTaskID = nil
@@ -776,3 +816,121 @@ struct SessionLiveView: View {
         .foregroundStyle(.white)
     }
 }
+
+#if os(macOS)
+private struct SessionTaskTabKeyMonitor: NSViewRepresentable {
+    let onMoveToPreviousTask: () -> Void
+    let onMoveToNextTask: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(
+            onMoveToPreviousTask: onMoveToPreviousTask,
+            onMoveToNextTask: onMoveToNextTask
+        )
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        context.coordinator.attach(to: view)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        context.coordinator.onMoveToPreviousTask = onMoveToPreviousTask
+        context.coordinator.onMoveToNextTask = onMoveToNextTask
+        context.coordinator.attach(to: nsView)
+    }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
+        coordinator.detach()
+    }
+
+    @MainActor
+    final class Coordinator {
+        var onMoveToPreviousTask: () -> Void
+        var onMoveToNextTask: () -> Void
+
+        private weak var view: NSView?
+        private var localMonitor: Any?
+
+        init(
+            onMoveToPreviousTask: @escaping () -> Void,
+            onMoveToNextTask: @escaping () -> Void
+        ) {
+            self.onMoveToPreviousTask = onMoveToPreviousTask
+            self.onMoveToNextTask = onMoveToNextTask
+        }
+
+        isolated deinit {
+            detach()
+        }
+
+        func attach(to view: NSView) {
+            self.view = view
+            installMonitorIfNeeded()
+        }
+
+        func detach() {
+            if let localMonitor {
+                NSEvent.removeMonitor(localMonitor)
+                self.localMonitor = nil
+            }
+            view = nil
+        }
+
+        private func installMonitorIfNeeded() {
+            guard localMonitor == nil else { return }
+            localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+                let keyCode = event.keyCode
+                let modifiers = event.modifierFlags
+                let eventWindowNumber = event.windowNumber
+
+                let handled = MainActor.assumeIsolated {
+                    self?.handleKeyDown(
+                        keyCode: keyCode,
+                        modifiers: modifiers,
+                        eventWindowNumber: eventWindowNumber
+                    ) ?? false
+                }
+
+                return handled ? nil : event
+            }
+        }
+
+        private func handleKeyDown(
+            keyCode: UInt16,
+            modifiers: NSEvent.ModifierFlags,
+            eventWindowNumber: Int
+        ) -> Bool {
+            guard let view, let window = view.window else {
+                return false
+            }
+
+            let isEditableTextInputFocused: Bool
+            if let textView = window.firstResponder as? NSTextView {
+                isEditableTextInputFocused = textView.isEditable
+            } else {
+                isEditableTextInputFocused = false
+            }
+
+            guard let direction = SessionTaskTabNavigation.direction(
+                for: keyCode,
+                modifiers: modifiers,
+                isEditableTextInputFocused: isEditableTextInputFocused,
+                targetsObservedWindow: window.windowNumber == eventWindowNumber && window.isKeyWindow
+            ) else {
+                return false
+            }
+
+            switch direction {
+            case .previous:
+                onMoveToPreviousTask()
+            case .next:
+                onMoveToNextTask()
+            }
+
+            return true
+        }
+    }
+}
+#endif
