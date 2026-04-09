@@ -262,6 +262,82 @@ struct FocusRepositoryTests {
     }
 
     @Test
+    func reconcileSyncInvariantsMergesDuplicateCategoriesAndDeduplicatesTaskLinks() async throws {
+        let database = try makeTestDatabase()
+        let repository = FocusRepository.liveValue
+
+        let sessionID = UUID(uuidString: "7A1A66F7-8D29-4D2F-B779-E14945B2AAB3")!
+        let taskID = UUID(uuidString: "82ACF5D4-C97B-4D12-B9A8-E1C4FEE39D5E")!
+        let keptCategoryID = UUID(uuidString: "00000000-0000-0000-0000-000000000010")!
+        let duplicateCategoryID = UUID(uuidString: "00000000-0000-0000-0000-000000000011")!
+
+        try seedSession(database: database, sessionID: sessionID)
+        try await database.write { db in
+            try prepareDatabaseForCloudKitSync(db: db)
+
+            try #sql(
+                """
+                INSERT INTO "sessionCategories" ("id", "name", "normalizedName", "colorHex")
+                VALUES
+                  (\(bind: keptCategoryID.uuidString.lowercased()), 'Shared', 'shared', '#58B5FF'),
+                  (\(bind: duplicateCategoryID.uuidString.lowercased()), 'shared', 'shared', '#7ED957')
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                INSERT INTO "sessionTasks" ("id", "sessionID", "markdown", "priority", "completedAt", "carriedFromTaskID", "createdAt", "updatedAt")
+                VALUES (
+                  \(bind: taskID.uuidString.lowercased()),
+                  \(bind: sessionID.uuidString.lowercased()),
+                  'Consolidate sync categories',
+                  'high',
+                  NULL,
+                  NULL,
+                  \(bind: Date(timeIntervalSince1970: 1_700_000_000)),
+                  \(bind: Date(timeIntervalSince1970: 1_700_000_050))
+                )
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                INSERT INTO "sessionTaskCategories" ("id", "taskID", "categoryID")
+                VALUES
+                  ('00000000-0000-0000-0000-000000000001', \(bind: taskID.uuidString.lowercased()), \(bind: keptCategoryID.uuidString.lowercased())),
+                  ('00000000-0000-0000-0000-000000000002', \(bind: taskID.uuidString.lowercased()), \(bind: duplicateCategoryID.uuidString.lowercased())),
+                  ('00000000-0000-0000-0000-000000000003', \(bind: taskID.uuidString.lowercased()), \(bind: duplicateCategoryID.uuidString.lowercased()))
+                """
+            )
+            .execute(db)
+        }
+
+        try await withDependencies {
+            $0.defaultDatabase = database
+        } operation: {
+            try await repository.reconcileSyncInvariants()
+        }
+
+        try await database.read { db in
+            let sharedCategories = try SessionCategory
+                .where { $0.normalizedName.eq("shared") }
+                .order(by: \.id)
+                .fetchAll(db)
+
+            let links = try SessionTaskCategory
+                .where { $0.taskID.eq(taskID) }
+                .fetchAll(db)
+
+            #expect(sharedCategories.map(\.id) == [keptCategoryID])
+            #expect(sharedCategories[0].name == "Shared")
+            #expect(links.count == 1)
+            #expect(links[0].categoryID == keptCategoryID)
+        }
+    }
+
+    @Test
     func exportMarkdownShowsTaskStatusAndSections() async throws {
         let database = try makeTestDatabase()
         let repository = FocusRepository.liveValue

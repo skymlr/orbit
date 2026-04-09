@@ -11,6 +11,7 @@ public enum PreferencesSection: String, CaseIterable, Identifiable {
     case categories = "Categories"
     case hotkeys = "Hotkeys"
     case appearance = "Appearance"
+    case sync = "Sync"
     case about = "About"
     case credits = "Credits"
 
@@ -26,6 +27,8 @@ public enum PreferencesSection: String, CaseIterable, Identifiable {
             return "Configure the global shortcuts Orbit registers with macOS."
         case .appearance:
             return "Choose the typography and background treatment Orbit uses across the app."
+        case .sync:
+            return "Control whether Orbit syncs sessions, tasks, and categories through iCloud."
         case .about:
             return "Versioning, identifiers, and the product-level details for this build."
         case .credits:
@@ -41,6 +44,8 @@ public enum PreferencesSection: String, CaseIterable, Identifiable {
             return "command"
         case .appearance:
             return "paintpalette"
+        case .sync:
+            return "icloud"
         case .about:
             return "info.circle"
         case .credits:

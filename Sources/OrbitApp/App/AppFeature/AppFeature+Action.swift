@@ -48,6 +48,8 @@ extension AppFeature {
         case sessionWindowBoundaryReached
 
         case settingsRefreshTapped
+        case settingsCloudSyncToggled(Bool)
+        case settingsCloudSyncRetryTapped
         case settingsResetHotkeysTapped
         case settingsSaveHotkeysTapped
         case settingsResetAppearanceTapped
@@ -67,6 +69,11 @@ extension AppFeature {
 
         case bootstrapActiveSessionLoaded(FocusSessionRecord?)
         case bootstrapActiveSessionFailed(String)
+        case cloudSyncMonitorUpdated(Bool, CloudSyncEngineState)
+        case cloudSyncStartSucceeded
+        case cloudSyncStartFailed(String)
+        case cloudSyncFetchSucceeded
+        case cloudSyncFetchFailed(String)
         case loadActiveSessionResponse(FocusSessionRecord?)
         case loadCategoriesResponse([SessionCategoryRecord])
         case settingsDataResponse([FocusSessionRecord], [SessionCategoryRecord])

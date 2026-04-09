@@ -11,6 +11,7 @@ extension AppFeature {
             var supportsMenuBar = false
             var supportsPointerInteractions = false
             var usesShareExport = false
+            var supportsCloudSync = false
         }
 
         struct PresentationState: Equatable {
@@ -91,6 +92,8 @@ extension AppFeature {
         var categories: [SessionCategoryRecord] = []
         var hotkeys: HotkeySettings = .default
         var appearance: AppearanceSettings = .default
+        var isCloudSyncEnabled = false
+        var syncStatus: SyncStatus = .off
 
         var captureDraft = CaptureDraft()
         var endSessionDraft: EndSessionDraft?
@@ -139,7 +142,8 @@ extension AppFeature.State.PlatformFeatures {
             supportsIdleMonitoring: capabilities.supportsIdleMonitoring,
             supportsMenuBar: capabilities.supportsMenuBar,
             supportsPointerInteractions: capabilities.supportsPointerInteractions,
-            usesShareExport: capabilities.usesShareExport
+            usesShareExport: capabilities.usesShareExport,
+            supportsCloudSync: capabilities.supportsCloudSync
         )
     }
 }

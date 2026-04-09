@@ -5,7 +5,19 @@ import StructuredQueries
 
 extension DependencyValues {
     mutating func bootstrapDatabase() throws {
-        let database = try SQLiteData.defaultDatabase(path: orbitDatabasePath())
+        var configuration = Configuration()
+        if orbitSupportsCloudSync {
+            configuration.prepareDatabase { db in
+                try db.attachMetadatabase(
+                    containerIdentifier: orbitCloudSyncContainerIdentifier
+                )
+            }
+        }
+
+        let database = try SQLiteData.defaultDatabase(
+            path: orbitDatabasePath(),
+            configuration: configuration
+        )
         var migrator = DatabaseMigrator()
 #if DEBUG
         migrator.eraseDatabaseOnSchemaChange = true
@@ -309,8 +321,25 @@ extension DependencyValues {
             try convertNotesToTasks(db: db)
         }
 
+        migrator.registerMigration("Prepare database for CloudKit sync") { db in
+            try prepareDatabaseForCloudKitSync(db: db)
+        }
+
         try migrator.migrate(database)
+        try database.write { db in
+            try reconcileOrbitSyncInvariants(db: db)
+        }
         defaultDatabase = database
+        if orbitSupportsCloudSync {
+            defaultSyncEngine = try SyncEngine(
+                for: database,
+                tables: FocusSession.self,
+                privateTables: SessionCategory.self, SessionTask.self, SessionTaskCategory.self,
+                containerIdentifier: orbitCloudSyncContainerIdentifier,
+                startImmediately: false,
+                delegate: orbitSyncEngineDelegate
+            )
+        }
     }
 }
 
@@ -702,6 +731,22 @@ func convertNotesToTasks(db: Database) throws {
     .execute(db)
 }
 
+func prepareDatabaseForCloudKitSync(db: Database) throws {
+    try #sql(
+        """
+        DROP INDEX IF EXISTS "index_sessionCategories_on_normalizedName"
+        """
+    )
+    .execute(db)
+
+    try #sql(
+        """
+        DROP INDEX IF EXISTS "index_sessionTaskCategories_on_taskID_categoryID"
+        """
+    )
+    .execute(db)
+}
+
 private func orbitDatabasePath() throws -> String {
     let fileManager = FileManager.default
     guard let appSupportDirectory = fileManager.urls(
@@ -724,3 +769,15 @@ private let taskRefactorCutoffDate: Date = {
     let formatter = ISO8601DateFormatter()
     return formatter.date(from: "2026-03-02T06:00:00Z")!
 }()
+
+private let orbitCloudSyncContainerIdentifier = "iCloud.com.smiller.orbit.data"
+private let orbitSupportsCloudSync: Bool = {
+#if LOCAL_UNSIGNED
+    false
+#else
+    true
+#endif
+}()
+
+@available(iOS 17, macOS 14, *)
+private let orbitSyncEngineDelegate = OrbitSyncEngineDelegate()

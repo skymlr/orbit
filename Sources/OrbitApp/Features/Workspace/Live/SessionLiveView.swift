@@ -458,6 +458,7 @@ struct SessionLiveView: View {
     private func sessionInfoPresentation(for session: FocusSessionRecord) -> some View {
         let surface = SessionInfoSurface(
             session: session,
+            syncStatus: store.syncStatus,
             endSessionDraft: store.endSessionDraft,
             taskDrafts: renderedTaskDrafts,
             style: .presentation,
@@ -495,6 +496,7 @@ struct SessionLiveView: View {
     private func sessionInfoSidebar(for session: FocusSessionRecord) -> some View {
         SessionInfoSurface(
             session: session,
+            syncStatus: store.syncStatus,
             endSessionDraft: store.endSessionDraft,
             taskDrafts: renderedTaskDrafts,
             style: .card,

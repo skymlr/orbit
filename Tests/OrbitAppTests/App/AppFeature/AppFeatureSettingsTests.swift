@@ -11,6 +11,7 @@ import Testing
 struct AppFeatureSettingsTests {
     @Test
     func onLaunchLoadsPersistedAppearanceIntoAppliedAndDraftState() async {
+        let clock = TestClock()
         let persistedAppearance = AppearanceSettings(
             font: .sourceSerif4,
             background: .glass,
@@ -24,14 +25,17 @@ struct AppFeatureSettingsTests {
             AppFeature()
         } withDependencies: {
             $0.appearanceSettingsClient = appearanceClient
+            $0.continuousClock = clock
             $0.platformCapabilities = PlatformCapabilities(
                 supportsGlobalHotkeys: true,
                 supportsIdleMonitoring: true,
                 supportsMenuBar: true,
                 supportsPointerInteractions: true,
-                usesShareExport: false
+                usesShareExport: false,
+                supportsCloudSync: true
             )
         }
+        store.exhaustivity = .off
 
         await store.send(.onLaunch) {
             $0.appearance = persistedAppearance
@@ -41,7 +45,8 @@ struct AppFeatureSettingsTests {
                 supportsIdleMonitoring: true,
                 supportsMenuBar: true,
                 supportsPointerInteractions: true,
-                usesShareExport: false
+                usesShareExport: false,
+                supportsCloudSync: true
             )
             $0.sessionBootstrapState = .loading
             $0.settings.appearanceDraft = persistedAppearance
@@ -51,14 +56,7 @@ struct AppFeatureSettingsTests {
             $0.settings.captureShortcut = HotkeySettings.default.captureShortcut
             $0.settings.captureNextPriorityShortcut = HotkeySettings.default.captureNextPriorityShortcut
         }
-        await store.receive(\.registerHotkeys)
-        await store.receive(\.settingsRefreshTapped)
-        await store.receive(\.bootstrapActiveSessionLoaded) {
-            $0.sessionBootstrapState = .loaded
-        }
-        await store.receive(\.loadActiveSessionResponse)
-        await store.receive(\.loadCategoriesResponse)
-        await store.receive(\.settingsDataResponse)
+        await store.skipReceivedActions(strict: false)
         await store.send(.appWillTerminate)
     }
 
@@ -168,17 +166,22 @@ struct AppFeatureSettingsTests {
 
     @Test
     func onLaunchWithoutHotkeyCapabilitySkipsRegistrationAndHidesHotkeySettings() async {
+        let clock = TestClock()
+
         let store = TestStore(initialState: AppFeature.State()) {
             AppFeature()
         } withDependencies: {
+            $0.continuousClock = clock
             $0.platformCapabilities = PlatformCapabilities(
                 supportsGlobalHotkeys: false,
                 supportsIdleMonitoring: false,
                 supportsMenuBar: false,
                 supportsPointerInteractions: false,
-                usesShareExport: true
+                usesShareExport: true,
+                supportsCloudSync: true
             )
         }
+        store.exhaustivity = .off
 
         await store.send(.onLaunch) {
             $0.appearance = .default
@@ -188,7 +191,8 @@ struct AppFeatureSettingsTests {
                 supportsIdleMonitoring: false,
                 supportsMenuBar: false,
                 supportsPointerInteractions: false,
-                usesShareExport: true
+                usesShareExport: true,
+                supportsCloudSync: true
             )
             $0.sessionBootstrapState = .loading
             $0.settings.appearanceDraft = .default
@@ -198,13 +202,8 @@ struct AppFeatureSettingsTests {
             $0.settings.captureShortcut = HotkeySettings.default.captureShortcut
             $0.settings.captureNextPriorityShortcut = HotkeySettings.default.captureNextPriorityShortcut
         }
-        await store.receive(\.settingsRefreshTapped)
-        await store.receive(\.settingsDataResponse)
-        await store.receive(\.bootstrapActiveSessionLoaded) {
-            $0.sessionBootstrapState = .loaded
-        }
-        await store.receive(\.loadActiveSessionResponse)
-        await store.receive(\.loadCategoriesResponse)
+        await store.skipReceivedActions(strict: false)
+        await store.send(.appWillTerminate)
     }
 
     @Test

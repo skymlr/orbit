@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import SQLiteData
 import StructuredQueries
 import Testing
@@ -207,6 +208,169 @@ struct SchemaMigrationTests {
             let legacyLinksColumns = try? db.columns(in: "sessionNoteCategories")
             #expect(legacyNotesColumns == nil)
             #expect(legacyLinksColumns == nil)
+        }
+    }
+
+    @Test
+    func prepareDatabaseForCloudKitSyncDropsUnsupportedUniqueIndexesAndPreservesRows() throws {
+        let databasePath = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("orbit-cloud-sync-migration-\(UUID().uuidString.lowercased()).sqlite", isDirectory: false)
+            .path
+        let database = try SQLiteData.defaultDatabase(path: databasePath)
+
+        let sessionID = UUID(uuidString: "3261E8B5-4302-4D32-9FDF-F5DAB4AF4D90")!
+        let taskID = UUID(uuidString: "9D8A53C2-1EE7-4E04-AC93-8E09B6F03D50")!
+        let categoryID = UUID(uuidString: "A6E2C2D2-53AF-4D10-ACE2-761B700A1DB2")!
+
+        try database.write { db in
+            try #sql(
+                """
+                CREATE TABLE "sessionCategories" (
+                  "id" TEXT PRIMARY KEY NOT NULL,
+                  "name" TEXT NOT NULL,
+                  "normalizedName" TEXT NOT NULL,
+                  "colorHex" TEXT NOT NULL
+                ) STRICT
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                CREATE UNIQUE INDEX "index_sessionCategories_on_normalizedName"
+                ON "sessionCategories"("normalizedName")
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                CREATE TABLE "focusSessions" (
+                  "id" TEXT PRIMARY KEY NOT NULL,
+                  "name" TEXT NOT NULL,
+                  "startedAt" TEXT NOT NULL,
+                  "endedAt" TEXT,
+                  "endedReason" TEXT
+                ) STRICT
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                CREATE TABLE "sessionTasks" (
+                  "id" TEXT PRIMARY KEY NOT NULL,
+                  "sessionID" TEXT NOT NULL REFERENCES "focusSessions"("id") ON DELETE CASCADE,
+                  "markdown" TEXT NOT NULL,
+                  "priority" TEXT NOT NULL,
+                  "completedAt" TEXT,
+                  "carriedFromTaskID" TEXT REFERENCES "sessionTasks"("id") ON DELETE SET NULL,
+                  "createdAt" TEXT NOT NULL,
+                  "updatedAt" TEXT NOT NULL
+                ) STRICT
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                CREATE TABLE "sessionTaskCategories" (
+                  "id" TEXT PRIMARY KEY NOT NULL,
+                  "taskID" TEXT NOT NULL REFERENCES "sessionTasks"("id") ON DELETE CASCADE,
+                  "categoryID" TEXT NOT NULL REFERENCES "sessionCategories"("id") ON DELETE RESTRICT
+                ) STRICT
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                CREATE UNIQUE INDEX "index_sessionTaskCategories_on_taskID_categoryID"
+                ON "sessionTaskCategories"("taskID", "categoryID")
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                INSERT INTO "sessionCategories" ("id", "name", "normalizedName", "colorHex")
+                VALUES (\(bind: categoryID.uuidString.lowercased()), 'project-a', 'project-a', '#58B5FF')
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                INSERT INTO "focusSessions" ("id", "name", "startedAt", "endedAt", "endedReason")
+                VALUES (\(bind: sessionID.uuidString.lowercased()), 'Migration Session', \(bind: Date(timeIntervalSince1970: 1_700_000_000)), NULL, NULL)
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                INSERT INTO "sessionTasks" ("id", "sessionID", "markdown", "priority", "completedAt", "carriedFromTaskID", "createdAt", "updatedAt")
+                VALUES (
+                  \(bind: taskID.uuidString.lowercased()),
+                  \(bind: sessionID.uuidString.lowercased()),
+                  'Ship sync',
+                  'high',
+                  NULL,
+                  NULL,
+                  \(bind: Date(timeIntervalSince1970: 1_700_000_000)),
+                  \(bind: Date(timeIntervalSince1970: 1_700_000_100))
+                )
+                """
+            )
+            .execute(db)
+
+            try #sql(
+                """
+                INSERT INTO "sessionTaskCategories" ("id", "taskID", "categoryID")
+                VALUES (
+                  '00000000-0000-0000-0000-000000000001',
+                  \(bind: taskID.uuidString.lowercased()),
+                  \(bind: categoryID.uuidString.lowercased())
+                )
+                """
+            )
+            .execute(db)
+        }
+
+        var migrator = DatabaseMigrator()
+        migrator.registerMigration("Prepare database for CloudKit sync") { db in
+            try prepareDatabaseForCloudKitSync(db: db)
+        }
+        try migrator.migrate(database)
+
+        try database.read { db in
+            let remainingIndexes = try Row.fetchAll(
+                db,
+                sql: """
+                SELECT "name"
+                FROM "sqlite_master"
+                WHERE "type" = 'index'
+                  AND "name" IN (
+                    'index_sessionCategories_on_normalizedName',
+                    'index_sessionTaskCategories_on_taskID_categoryID'
+                  )
+                ORDER BY "name"
+                """
+            )
+            .compactMap { row in
+                row["name"] as String?
+            }
+
+            let categories = try SessionCategory.fetchAll(db)
+            let tasks = try SessionTask.fetchAll(db)
+            let links = try SessionTaskCategory.fetchAll(db)
+
+            #expect(remainingIndexes.isEmpty)
+            #expect(categories.map(\.id) == [categoryID])
+            #expect(tasks.map(\.id) == [taskID])
+            #expect(links.count == 1)
+            #expect(links[0].taskID == taskID)
+            #expect(links[0].categoryID == categoryID)
         }
     }
 }

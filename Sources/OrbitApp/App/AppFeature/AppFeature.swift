@@ -8,9 +8,13 @@ struct AppFeature {
         case inactivityMonitor
         case sessionWindowMonitor
         case hotkeyRegistration
+        case cloudSyncMonitor
+        case cloudSyncOperation
         case toastAutoDismiss
     }
 
+    @Dependency(\.cloudSyncClient) var cloudSyncClient
+    @Dependency(\.cloudSyncSettingsClient) var cloudSyncSettingsClient
     @Dependency(\.continuousClock) var continuousClock
     @Dependency(\.appearanceSettingsClient) var appearanceSettingsClient
     @Dependency(\.date.now) var now
@@ -43,7 +47,12 @@ struct AppFeature {
                     .retryBootstrapActiveSessionButtonTapped,
                     .preferencesWindowClosed,
                     .settingsDataResponse,
-                    .workspaceWindowClosed:
+                    .workspaceWindowClosed,
+                    .cloudSyncMonitorUpdated,
+                    .cloudSyncStartSucceeded,
+                    .cloudSyncStartFailed,
+                    .cloudSyncFetchSucceeded,
+                    .cloudSyncFetchFailed:
                 return reduceLifecycle(into: &state, action: action)
 
             case .autoEndSession,
@@ -80,6 +89,8 @@ struct AppFeature {
                     .sharedExportDismissed,
                     .sharedExportFailed,
                     .sharedExportPrepared,
+                    .settingsCloudSyncRetryTapped,
+                    .settingsCloudSyncToggled,
                     .settingsRefreshTapped,
                     .settingsResetAppearanceTapped,
                     .settingsRenameCategoryTapped,

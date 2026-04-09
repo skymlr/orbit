@@ -82,6 +82,8 @@ struct PreferencesView: View {
             hotkeysPage
         case .appearance:
             appearancePage
+        case .sync:
+            syncPage
         case .about:
             aboutPage
         case .credits:
@@ -212,6 +214,67 @@ struct PreferencesView: View {
                 }
                 .orbitFont(.subheadline)
             }
+        }
+    }
+
+    private var syncPage: some View {
+        detailPage(for: .sync) {
+            preferencesSectionCard(
+                title: "iCloud Sync",
+                subtitle: "Mirror sessions, tasks, and categories across your Orbit devices with one opt-in toggle."
+            ) {
+                VStack(alignment: .leading, spacing: 16) {
+                    Toggle("Enable iCloud Sync", isOn: syncToggleBinding)
+                    .toggleStyle(.switch)
+                    .disabled(!store.platform.supportsCloudSync)
+
+                    PreferencesSyncStatusCardView(
+                        title: syncStatusTitle,
+                        message: syncStatusMessage,
+                        showsRetry: store.platform.supportsCloudSync && store.syncStatus.isRetryAvailable,
+                        retryAction: {
+                            store.send(.settingsCloudSyncRetryTapped)
+                        }
+                    )
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("What syncs")
+                            .orbitFont(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Text(
+                            store.platform.supportsCloudSync
+                                ? "Sessions, tasks, and categories sync through iCloud. Appearance and hotkeys stay local to this device."
+                                : "This local unsigned build runs Orbit in local-only mode. Use the signed schemes to test iCloud sync."
+                        )
+                            .orbitFont(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    private var syncToggleBinding: Binding<Bool> {
+        Binding(
+            get: { store.platform.supportsCloudSync ? store.isCloudSyncEnabled : false },
+            set: { store.send(.settingsCloudSyncToggled($0)) }
+        )
+    }
+
+    private var syncStatusTitle: String {
+        if store.platform.supportsCloudSync {
+            return store.syncStatus.settingsTitle
+        } else {
+            return "iCloud sync is unavailable"
+        }
+    }
+
+    private var syncStatusMessage: String {
+        if store.platform.supportsCloudSync {
+            return store.syncStatus.settingsMessage
+        } else {
+            return "The local unsigned scheme omits CloudKit entitlements, so Orbit stays local-only in this build."
         }
     }
 

@@ -26,6 +26,8 @@ extension AppFeature {
                 .sessionTaskPriorityFilterToggled,
                 .sessionTaskPrioritySetTapped,
                 .sessionWindowBoundaryReached,
+                .settingsCloudSyncRetryTapped,
+                .settingsCloudSyncToggled,
                 .settingsAddCategoryTapped,
                 .settingsDeleteCategoryTapped,
                 .settingsDeleteSessionTapped,
@@ -65,25 +67,25 @@ extension AppFeature {
             let appearance = appearanceSettingsClient.load()
             state.appearance = appearance
             state.settings.appearanceDraft = appearance
+            state.isCloudSyncEnabled = state.platform.supportsCloudSync
+                ? cloudSyncSettingsClient.load()
+                : false
+            state.syncStatus = state.isCloudSyncEnabled ? .starting : .off
 
-            var effects: [Effect<Action>] = [
-                .run { send in
-                    do {
-                        let activeSession = try await focusRepository.loadActiveSession()
-                        await send(.bootstrapActiveSessionLoaded(activeSession))
-                    } catch {
-                        await send(.bootstrapActiveSessionFailed(error.localizedDescription))
-                    }
-                },
-                .run { send in
-                    let categories = (try? await focusRepository.listCategories()) ?? []
-                    await send(.loadCategoriesResponse(categories))
-                },
-                .send(.settingsRefreshTapped)
-            ]
+            var effects: [Effect<Action>] = []
+
+            if state.platform.supportsCloudSync {
+                effects.append(monitorCloudSyncEffect())
+            }
 
             if state.platform.supportsGlobalHotkeys {
                 effects.insert(.send(.registerHotkeys(hotkeys)), at: 0)
+            }
+
+            if state.isCloudSyncEnabled {
+                effects.append(startCloudSyncEffect())
+            } else {
+                effects.append(contentsOf: launchDataLoadEffects())
             }
 
             return .merge(effects)
@@ -103,6 +105,8 @@ extension AppFeature {
             state.endSessionDraft = nil
             state.toast = nil
             return .merge(
+                .cancel(id: CancelID.cloudSyncMonitor),
+                .cancel(id: CancelID.cloudSyncOperation),
                 .cancel(id: CancelID.inactivityMonitor),
                 .cancel(id: CancelID.sessionWindowMonitor),
                 .cancel(id: CancelID.hotkeyRegistration),
@@ -191,9 +195,37 @@ extension AppFeature {
             state.selectedTaskPriorityFilters.removeAll()
 
             return .merge(
+                .cancel(id: CancelID.cloudSyncOperation),
                 .cancel(id: CancelID.inactivityMonitor),
                 .cancel(id: CancelID.sessionWindowMonitor)
             )
+
+        case let .cloudSyncMonitorUpdated(isEnabled, engineState):
+            state.isCloudSyncEnabled = isEnabled
+            state.syncStatus = syncStatus(
+                isEnabled: isEnabled,
+                engineState: engineState,
+                currentStatus: state.syncStatus
+            )
+            return .none
+
+        case .cloudSyncStartSucceeded:
+            state.syncStatus = .enabled
+            return .merge(launchDataLoadEffects())
+
+        case let .cloudSyncStartFailed(message):
+            state.syncStatus = state.isCloudSyncEnabled ? .retryNeeded(message) : .off
+            var effects = launchDataLoadEffects()
+            effects.append(.send(.showToast(tone: .failure, message: message)))
+            return .merge(effects)
+
+        case .cloudSyncFetchSucceeded:
+            state.syncStatus = .enabled
+            return .merge(launchDataLoadEffects())
+
+        case let .cloudSyncFetchFailed(message):
+            state.syncStatus = .retryNeeded(message)
+            return .send(.showToast(tone: .failure, message: message))
 
         case let .loadActiveSessionResponse(session):
             state.activeSession = session
@@ -287,5 +319,113 @@ extension AppFeature {
             ensureCategorySelections(&state)
             return .none
         }
+    }
+
+    func launchDataLoadEffects() -> [Effect<Action>] {
+        [
+            .run { send in
+                do {
+                    let activeSession = try await focusRepository.loadActiveSession()
+                    await send(.bootstrapActiveSessionLoaded(activeSession))
+                } catch {
+                    await send(.bootstrapActiveSessionFailed(error.localizedDescription))
+                }
+            },
+            .run { send in
+                let categories = (try? await focusRepository.listCategories()) ?? []
+                await send(.loadCategoriesResponse(categories))
+            },
+            .send(.settingsRefreshTapped)
+        ]
+    }
+
+    func monitorCloudSyncEffect() -> Effect<Action> {
+        .run { send in
+            while !Task.isCancelled {
+                try await continuousClock.sleep(for: .seconds(2))
+                await send(
+                    .cloudSyncMonitorUpdated(
+                        cloudSyncSettingsClient.load(),
+                        cloudSyncClient.state()
+                    )
+                )
+            }
+        }
+        .cancellable(id: CancelID.cloudSyncMonitor, cancelInFlight: true)
+    }
+
+    func startCloudSyncEffect() -> Effect<Action> {
+        .run { send in
+            do {
+                try await cloudSyncClient.start()
+                try await focusRepository.reconcileSyncInvariants()
+                await send(.cloudSyncStartSucceeded)
+            } catch {
+                await send(
+                    .cloudSyncStartFailed(
+                        cloudSyncFailureMessage(
+                            prefix: "Could not start iCloud sync",
+                            error: error
+                        )
+                    )
+                )
+            }
+        }
+        .cancellable(id: CancelID.cloudSyncOperation, cancelInFlight: true)
+    }
+
+    func fetchCloudSyncEffect() -> Effect<Action> {
+        .run { send in
+            do {
+                try await cloudSyncClient.fetchChanges()
+                try await focusRepository.reconcileSyncInvariants()
+                await send(.cloudSyncFetchSucceeded)
+            } catch {
+                await send(
+                    .cloudSyncFetchFailed(
+                        cloudSyncFailureMessage(
+                            prefix: "Could not refresh iCloud sync",
+                            error: error
+                        )
+                    )
+                )
+            }
+        }
+        .cancellable(id: CancelID.cloudSyncOperation, cancelInFlight: true)
+    }
+
+    func syncStatus(
+        isEnabled: Bool,
+        engineState: CloudSyncEngineState,
+        currentStatus: SyncStatus
+    ) -> SyncStatus {
+        guard isEnabled else {
+            return .off
+        }
+
+        if engineState.isSynchronizing {
+            return .syncing
+        }
+
+        if engineState.isRunning {
+            return .enabled
+        }
+
+        switch currentStatus {
+        case .starting:
+            return .starting
+        case .syncing:
+            return .syncing
+        default:
+            return .retryNeeded("iCloud sync is paused or unavailable.")
+        }
+    }
+
+    func cloudSyncFailureMessage(prefix: String, error: any Error) -> String {
+        let description = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !description.isEmpty else {
+            return prefix
+        }
+        return "\(prefix). \(description)"
     }
 }

@@ -7,6 +7,7 @@ struct FocusRepository: Sendable {
     var loadActiveSession: @Sendable () async throws -> FocusSessionRecord?
     var endSession: @Sendable (_ id: UUID, _ name: String?, _ reason: SessionEndReason, _ endedAt: Date) async throws -> FocusSessionRecord?
     var endSessionSync: @Sendable (_ id: UUID, _ name: String?, _ reason: SessionEndReason, _ endedAt: Date) throws -> Void
+    var reconcileSyncInvariants: @Sendable () async throws -> Void
 
     var listSessions: @Sendable () async throws -> [FocusSessionRecord]
     var renameSession: @Sendable (_ id: UUID, _ name: String) async throws -> Void
@@ -114,6 +115,13 @@ extension FocusRepository: DependencyKey {
                         $0.endedReason = #bind(reason.rawValue)
                     }
                     .execute(db)
+                }
+            },
+            reconcileSyncInvariants: {
+                @Dependency(\.defaultDatabase) var database
+
+                try await database.write { db in
+                    try reconcileOrbitSyncInvariants(db: db)
                 }
             },
             listSessions: {
@@ -349,6 +357,7 @@ extension FocusRepository: DependencyKey {
             loadActiveSession: { nil },
             endSession: { _, _, _, _ in nil },
             endSessionSync: { _, _, _, _ in },
+            reconcileSyncInvariants: {},
             listSessions: { [] },
             renameSession: { _, _ in },
             deleteSession: { _ in },

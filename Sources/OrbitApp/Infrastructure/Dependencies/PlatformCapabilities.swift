@@ -7,25 +7,33 @@ struct PlatformCapabilities: Sendable {
     var supportsMenuBar: Bool
     var supportsPointerInteractions: Bool
     var usesShareExport: Bool
+    var supportsCloudSync: Bool
 }
 
 extension PlatformCapabilities: DependencyKey {
     static var liveValue: PlatformCapabilities {
+#if LOCAL_UNSIGNED
+        let supportsCloudSync = false
+#else
+        let supportsCloudSync = true
+#endif
 #if os(macOS)
-        PlatformCapabilities(
+        return PlatformCapabilities(
             supportsGlobalHotkeys: true,
             supportsIdleMonitoring: true,
             supportsMenuBar: true,
             supportsPointerInteractions: true,
-            usesShareExport: false
+            usesShareExport: false,
+            supportsCloudSync: supportsCloudSync
         )
 #else
-        PlatformCapabilities(
+        return PlatformCapabilities(
             supportsGlobalHotkeys: false,
             supportsIdleMonitoring: false,
             supportsMenuBar: false,
             supportsPointerInteractions: false,
-            usesShareExport: true
+            usesShareExport: true,
+            supportsCloudSync: supportsCloudSync
         )
 #endif
     }
@@ -36,7 +44,8 @@ extension PlatformCapabilities: DependencyKey {
             supportsIdleMonitoring: false,
             supportsMenuBar: false,
             supportsPointerInteractions: false,
-            usesShareExport: false
+            usesShareExport: false,
+            supportsCloudSync: true
         )
     }
 }

@@ -171,3 +171,37 @@ struct PreferencesBackgroundOptionCardView: View {
         .contentShape(RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous))
     }
 }
+
+struct PreferencesSyncStatusCardView: View {
+    let title: String
+    let message: String
+    let showsRetry: Bool
+    let retryAction: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .orbitFont(.body, weight: .semibold)
+
+                Text(message)
+                    .orbitFont(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if showsRetry {
+                Button("Retry Sync", action: retryAction)
+                    .buttonStyle(.orbitSecondary)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
+                .fill(Color.white.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
+                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+        )
+    }
+}

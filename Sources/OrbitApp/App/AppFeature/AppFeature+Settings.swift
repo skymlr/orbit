@@ -38,6 +38,11 @@ extension AppFeature {
                 .sessionTaskPriorityFilterToggled,
                 .sessionTaskPrioritySetTapped,
                 .sessionWindowBoundaryReached,
+                .cloudSyncFetchFailed,
+                .cloudSyncFetchSucceeded,
+                .cloudSyncMonitorUpdated,
+                .cloudSyncStartFailed,
+                .cloudSyncStartSucceeded,
                 .startSessionTapped,
                 .workspaceWindowClosed:
             return .none
@@ -47,6 +52,47 @@ extension AppFeature {
                 let sessions = (try? await focusRepository.listSessions()) ?? []
                 let categories = (try? await focusRepository.listCategories()) ?? []
                 await send(.settingsDataResponse(sessions, categories))
+            }
+
+        case let .settingsCloudSyncToggled(isEnabled):
+            guard state.platform.supportsCloudSync else {
+                state.isCloudSyncEnabled = false
+                state.syncStatus = .off
+                return .send(
+                    .showToast(
+                        tone: .failure,
+                        message: "iCloud sync is unavailable in the local unsigned build."
+                    )
+                )
+            }
+
+            state.isCloudSyncEnabled = isEnabled
+            cloudSyncSettingsClient.save(isEnabled)
+
+            if isEnabled {
+                state.syncStatus = .starting
+                return startCloudSyncEffect()
+            } else {
+                state.syncStatus = .off
+                return .merge(
+                    .cancel(id: CancelID.cloudSyncOperation),
+                    .run { _ in
+                        cloudSyncClient.stop()
+                    }
+                )
+            }
+
+        case .settingsCloudSyncRetryTapped:
+            guard state.platform.supportsCloudSync else { return .none }
+            guard state.isCloudSyncEnabled else { return .none }
+
+            let engineState = cloudSyncClient.state()
+            if engineState.isRunning {
+                state.syncStatus = .syncing
+                return fetchCloudSyncEffect()
+            } else {
+                state.syncStatus = .starting
+                return startCloudSyncEffect()
             }
 
         case .settingsSaveHotkeysTapped:

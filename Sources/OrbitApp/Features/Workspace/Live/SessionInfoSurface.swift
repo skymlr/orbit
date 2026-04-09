@@ -8,6 +8,7 @@ enum SessionInfoSurfaceStyle: Equatable {
 struct SessionInfoSurface: View {
     @Environment(\.orbitAdaptiveLayout) private var layout
     let session: FocusSessionRecord
+    let syncStatus: SyncStatus
     let endSessionDraft: AppFeature.State.EndSessionDraft?
     let taskDrafts: [AppFeature.State.TaskDraft]
     let style: SessionInfoSurfaceStyle
@@ -108,9 +109,16 @@ struct SessionInfoSurface: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            statusButton
+            HStack(spacing: 8) {
+                statusButton
+                syncStatusBadge
+            }
 
             nameEditor
+
+            Text(syncStatus.sessionMessage)
+                .orbitFont(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -324,6 +332,31 @@ struct SessionInfoSurface: View {
         isEndSessionArmed = false
         onEndSessionTapped()
     }
+
+    private var syncStatusBadge: some View {
+        let presentation = SessionSyncStatusPresentation(status: syncStatus)
+
+        return HStack(spacing: 6) {
+            Image(systemName: presentation.systemImage)
+                .orbitFont(.caption2, weight: .bold)
+
+            Text(presentation.label)
+                .orbitFont(.caption2, weight: .black)
+                .textCase(.uppercase)
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(
+            Capsule()
+                .fill(presentation.fillColor)
+        )
+        .overlay(
+            Capsule()
+                .stroke(presentation.strokeColor, lineWidth: 1)
+        )
+        .accessibilityLabel("Sync Status: \(presentation.label)")
+    }
 }
 
 private struct SessionInfoMetricTile<Value: View>: View {
@@ -365,5 +398,42 @@ private struct SessionInfoMetricTile<Value: View>: View {
             RoundedRectangle(cornerRadius: OrbitTheme.Radius.card, style: .continuous)
                 .stroke(Color.white.opacity(0.10), lineWidth: 1)
         )
+    }
+}
+
+private struct SessionSyncStatusPresentation {
+    let label: String
+    let systemImage: String
+    let fillColor: Color
+    let strokeColor: Color
+
+    init(status: SyncStatus) {
+        switch status {
+        case .off:
+            label = "Off"
+            systemImage = "icloud.slash"
+            fillColor = Color.white.opacity(0.10)
+            strokeColor = Color.white.opacity(0.18)
+        case .starting:
+            label = "Starting"
+            systemImage = "icloud"
+            fillColor = OrbitTheme.Palette.heroCyan.opacity(0.22)
+            strokeColor = OrbitTheme.Palette.heroCyan.opacity(0.46)
+        case .syncing:
+            label = "Syncing"
+            systemImage = "arrow.triangle.2.circlepath.icloud"
+            fillColor = OrbitTheme.Palette.sunHalo.opacity(0.24)
+            strokeColor = OrbitTheme.Palette.sunCore.opacity(0.48)
+        case .enabled:
+            label = "Synced"
+            systemImage = "checkmark.icloud"
+            fillColor = OrbitTheme.Palette.completionGreen.opacity(0.22)
+            strokeColor = OrbitTheme.Palette.completionGreen.opacity(0.48)
+        case .retryNeeded:
+            label = "Needs Attention"
+            systemImage = "exclamationmark.icloud"
+            fillColor = Color.red.opacity(0.22)
+            strokeColor = Color.red.opacity(0.48)
+        }
     }
 }

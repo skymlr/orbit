@@ -89,6 +89,94 @@ final class AppearanceSettingsTracker: @unchecked Sendable {
     }
 }
 
+final class CloudSyncSettingsTracker: @unchecked Sendable {
+    private let lock = NSLock()
+    private var persistedValue: Bool
+    private var savedValues: [Bool] = []
+
+    init(initialValue: Bool = false) {
+        self.persistedValue = initialValue
+    }
+
+    func load() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return persistedValue
+    }
+
+    func save(_ value: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        persistedValue = value
+        savedValues.append(value)
+    }
+
+    func values() -> [Bool] {
+        lock.lock()
+        defer { lock.unlock() }
+        return savedValues
+    }
+}
+
+final class CloudSyncTracker: @unchecked Sendable {
+    private let lock = NSLock()
+    private var startCount = 0
+    private var stopCount = 0
+    private var fetchCount = 0
+    private var currentState = CloudSyncEngineState(
+        isRunning: false,
+        isSynchronizing: false
+    )
+
+    func recordStart() {
+        lock.lock()
+        defer { lock.unlock() }
+        startCount += 1
+        currentState = CloudSyncEngineState(
+            isRunning: true,
+            isSynchronizing: false
+        )
+    }
+
+    func recordStop() {
+        lock.lock()
+        defer { lock.unlock() }
+        stopCount += 1
+        currentState = CloudSyncEngineState(
+            isRunning: false,
+            isSynchronizing: false
+        )
+    }
+
+    func recordFetch() {
+        lock.lock()
+        defer { lock.unlock() }
+        fetchCount += 1
+        currentState = CloudSyncEngineState(
+            isRunning: true,
+            isSynchronizing: false
+        )
+    }
+
+    func setState(_ state: CloudSyncEngineState) {
+        lock.lock()
+        defer { lock.unlock() }
+        currentState = state
+    }
+
+    func state() -> CloudSyncEngineState {
+        lock.lock()
+        defer { lock.unlock() }
+        return currentState
+    }
+
+    func counts() -> (starts: Int, stops: Int, fetches: Int) {
+        lock.lock()
+        defer { lock.unlock() }
+        return (startCount, stopCount, fetchCount)
+    }
+}
+
 actor SessionWindowTransitionTracker {
     private(set) var endReasonValues: [SessionEndReason] = []
     private(set) var startTimes: [Date] = []
@@ -112,6 +200,18 @@ actor SessionWindowTransitionTracker {
 
 enum AppFeatureTestError: Error {
     case failed
+}
+
+actor InvocationCounter {
+    private(set) var count = 0
+
+    func record() {
+        count += 1
+    }
+
+    func value() -> Int {
+        count
+    }
 }
 
 let appFeatureProjectACategoryID = UUID(uuidString: "3261E8B5-4302-4D32-9FDF-F5D4AB4AF4D9")!
